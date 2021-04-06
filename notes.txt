@@ -1,1 +1,62 @@
 400 x 400 grid can run at 60fps on my laptop.
+
+
+Module-based:
+	allocation (of library modules)
+	binding	   (operations to modules)
+	schedule   (operation execution)
+	placement  (of modules)
+	routing
+
+### My BioAssay JSON Example ###
+
+{
+	"name"  : "PCR",
+	"1" : {
+		"type" : "input",
+		"substance" : "water"
+	},
+	"2" : {
+		"type" : "input",
+		"substance" : "alcohol"
+	},
+	"3" : {
+		"type" : "mix",
+		"input" : [ "1" ,  "2" ]
+	},
+	"4" : {
+		"type" : "output",
+		"input" : [ "3" ]
+	}
+}
+
+### My Library Example ###
+
+{
+	"name" : "a lib",
+	{
+		"name" : "heater",
+		"configs" : [
+			{
+				"width" : "4",
+				"height" : "3",
+				"duration" : "22"
+			},
+			{
+				"width" : "4",
+				"height" : "4",
+				"duration" : "14"
+			},
+		]
+	},
+	{
+		"name" : "X detector",
+		"configs" : [
+			{
+				"width" : "2",
+				"height" : "2",
+				"duration" : "4" 
+			}
+		]
+	},  
+}

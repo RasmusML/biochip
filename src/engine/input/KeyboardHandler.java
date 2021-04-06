@@ -1,6 +1,7 @@
 package engine.input;
 
 import java.awt.Component;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
@@ -35,12 +36,7 @@ public class KeyboardHandler {
 		pendingKeys = new ArrayList<>();
 		preKeys = new ArrayList<>();
 
-		keyListener = new KeyListener() {
-
-			@Override
-			public void keyTyped(KeyEvent e) {
-			}
-
+		keyListener = new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {
 				synchronized(preKeys) {

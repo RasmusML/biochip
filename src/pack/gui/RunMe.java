@@ -1,4 +1,4 @@
-package pack;
+package pack.gui;
 
 import engine.Application;
 import engine.ApplicationConfiguration;

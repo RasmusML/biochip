@@ -1,18 +1,28 @@
-package pack;
+package pack.gui;
 
 import java.awt.Canvas;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-import engine.ApplicationListener;
+import engine.ApplicationAdapter;
 import engine.graphics.Camera;
 import engine.graphics.FitViewport;
 import engine.graphics.Renderer;
 import engine.input.Button;
+import engine.input.Keys;
+import engine.math.MathUtils;
 import engine.math.Vector2;
+import pack.algorithms.BioArray;
+import pack.algorithms.BioAssay;
+import pack.algorithms.MixingPercentages;
+import pack.algorithms.Point;
+import pack.algorithms.MergeRouter;
+import pack.algorithms.Route;
+import pack.algorithms.MergeBioArray;
+import pack.algorithms.MergeBioAssay;
 
-public class App extends ApplicationListener {
+public class App extends ApplicationAdapter {
 
 	// graphics
 	Renderer renderer;
@@ -30,13 +40,15 @@ public class App extends ApplicationListener {
 
 	// routing
 	Grid grid;
-	List<Droplet> droplets;
+	
+	List<Route> routes;
+	int timestamp;
 
 	@Override
 	public void init() {
 		canvas = new Canvas();
 		app.setRoot(canvas);
-		app.attachComponentToListen(canvas);
+		app.attachInputListenersToComponent(canvas);
 
 		canvas.createBufferStrategy(3);
 
@@ -48,24 +60,22 @@ public class App extends ApplicationListener {
 		renderer.setCanvas(canvas);
 
 		grid = new Grid();
-		grid.width = 14;
-		grid.height = 10;
+		grid.width = 7;
+		grid.height = 7;
 
-		float cx = viewport.getVirtualWidth() / 2f - grid.width * (tilesize - 2 * gap);
-		float cy = viewport.getVirtualHeight() / 2f - grid.height * (tilesize - 2 * gap);
+		float cx = grid.width * tilesize / 2f;
+		float cy = grid.height * tilesize / 2f;
 		camera.lookAtNow(cx, cy);
-		camera.zoom(2f);
+		camera.zoomNow(2f);
 
-		int dropletCount = 10;
-		droplets = new ArrayList<>();
-
-		for (int i = 0; i < dropletCount; i++) {
-			Droplet droplet = new Droplet();
-			droplet.path = new ArrayList<>();
-			droplet.at = 0;
-
-			droplets.add(droplet);
-		}
+		BioAssay assay = new MergeBioAssay();
+		BioArray array = new MergeBioArray();
+		MixingPercentages percentages = new MixingPercentages();
+		
+		MergeRouter router = new MergeRouter();
+		routes = router.compute(assay, array, percentages);
+		
+		System.out.println(routes.size());
 	}
 
 	@Override
@@ -80,11 +90,12 @@ public class App extends ApplicationListener {
 		}
 
 		if (input.isMouseJustPressed(Button.LEFT)) {
+			dragging = true;
+
 			Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
 			oldX = mouse.x;
 			oldY = mouse.y;
 
-			dragging = true;
 		}
 
 		if (input.isMouseJustReleased(Button.LEFT)) {
@@ -103,6 +114,15 @@ public class App extends ApplicationListener {
 			float ty = camera.y - dy;
 
 			camera.lookAtNow(tx, ty);
+		}
+		
+		if (input.isKeyJustPressed(Keys.RIGHT)) {
+		  timestamp += 1;
+		}
+		
+		if (input.isKeyJustPressed(Keys.LEFT)) {
+		  timestamp -= 1;
+		  if (timestamp < 0) timestamp = 0;
 		}
 	}
 
@@ -138,6 +158,53 @@ public class App extends ApplicationListener {
 			}
 		}
 
+		/*
+		{	// routes
+			
+			for (int i = 0; i < routes.size(); i++) {
+				Route route = routes.get(i);
+				
+				float r = i / (float) routes.size();
+				Color color = new Color(r, r, r);
+				renderer.setColor(color);
+				
+				for (Point tile : route.path) {
+					float xx = tile.x * tilesize + gap;
+					float yy = tile.y * tilesize + gap;
+
+					float width = tilesize - gap * 2f;
+					float height = tilesize - gap * 2f;
+					
+					renderer.fillRect(xx, yy, width, height);
+				}
+			}
+		}
+		*/
+		
+    { // routes
+      
+      for (int i = 0; i < routes.size(); i++) {
+        Route route = routes.get(i);
+        
+        float r = i / (float) routes.size();
+        Color color = new Color(r, r, r);
+        renderer.setColor(color);
+        
+        int pathIndex = timestamp - route.start;
+        
+        if (pathIndex < 0 || pathIndex >= route.path.size()) continue;
+        
+        Point tile = route.path.get(pathIndex);
+        float xx = tile.x * tilesize + gap;
+        float yy = tile.y * tilesize + gap;
+
+        float width = tilesize - gap * 2f;
+        float height = tilesize - gap * 2f;
+        
+        renderer.fillOval(xx, yy, width, height);        
+      }
+    }
+
 		renderer.end();
 	}
 
@@ -150,12 +217,4 @@ public class App extends ApplicationListener {
 		public int width, height;
 	}
 
-	static private class Droplet {
-		public int at;
-		public List<Point> path;
-	}
-
-	static private class Point {
-		public int x, y;
-	}
 }

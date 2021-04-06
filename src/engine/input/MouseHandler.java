@@ -2,6 +2,7 @@ package engine.input;
 
 import java.awt.Component;
 import java.awt.Point;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -33,7 +34,7 @@ public class MouseHandler {
 		preMouses = new ArrayList<>();
 		pendingMouses = new ArrayList<>();
 		
-		mouseListener = new MouseListener() {
+		mouseListener = new MouseAdapter() {
 			@Override
 			public void mouseReleased(MouseEvent e) {
 				synchronized(preMouses) {
@@ -46,18 +47,6 @@ public class MouseHandler {
 				synchronized(preMouses) {
 					preMouses.add(e);
 				}
-			}
-
-			@Override
-			public void mouseClicked(MouseEvent e) {
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
 			}
 		};
 		

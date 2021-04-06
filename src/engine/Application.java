@@ -3,7 +3,6 @@ package engine;
 import java.awt.Component;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.SwingUtilities;
 
@@ -18,10 +17,10 @@ public class Application {
 	private boolean running;
 
 	private int fps;
-	private int defaultFps;
 	private double msPerFrame;
 
 	private int actualFps;
+	private float actualMsPerFrame;
 
 	private boolean resizable;
 
@@ -35,14 +34,13 @@ public class Application {
 	private Window window;
 	private String title;
 
-	private Thread mainLoopThread;
+	private Thread appThread;
 
-	private ApplicationListener listener;
+	private ApplicationAdapter appAdapter;
 	
-	private float delta;
 	
-	public Application(ApplicationListener listener, ApplicationConfiguration config) {
-		this.listener = listener;
+	public Application(ApplicationAdapter appAdapter, ApplicationConfiguration config) {
+		this.appAdapter = appAdapter;
 		
 		// dual monitors crashes. For some reason, it can not create buffers for the canvas.
 		// this fixes it.
@@ -57,7 +55,7 @@ public class Application {
 		width = initialWidth;
 		height = initialHeight;
 
-		defaultFps = 60;
+		int defaultFps = 60;
 		fps = (config.fps <= 0) ? defaultFps : config.fps;
 		msPerFrame = 1000 / (double) fps;
 
@@ -69,28 +67,28 @@ public class Application {
 		mouseHandler = new MouseHandler();
 		inputHandler = new InputHandler(mouseHandler, keyboardHandler);
 
-		listener.input = inputHandler;
-		listener.app = this;
+		appAdapter.input = inputHandler;
+		appAdapter.app = this;
 		
-		listener.init();
-		listener.resize(initialWidth, initialHeight);
+		appAdapter.init();
+		appAdapter.resize(initialWidth, initialHeight);
 		
 		initialize();
 	}
 
 	private void initialize() {
-		mainLoopThread = new Thread(new Runnable() {
+		appThread = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
-				startMainLoop();
+				runMainLoop();
 			}
 		});
 
-		mainLoopThread.start();
+		appThread.start();
 	}
 
-	private void startMainLoop() {
+	private void runMainLoop() {
 		running = true;
 
 		int ticks = 0;
@@ -117,22 +115,23 @@ public class Application {
 					System.out.printf("running behind %d\n", elapsed);
 			}
 
+			actualMsPerFrame = elapsed;
+
 			keyboardHandler.act();
 			mouseHandler.act();
 
-			delta = elapsed / 1_000f;
-			listener.update();
+			appAdapter.update();
 
 			int currentWidth = window.getWidth();
 			int currentHeight = window.getHeight();
 
 			if (currentWidth != width || currentHeight != height) {
-				listener.resize(currentWidth, currentHeight);
+				appAdapter.resize(currentWidth, currentHeight);
 				width = currentWidth;
 				height = currentHeight;
 			}
 
-			listener.draw();
+			appAdapter.draw();
 
 			sync(elapsed);
 		}
@@ -146,15 +145,7 @@ public class Application {
 
 		long correctedMsPerFrame = (long) (msPerFrame - accumulatedDelta - theta);
 		long msSleep = (correctedMsPerFrame < 0) ? 0 : correctedMsPerFrame; // @todo: yield when 0 ?
-		sleep(msSleep);
-	}
-
-	private void sleep(long ms) {
-		try {
-			Thread.sleep(ms);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		Utils.sleep(msSleep);
 	}
 
 	private void initWindow() {
@@ -182,7 +173,7 @@ public class Application {
 
 	public void exit() {
 		running = false;
-		listener.dispose();
+		appAdapter.dispose();
 		window.close();
 	}
 
@@ -191,7 +182,7 @@ public class Application {
 	}
 
 	public float getDelta() {
-		return delta;
+		return actualMsPerFrame;
 	}
 	
 	public int getWidth() {
@@ -203,20 +194,10 @@ public class Application {
 	}
 	
 	public void setRoot(Component component) {
-		if (SwingUtilities.isEventDispatchThread()) {
-			window.setRoot(component);
-		} else {
-			try {
-				SwingUtilities.invokeAndWait(() -> {
-					window.setRoot(component);
-				});
-			} catch (InvocationTargetException | InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+		window.setRoot(component);
 	}
 	
-	public void attachComponentToListen(Component component) {
+	public void attachInputListenersToComponent(Component component) {
 		mouseHandler.attach(component);
 		keyboardHandler.attach(component);
 	}

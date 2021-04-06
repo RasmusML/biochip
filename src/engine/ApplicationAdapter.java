@@ -2,7 +2,7 @@ package engine;
 
 import engine.input.Input;
 
-public class ApplicationListener {
+public class ApplicationAdapter {
 	public Input input;
 	public Application app;
 	

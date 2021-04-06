@@ -5,7 +5,6 @@ public interface Input {
 	public int getX();
 	public int getY();
 	
-	// @todo: isAnyPressed?
 	public boolean isMouseJustPressed(int button);
 	public boolean isMousePressed(int button);
 	public boolean isMouseJustReleased(int button);

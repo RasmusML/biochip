@@ -47,7 +47,6 @@ public class FitViewport implements Viewport {
 		float centerX = virtualWidth / 2.0f;
 		float centerY = virtualHeight / 2.0f;
 		
-		// to screen (if there was no scaling from the viewport to fit the screen)
 		float screenX = ((x - camera.x) * camera.zoom + centerX) * scale;
 		float screenY = ((y - camera.y) * camera.zoom + centerY) * scale;
 		

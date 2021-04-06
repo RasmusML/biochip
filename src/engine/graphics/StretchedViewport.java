@@ -44,7 +44,6 @@ public class StretchedViewport implements Viewport {
 		float centerX = virtualWidth / 2.0f;
 		float centerY = virtualHeight / 2.0f;
 		
-		// to screen (if there was no scaling from the viewport to fit the screen)
 		float screenX = ((x - camera.x) * camera.zoom + centerX) * scaleX;
 		float screenY = ((y - camera.y) * camera.zoom + centerY) * scaleY;
 		

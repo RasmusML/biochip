@@ -2,53 +2,78 @@ package engine;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 public class Window {
 
 	private JFrame frame;
 	private Component root;
-	
-	private int frameHeaderWidth, frameHeaderHeight;
-	
+
+	private Dimension dimensions;
+
 	public Window() {
 		setUILookAndFeel(UIManager.getSystemLookAndFeelClassName());
 	}
-	
+
 	public void init(String title, int width, int height, boolean resizable, WindowAdapter onCloseListener) {
-		
 		frame = new JFrame(title);
-		
-		Dimension dimension = new Dimension(width, height);
+
+		dimensions = new Dimension();
+
+		Dimension initialDimensions = new Dimension(width, height);
 		Component root = frame.getContentPane();
-		root.setMinimumSize(dimension);
-		root.setMaximumSize(dimension);
-		root.setPreferredSize(dimension);
+		root.setMinimumSize(initialDimensions);
+		root.setMaximumSize(initialDimensions);
+		root.setPreferredSize(initialDimensions);
+
+		ComponentAdapter listener = new ComponentAdapter() {
+
+			@Override
+			public void componentResized(ComponentEvent e) {
+				dimensions.setSize(frame.getWidth(), frame.getHeight());
+			}
+		};
+
+		frame.addComponentListener(listener);
 
 		frame.pack();
 		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		frame.addWindowListener(onCloseListener);
-		
 		frame.setResizable(resizable);
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
-		
-		frameHeaderHeight = frame.getHeight() - dimension.height;
-		frameHeaderWidth = frame.getWidth() - dimension.width;
 	}
 
 	public void setTitle(String title) {
 		frame.setTitle(title);
 	}
-	
+
 	public JFrame getFrame() {
 		return frame;
 	}
-	
+
 	public void setRoot(Component newRoot) {
+		if (SwingUtilities.isEventDispatchThread()) {
+			setRootUnsafe(newRoot);
+		} else {
+			try {
+				SwingUtilities.invokeAndWait(() -> {
+					setRootUnsafe(newRoot);
+				});
+			} catch (InvocationTargetException | InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public void setRootUnsafe(Component newRoot) {
 		if (root != null) frame.remove(root);
 		frame.add(newRoot);
 		frame.revalidate();
@@ -59,11 +84,11 @@ public class Window {
 	}
 
 	public int getWidth() {
-		return frame.getWidth() - frameHeaderWidth;
+		return dimensions.width;
 	}
 
 	public int getHeight() {
-		return frame.getHeight() - frameHeaderHeight;
+		return dimensions.height;
 	}
 
 	private void setUILookAndFeel(String uiName) {
@@ -78,6 +103,5 @@ public class Window {
 	public void close() {
 		frame.setVisible(false);
 		frame.dispose();
-		System.exit(0);
 	}
 }
