@@ -158,6 +158,8 @@ public class MergeRouter {
               System.out.println(":)2");
   
               if ("merge".equals(child.type)) {
+                NodeExtra childExtra = nodeIdToNodeExtra.get(child.id);
+
                 for (Point spawn : spawns) {
                   Route route = new Route();
                   route.path.add(spawn);
@@ -169,11 +171,11 @@ public class MergeRouter {
                   nextDropletId += 1;
                   runningDroplets.add(droplet);
   
-                  NodeExtra childExtra = nodeIdToNodeExtra.get(child.id);
                   childExtra.dropletId.add(droplet.id);
                 }
   
                 for (Node op : operationalNodes) {
+                  // :forwardIndex
                   // @incomplete: assumes no splitting for now!
                   NodeExtra oldExtra = nodeIdToNodeExtra.get(op.id);
                   int oldDropletId = oldExtra.dropletId.get(0);
@@ -189,7 +191,6 @@ public class MergeRouter {
                   nextDropletId += 1;
                   runningDroplets.add(droplet);
   
-                  NodeExtra childExtra = nodeIdToNodeExtra.get(child.id);
                   childExtra.dropletId.add(droplet.id);
                 }
   
@@ -206,7 +207,7 @@ public class MergeRouter {
       }
 
       runningOperations.addAll(queuedOperations);
-      if (runningOperations.size() == 0) break;
+      if (runningOperations.size() == 0 && base.size() == 0) break;
       
       timestamp += 1;
 
@@ -370,8 +371,10 @@ class Droplet {
 }
 
 class NodeExtra {
-  public boolean done; // @NOTE: input nodes do not set this true currently
   public List<Integer> dropletId = new ArrayList<>();
+
+  public boolean done; // @NOTE: input nodes do not set this true currently
+  //public int forwardIndex;  // this becomes relevant when an input is a split, as some droplets after a split may be assigned as inputs already.
 }
 
 
