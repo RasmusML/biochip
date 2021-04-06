@@ -7,6 +7,6 @@ public class MergeBioArray extends BioArray {
 		height = 7;
 		
 		reserviorTiles.add(new Point(0, 0));
-		reserviorTiles.add(new Point(6, 6));
+		reserviorTiles.add(new Point(5, 6));
 	}
 }

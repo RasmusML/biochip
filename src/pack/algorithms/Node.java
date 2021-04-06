@@ -14,7 +14,7 @@ public class Node { // "fat class"
 	public List<Node> inputs = new ArrayList<>();
 	public List<Node> outputs = new ArrayList<>();
 
-	public String substance;	// only used for input!
+	public String substance;	// only used for input.
 	
 }
 

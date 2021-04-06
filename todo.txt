@@ -1,3 +1,6 @@
-static and dynamic constraints
-split operation
-mix operation
+- static and dynamic constraints
+- handle merging where droplets are spaced by 2 tiles, 1 droplet should stall, while the other one moves towards it. The next timestamp
+both jump to the common tile.
+- pretty-print bio-array
+- split operation
+- mix operation

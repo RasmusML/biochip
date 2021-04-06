@@ -51,7 +51,7 @@ public class MergeRouter {
           it.remove();
           runningOperations.add(node);
           
-          System.out.println(":)");
+          System.out.printf("spawning %d (%s)\n", node.id, node.type);
 
           if ("merge".equals(node.type)) {
 
@@ -105,6 +105,8 @@ public class MergeRouter {
 
             retiredDroplets.add(droplet1);
             runningDroplets.remove(droplet1);
+            
+            System.out.printf("completed %d (%s)\n", node.id, node.type);
 
           } else { // do a merge move
             
@@ -155,7 +157,7 @@ public class MergeRouter {
             }
   
             if (canRun) {
-              System.out.println(":)2");
+              System.out.printf("starting %d (%s)\n", child.id, child.type);
   
               if ("merge".equals(child.type)) {
                 NodeExtra childExtra = nodeIdToNodeExtra.get(child.id);
@@ -292,7 +294,7 @@ public class MergeRouter {
     }
 
     for (Reservior reservior : reserviors) {
-      System.out.printf("%s: %s\n", reservior.position, reservior.substance);
+      System.out.printf("reservior %s: %s\n", reservior.position, reservior.substance);
     }
 
     return reserviors;
@@ -360,17 +362,17 @@ public class MergeRouter {
 
 }
 
-class Reservior {
+class Reservior { // global
   public Point position;
   public String substance;
 }
 
-class Droplet {
+class Droplet { // global?
   public int id;
   public Route route;
 }
 
-class NodeExtra {
+class NodeExtra { // algorithm specific
   public List<Integer> dropletId = new ArrayList<>();
 
   public boolean done; // @NOTE: input nodes do not set this true currently
