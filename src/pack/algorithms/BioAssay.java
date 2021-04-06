@@ -82,13 +82,13 @@ public class BioAssay {
 		return ids;
 	}
 
-	private static class Wrapper<T> {
-		public T value;
-	}
-
   public List<Node> getNodes() {
     List<Node> nodes = new ArrayList<>();
     traverse(node -> nodes.add(node), sink);
     return nodes;
+  }
+
+  private static class Wrapper<T> {
+    public T value;
   }
 }
