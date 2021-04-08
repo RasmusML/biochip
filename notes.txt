@@ -60,3 +60,53 @@ Module-based:
 		]
 	},  
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Droplet:
+	at
+
+
+
+findNextActions():
+	for operation in operations:
+		# queueAction()
+		if operation.type == "merge":
+			d1 = operation.d1
+			d2 = operation.d2
+			
+			moves = []
+			for move in maybeMoves:
+				next1 = d1.at + move
+				
+				for do in droplets:
+					if !okStatic(d1, do) | !okDynamic(d1, do):
+						continue move
+			
+				moves.add(move)	
+				
+			
+
+snap():
+	for action in actions:
+		# execute(operation)
+		
+
+compute():
+	findNextActions()
+	snap()

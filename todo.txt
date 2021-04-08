@@ -1,3 +1,5 @@
-- pretty-print bio-array
 - split operation
 - mix operation
+
+
+- Create an update Graphviz, when the routing is (how long does each operation take, or start and stop time for operation)

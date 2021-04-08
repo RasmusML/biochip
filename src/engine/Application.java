@@ -145,7 +145,7 @@ public class Application {
 
 		long correctedMsPerFrame = (long) (msPerFrame - accumulatedDelta - theta);
 		long msSleep = (correctedMsPerFrame < 0) ? 0 : correctedMsPerFrame; // @todo: yield when 0 ?
-		Utils.sleep(msSleep);
+		sleep(msSleep);
 	}
 
 	private void initWindow() {
@@ -170,6 +170,14 @@ public class Application {
 			e.printStackTrace();
 		}
 	}
+	
+	 public static void sleep(long ms) {
+	    try {
+	      Thread.sleep(ms);
+	    } catch (InterruptedException e) {
+	      e.printStackTrace();
+	    }
+	  }
 
 	public void exit() {
 		running = false;
