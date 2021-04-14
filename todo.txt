@@ -2,4 +2,6 @@
 - mix operation
 
 
+// @TODO: build verboseBioAssay from bioAssay (with merge, move etc...)
+
 - Create an update Graphviz, when the routing is (how long does each operation take, or start and stop time for operation)

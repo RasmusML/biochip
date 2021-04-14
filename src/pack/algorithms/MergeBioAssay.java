@@ -8,35 +8,35 @@ public class MergeBioAssay extends BioAssay {
 		count = 6;
 	}
 
-	private Node build() {
-		Node input1 = new Node();
+	private Operation build() {
+		Operation input1 = new Operation();
 		input1.id = 1;
 		input1.type = "input";
 		input1.substance = "a";
 
-		Node input2 = new Node();
+		Operation input2 = new Operation();
 		input2.id = 2;
 		input2.type = "input";
 		input2.substance = "b";
 		
-		Node input3 = new Node();
+		Operation input3 = new Operation();
 		input3.id = 3;
 		input3.type = "input";
 		input3.substance = "a";
 		
-		Node merge1 = new Node();
+		Operation merge1 = new Operation();
 		merge1.id = 4;
 		merge1.type = "merge";
 		
-		Node merge2 = new Node();
+		Operation merge2 = new Operation();
     merge2.id = 5;
     merge2.type = "merge";
     
-    Node split1 = new Node();
+    Operation split1 = new Operation();
     split1.id = 6;
     split1.type = "split";
     
-		Node sink = new Node();
+		Operation sink = new Operation();
 		sink.type = "sink";
 		//sink.id = 7;
 		sink.id = 6;

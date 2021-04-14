@@ -8,26 +8,37 @@ import java.util.Map;
 
 public class MergeRouter {
 
+  private List<Operation> baseOperations;
+  private List<Operation> runningOperations;
+  
+  private List<Droplet> runningDroplets;
+  private List<Droplet> retiredDroplets;
+  
+  private List<Reservior> reserviors;
+  
+  private Map<Integer, OperationExtra> operationIdToExtra;
+  
   int nextDropletId;
-
+  
   public List<Route> compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
-    List<Reservior> reserviors = bindSubstancesToReserviors(assay, array);
+    reserviors = bindSubstancesToReserviors(assay, array);
 
-    Map<Integer, NodeExtra> nodeIdToNodeExtra = new HashMap<>();
-    List<Node> nodes = assay.getNodes();
+    operationIdToExtra = new HashMap<>();
 
-    for (Node node : nodes) {
-      NodeExtra extra = new NodeExtra();
-      nodeIdToNodeExtra.put(node.id, extra);
+    List<Operation> operations = assay.getOperations();
+    for (Operation operation : operations) {
+      OperationExtra extra = new OperationExtra();
+      operationIdToExtra.put(operation.id, extra);
     }
 
-    List<Node> base = assay.getOperationalBase();
-    List<Node> runningOperations = new ArrayList<>();
+    baseOperations = assay.getOperationalBase();
+    runningOperations = new ArrayList<>();
 
-    List<Droplet> runningDroplets = new ArrayList<>();
-    List<Droplet> retiredDroplets = new ArrayList<>();
-
+    runningDroplets = new ArrayList<>();
+    retiredDroplets = new ArrayList<>();
+    
     // @remove
+    /*
     List<Droplet> temporaryDroplets = new ArrayList<>();
     {
       Route froute = new Route();
@@ -39,17 +50,19 @@ public class MergeRouter {
       runningDroplets.add(filler);
       temporaryDroplets.add(filler);
     }
+    */
 
     int timestamp = 0;
+    
     while (true) {
 
-      for (Iterator<Node> it = base.iterator(); it.hasNext();) {
-        Node node = it.next();
-
+      for (Iterator<Operation> it = baseOperations.iterator(); it.hasNext();) {
+        Operation operation = it.next();
+        
         boolean canRun = true;
         List<Point> dropletPositions = getDropletPositions(runningDroplets);
         List<Point> spawns = new ArrayList<>();
-        for (Node input : node.inputs) {
+        for (Operation input : operation.inputs) {
           Point spawn = getDropletSpawn(input.substance, reserviors, dropletPositions);
 
           if (spawn == null) {
@@ -62,33 +75,28 @@ public class MergeRouter {
 
         if (canRun) {
           it.remove();
-          runningOperations.add(node);
+          runningOperations.add(operation);
 
-          System.out.printf("spawning %d (%s)\n", node.id, node.type);
-
-          if ("merge".equals(node.type)) {
-
-            for (Point spawn : spawns) {
-              Droplet droplet = spawnDroplet(spawn, runningDroplets, timestamp);
-
-              NodeExtra extra = nodeIdToNodeExtra.get(node.id);
-              extra.dropletId.add(droplet.id);
-            }
-
-          } else {
-            throw new IllegalStateException("unsupported operation! " + node.type);
+          System.out.printf("spawning %d (%s)\n", operation.id, operation.type);
+          
+          for (Point position : spawns) {
+            Droplet droplet = createDroplet(position, timestamp);
+            runningDroplets.add(droplet);
+            
+            OperationExtra extra = operationIdToExtra.get(operation.id);
+            extra.dropletId.add(droplet.id);
           }
         }
       }
 
-      List<Node> queuedOperations = new ArrayList<>();
+      List<Operation> queuedOperations = new ArrayList<>();
 
-      for (Iterator<Node> it = runningOperations.iterator(); it.hasNext();) {
-        Node node = it.next();
+      for (Iterator<Operation> it = runningOperations.iterator(); it.hasNext();) {
+        Operation operation = it.next();
 
-        NodeExtra extra = nodeIdToNodeExtra.get(node.id);
+        OperationExtra extra = operationIdToExtra.get(operation.id);
 
-        if ("merge".equals(node.type)) {
+        if ("merge".equals(operation.type)) {
           int id0 = extra.dropletId.get(0);
           int id1 = extra.dropletId.get(1);
 
@@ -110,7 +118,7 @@ public class MergeRouter {
             retiredDroplets.add(droplet1);
             runningDroplets.remove(droplet1);
 
-            System.out.printf("completed %d (%s)\n", node.id, node.type);
+            System.out.printf("completed %d (%s)\n", operation.id, operation.type);
 
           } else { // do a merge move
 
@@ -130,28 +138,28 @@ public class MergeRouter {
         }
 
         if (extra.done) {
-          for (Node readyNode : node.outputs) {
-            List<Node> inputSpawnNodes = new ArrayList<>();
-            List<Node> inputOperationalNodes = new ArrayList<>();
+          for (Operation readyoperation : operation.outputs) {
+            List<Operation> inputSpawnOperations = new ArrayList<>();
+            List<Operation> inputOperationaloperations = new ArrayList<>();
 
-            for (Node input : readyNode.inputs) {
+            for (Operation input : readyoperation.inputs) {
               if ("input".equals(input.type)) {
-                inputSpawnNodes.add(input);
+                inputSpawnOperations.add(input);
               } else {
-                inputOperationalNodes.add(input);
+                inputOperationaloperations.add(input);
               }
             }
 
             boolean canRun = true;
-            for (Node operationalNode : inputOperationalNodes) {
-              NodeExtra opExtra = nodeIdToNodeExtra.get(operationalNode.id);
+            for (Operation operationaloperation : inputOperationaloperations) {
+              OperationExtra opExtra = operationIdToExtra.get(operationaloperation.id);
               if (!opExtra.done) canRun = false;
             }
 
-            // try and spawn all input nodes.
+            // try and spawn all input operations.
             List<Point> allDroplets = getDropletPositions(runningDroplets);
             List<Point> spawns = new ArrayList<>();
-            for (Node input : inputSpawnNodes) {
+            for (Operation input : inputSpawnOperations) {
               Point spawn = getDropletSpawn(input.substance, reserviors, allDroplets);
 
               if (spawn == null) {
@@ -163,52 +171,37 @@ public class MergeRouter {
             }
 
             if (canRun) {
-              System.out.printf("starting %d (%s)\n", readyNode.id, readyNode.type);
+              System.out.printf("starting %d (%s)\n", readyoperation.id, readyoperation.type);
 
-              NodeExtra readyNodeExtra = nodeIdToNodeExtra.get(readyNode.id);
+              OperationExtra readyOperationExtra = operationIdToExtra.get(readyoperation.id);
 
-              if ("merge".equals(readyNode.type)) {
+              if ("merge".equals(readyoperation.type)) {
 
                 for (Point spawn : spawns) {
-                  Route route = new Route();
-                  route.start = timestamp;
-
-                  Droplet droplet = new Droplet();
-                  droplet.route = route;
-                  droplet.to = spawn;
-                  droplet.id = nextDropletId;
-                  nextDropletId += 1;
+                  Droplet droplet = createDroplet(spawn, timestamp);
+                  
                   runningDroplets.add(droplet);
-
-                  readyNodeExtra.dropletId.add(droplet.id);
+                  readyOperationExtra.dropletId.add(droplet.id);
                 }
 
-                for (Node op : inputOperationalNodes) {
+                for (Operation op : inputOperationaloperations) {
                   // :forwardIndex
                   // @incomplete: assumes no splitting for now!
-                  NodeExtra prevNodeExtra = nodeIdToNodeExtra.get(op.id);
-                  int prevDropletId = prevNodeExtra.dropletId.get(0);
+                  OperationExtra prevoperationExtra = operationIdToExtra.get(op.id);
+                  int prevDropletId = prevoperationExtra.dropletId.get(0);
 
                   Point spawn = getPosition(getDroplet(prevDropletId, retiredDroplets));
-                  Route route = new Route();
-                  route.start = timestamp;
-
-                  Droplet droplet = new Droplet();
-                  droplet.route = route;
-                  droplet.to = spawn;
-                  droplet.id = nextDropletId;
-                  nextDropletId += 1;
+                  Droplet droplet = createDroplet(spawn, timestamp);
                   runningDroplets.add(droplet);
-
-                  readyNodeExtra.dropletId.add(droplet.id);
+                  readyOperationExtra.dropletId.add(droplet.id);
                 }
 
-                queuedOperations.add(readyNode);
+                queuedOperations.add(readyoperation);
 
-              } else if ("sink".equals(readyNode.type)) {
+              } else if ("sink".equals(readyoperation.type)) {
                 System.out.println("sink...");
               } else {
-                throw new IllegalStateException("unsupported operation! " + readyNode.type);
+                throw new IllegalStateException("unsupported operation! " + readyoperation.type);
               }
             }
           }
@@ -226,13 +219,9 @@ public class MergeRouter {
         droplet.route.path.add(next);
       }
 
-      if (runningOperations.size() == 0 && base.size() == 0) break;
+      if (runningOperations.size() == 0 && baseOperations.size() == 0) break;
 
       timestamp += 1;
-
-      /*
-       * if (timestamp == 10) { retiredDroplets.addAll(runningDroplets); break; }
-       */
 
     }
 
@@ -240,16 +229,18 @@ public class MergeRouter {
     for (Droplet droplet : retiredDroplets) {
       routes.add(droplet.route);
     }
-
+    
+    /*
     // @TODO: remove: these droplets are manually added to test stuff.
     for (Droplet droplet : temporaryDroplets) {
       routes.add(droplet.route);
     }
+    */
 
     return routes;
   }
 
-  private Droplet spawnDroplet(Point spawn, List<Droplet> runningDroplets, int timestamp) {
+  private Droplet createDroplet(Point spawn, int timestamp) {
     Route route = new Route();
     route.path.add(spawn);
     route.start = timestamp;
@@ -258,7 +249,7 @@ public class MergeRouter {
     droplet.route = route;
     droplet.id = nextDropletId;
     nextDropletId += 1;
-    runningDroplets.add(droplet);
+    
     return droplet;
   }
 
@@ -285,7 +276,7 @@ public class MergeRouter {
   }
 
   private List<Reservior> bindSubstancesToReserviors(BioAssay assay, BioArray array) {
-    List<Node> inputNodes = assay.getNodesOfType("input");
+    List<Operation> inputoperations = assay.getOperationsOfType("input");
     List<Point> reserviorTiles = array.reserviorTiles;
 
     List<String> assigned = new ArrayList<>();
@@ -296,20 +287,20 @@ public class MergeRouter {
     int reserviorIndex = 0;
     int inputIndex = 0;
 
-    while (inputIndex < inputNodes.size()) {
-      Node inputNode = inputNodes.get(inputIndex);
+    while (inputIndex < inputoperations.size()) {
+      Operation inputoperation = inputoperations.get(inputIndex);
       inputIndex += 1;
 
-      if (assigned.contains(inputNode.substance)) {
-        pending.add(inputNode.substance);
+      if (assigned.contains(inputoperation.substance)) {
+        pending.add(inputoperation.substance);
       } else {
-        assigned.add(inputNode.substance);
+        assigned.add(inputoperation.substance);
 
         Point reserviorTile = reserviorTiles.get(reserviorIndex);
         reserviorIndex += 1;
 
         Reservior reservior = new Reservior();
-        reservior.substance = inputNode.substance;
+        reservior.substance = inputoperation.substance;
         reservior.position = reserviorTile.copy();
         reserviors.add(reservior);
 
@@ -390,6 +381,7 @@ public class MergeRouter {
   public boolean validMove(Droplet droplet, Point to, List<Droplet> droplets, Droplet companion) {
     for (Droplet other : droplets) {
       if (droplet.id == other.id) continue;
+      if (companion != null && companion.id == other.id) continue;
 
       { // dynamic constraint
         Point otherAt = getPosition(other);
@@ -398,14 +390,6 @@ public class MergeRouter {
         int dy = Math.abs(to.y - otherAt.y);
 
         boolean dynamicOk = dx >= 2 || dy >= 2;
-
-        // we assume that if there is 1 spacing in "time", then the other one will do a move
-        // which handles the problem through a split or merge.
-        if (companion != null && companion.id == other.id) {
-          dynamicOk |= (dx == 0 && dy == 0);  // split
-          dynamicOk |= (dx == 1 && dy == 0) || (dx == 0 && dy == 1);  // merge
-        }
-
         if (!dynamicOk) return false;
       }
 
@@ -415,20 +399,44 @@ public class MergeRouter {
           int dy = Math.abs(to.y - other.to.y);
 
           boolean staticOk = dx >= 2 || dy >= 2;
-
-          if (companion != null && companion.id == other.id) {
+          if (!staticOk) return false;
+        }
+      }
+    }
+    
+    {
+      if (companion != null) {
+        {
+          Point otherAt = getPosition(companion);
+          
+          int dx = Math.abs(to.x - otherAt.x);
+          int dy = Math.abs(to.y - otherAt.y);
+    
+          // we assume that if there is 1 spacing in "time", then the other one will do a move
+          // which handles the problem through a split or merge.
+          boolean dynamicOk = dx >= 2 || dy >= 2;
+          dynamicOk |= (dx == 0 && dy == 0);  // split
+          dynamicOk |= (dx == 1 && dy == 0) || (dx == 0 && dy == 1);  // merge
+          if (!dynamicOk) return false;
+        }
+        
+        {
+          if (companion.to != null) {
             // special case for a merge and split
             // points can't be next to each other, but they may overlap.
-
+  
             // Illegal:
             // o o o o
             // o x x o
             // o o o o
-            staticOk |= (companion.to.x == to.x && companion.to.y == to.y);
+            int dx = Math.abs(to.x - companion.to.x);
+            int dy = Math.abs(to.y - companion.to.y);
+  
+            boolean staticOk = dx >= 2 || dy >= 2;
+            staticOk |= dx == 0 && dy == 0;
+            if (!staticOk) return false;
           }
-
-          if (!staticOk) return false;
-        }
+         }
       }
     }
 
@@ -449,24 +457,14 @@ class Reservior { // global
 class Droplet { // global?
   public int id;
   public Route route;
-
-  public Point to; // @TODO: dedicated move-system?
+  
+  public Point to;
 }
 
-class NodeExtra { // algorithm specific
+class OperationExtra { // algorithm specific
   public List<Integer> dropletId = new ArrayList<>();
 
-  public boolean done; // @NOTE: input nodes do not set this true currently
+  public boolean done; // @NOTE: input operations do not set this true currently
   // public int forwardIndex; // this becomes relevant when an input is a split,
   // as some droplets after a split may be assigned as inputs already.
-}
-
-class SplitAction {
-  public Point at;
-  public Point move1, move2;
-}
-
-class MoveAction {
-  public Point at;
-  public Point move;
 }
