@@ -201,7 +201,12 @@ public class App extends ApplicationAdapter {
         float width = tilesize - gap * 2f;
         float height = tilesize - gap * 2f;
         
-        renderer.fillOval(xx, yy, width, height);        
+        renderer.fillOval(xx, yy, width, height);    
+        
+        String id = String.format("%d", i);
+        
+        renderer.setColor(Color.white);
+        renderer.drawText(id, xx + width / 2f, yy + height / 2f);
       }
     }
 
