@@ -44,10 +44,3 @@ class Sink {
   public List<Operation> operations = new ArrayList<>();
 }
 */
-
-class Node {
-   List<Node> inputs;
-   List<Node> outputs;
-  
-   Operation operation;
-}

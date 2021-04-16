@@ -22,6 +22,8 @@ public class MergeRouter {
   private Map<Integer, OperationExtra> operationIdToExtra;
 
   int nextDropletId;
+  
+  int timestamp;
 
   public List<Route> compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
     reserviors = bindSubstancesToReserviors(assay, array);
@@ -50,7 +52,7 @@ public class MergeRouter {
     
     aliveOperationsCount += activatedOperations.size();
 
-    int timestamp = 0;
+    timestamp = 0;
 
     while (true) {
 
@@ -154,25 +156,11 @@ public class MergeRouter {
           stalledExtra.running = true;
 
           for (Operation input : stalled.inputs) {
-            // :forwardIndex
-            // @incomplete: assumes no splitting for now!
             OperationExtra ascendantExtra = operationIdToExtra.get(input.id);
-            int ascendantDropletId = ascendantExtra.dropletId.get(0);
+            int ascendantDropletId = ascendantExtra.dropletId.remove(0);
             Droplet ascendantDroplet = getDroplet(ascendantDropletId, runningDroplets);
-            runningDroplets.remove(ascendantDroplet);
-            retiredDroplets.add(ascendantDroplet);
             
-            Route route = new Route();
-            route.start = timestamp;
-            
-            Droplet droplet = new Droplet();
-            droplet.route = route;
-            droplet.at = ascendantDroplet.at; // @fix: at vs to in general when to use each.
-            droplet.id = nextDropletId;
-            nextDropletId += 1;
-            
-            stalledExtra.dropletId.add(droplet.id);
-            runningDroplets.add(droplet);
+            stalledExtra.dropletId.add(ascendantDroplet.id);
           }
         }
       }
@@ -234,33 +222,92 @@ public class MergeRouter {
           }
 
         } else if ("split".equals(operation.type)) {
-          // @incomplete
+          
           int id = extra.dropletId.get(0);
           
           Droplet droplet = getDroplet(id, runningDroplets);
 
-          boolean split = false;
+          boolean horizontalSplit = true;
+          
+          Point left = new Point(-1, 0).add(droplet.at);
+          Point right = new Point(1, 0).add(droplet.at);
+          
+          if (!inside(left.x, left.y, array.width, array.height)) horizontalSplit = false;
+          if (!inside(right.x, right.y, array.width, array.height)) horizontalSplit = false;
+          
+          
+          for (Droplet other : runningDroplets) {
+            if (other.id == droplet.id) continue;
+            
+            boolean ok1 = mutuallySatifiesConstraints(droplet.at, left, other.at, other.to);
+            boolean ok2 = mutuallySatifiesConstraints(droplet.at, right, other.at, other.to);
+            
+            if (!ok1 || !ok2) horizontalSplit = false;
+          }
+
+          boolean verticalSplit = true;
+          
+          Point up = new Point(0, 1).add(droplet.at);
+          Point down = new Point(0, -1).add(droplet.at);
+          
+          if (!inside(up.x, up.y, array.width, array.height)) verticalSplit = false;
+          if (!inside(down.x, down.y, array.width, array.height)) verticalSplit = false;
+          
+          for (Droplet other : runningDroplets) {
+            if (other.id == droplet.id) continue;
+            
+            boolean ok1 = mutuallySatifiesConstraints(droplet.at, up, other.at, other.to);
+            boolean ok2 = mutuallySatifiesConstraints(droplet.at, down, other.at, other.to);
+            
+            if (!ok1 || !ok2) verticalSplit = false;
+          }
+
+          Point to1 = verticalSplit ? up : left;
+          Point to2 = verticalSplit ? down : right;
+          
+          boolean split = verticalSplit || horizontalSplit;
           if (split) {
             runningDroplets.remove(droplet);
             retiredDroplets.add(droplet);
             
             extra.dropletId.clear();
 
+            Route r1 = new Route();
+            r1.start = timestamp;
+            
             Droplet s1 = new Droplet();
-            s1.to = null;
+            s1.route = r1;
+            s1.to = to1;
+            s1.id = nextDropletId;
+            nextDropletId += 1;
+            
+            Route r2 = new Route();
+            r2.start = timestamp;
             
             Droplet s2 = new Droplet();
-            s2.to = null;
+            s2.route = r2;
+            s2.to = to2;
+            s2.id = nextDropletId;
+            nextDropletId += 1;
             
             runningDroplets.add(s1);
             runningDroplets.add(s2);
             
             extra.dropletId.add(s1.id);
             extra.dropletId.add(s2.id);
-            
           } else {
             // move somewhere, where it can split.
+            Point move = getBestSplitMove(droplet, runningDroplets, array);
+            if (move == null) throw new IllegalStateException("broken!");
+            
+            droplet.to = new Point(droplet.at).add(move);
           }
+        } else if ("mix".equals(operation.type)) {
+          int id = extra.dropletId.get(0);
+          Droplet droplet = getDroplet(id, runningDroplets);
+          
+          Point move = getBestMixMove(droplet, percentages, array);
+          droplet.to = new Point(droplet.at).add(move);
           
         } else {
           throw new IllegalStateException("unsupported operation!");
@@ -269,6 +316,21 @@ public class MergeRouter {
 
       // ====================
 
+      for (Operation operation : runningOperations) {
+        if (!operation.type.equals("mix")) continue;
+        OperationExtra extra = operationIdToExtra.get(operation.id);
+        
+        int dropletId = extra.dropletId.get(0);
+        Droplet droplet = getDroplet(dropletId, runningDroplets);
+        
+        Point previousMove = getPreviousMove(droplet);
+        Point move = droplet.to.copy().sub(droplet.at);
+        
+        int mixing = getMixingPercentage(move, previousMove, percentages);
+        extra.mixingPercentage += mixing;
+        if (extra.mixingPercentage > 100) extra.mixingPercentage = 100;
+      }
+      
       // perform action
       for (Droplet droplet : runningDroplets) {
         Point next = (droplet.to == null) ? droplet.at.copy() : droplet.to;
@@ -294,7 +356,10 @@ public class MergeRouter {
           
         } else if ("merge".equals(operation.type)) {
           extra.done = (extra.dropletId.size() == 1);
-          
+        } else if ("split".equals(operation.type)) {
+          extra.done = (extra.dropletId.size() == 2);
+        } else if ("mix".equals(operation.type)) {
+          extra.done = (extra.mixingPercentage == 100);
         } else {
           throw new IllegalStateException("unsupported operation!");
         }
@@ -332,13 +397,117 @@ public class MergeRouter {
     retiredDroplets.addAll(runningDroplets);
     runningDroplets.clear();
 
-    // @TODO: post process combine a spawn operation route with the following route.
     List<Route> routes = new ArrayList<>();
     for (Droplet droplet : retiredDroplets) {
       routes.add(droplet.route);
     }
 
     return routes;
+  }
+  
+  private int getMixingPercentage(Point move, Point previousMove, MixingPercentages mixingPercentages) {
+    if (previousMove == null) {
+      boolean stay1 = (move.x == 0 && move.y == 0);
+      if (stay1) return mixingPercentages.stationaryPercentage;
+      return mixingPercentages.firstPercentage;
+    } else {
+
+      boolean stay1 = (move.x == 0 && move.y == 0);
+      boolean left1 = (move.x == -1 && move.y == 0);
+      boolean right1 = (move.x == 1 && move.y == 0);
+      boolean up1 = (move.x == 0 && move.y == 1);
+      boolean down1 = (move.x == 0 && move.y == -1);
+      
+      boolean stay0 = (previousMove.x == 0 && previousMove.y == 0);
+      boolean left0 = (previousMove.x == -1 && previousMove.y == 0);
+      boolean right0 = (previousMove.x == 1 && previousMove.y == 0);
+      boolean up0 = (previousMove.x == 0 && previousMove.y == 1);
+      boolean down0 = (previousMove.x == 0 && previousMove.y == -1);
+      
+      if (stay1) return mixingPercentages.stationaryPercentage;
+      
+      if (!stay1 && stay0) return mixingPercentages.firstPercentage;
+
+      if (left1 && left0) return mixingPercentages.forwardPercentage;
+      if (right1 && right0) return mixingPercentages.forwardPercentage;
+      if (up1 && up0) return mixingPercentages.forwardPercentage;
+      if (down1 && down0) return mixingPercentages.forwardPercentage;
+      
+      if (left1 && right0) return mixingPercentages.reversePercentage;
+      if (right1 && left0) return mixingPercentages.reversePercentage;
+      if (up1 && down0) return mixingPercentages.reversePercentage;
+      if (down1 && up0) return mixingPercentages.reversePercentage;
+      
+      if ((up1 || down1) && (right0 || left0)) return mixingPercentages.turnPercentage;
+      if ((left1 || right1) && (up0 || down0)) return mixingPercentages.turnPercentage;
+      
+      throw new IllegalStateException("broken! forgot mixing percentage.");
+    }
+  }
+
+  private Point getBestMixMove(Droplet droplet, MixingPercentages mixingPercentages, BioArray array) {
+    List<Point> validMoves = getValidMoves(droplet, null, timestamp, runningDroplets, array);
+    Point prevMove = getPreviousMove(droplet);
+    
+    int bestPercentage = Integer.MIN_VALUE;
+    Point bestMove = null;
+    
+    for (Point move : validMoves) {
+      int percentage = getMixingPercentage(move, prevMove, mixingPercentages);
+      
+      if (percentage > bestPercentage) {
+        bestPercentage = percentage;
+        bestMove = move;
+      }
+    }
+    
+    return bestMove;
+  }
+
+  private Point getPreviousMove(Droplet droplet) {
+    List<Point> path = droplet.route.path;
+    if (path.size() >= 2) {
+      Point at0 = path.get(path.size() - 2);
+      Point at1 = path.get(path.size() - 1);
+      
+      Point prevMove = new Point();
+      prevMove.set(at1).sub(at0);
+      
+      return prevMove;
+    }
+    
+    return null;
+  }
+
+  private List<Point> getValidMoves(Droplet droplet, Droplet mergeSibling, int timestamp, List<Droplet> droplets, BioArray array) {
+    List<Point> candidateMoves = new ArrayList<>();
+    candidateMoves.add(new Point(-1, 0));
+    candidateMoves.add(new Point(1, 0));
+    candidateMoves.add(new Point(0, 1));
+    candidateMoves.add(new Point(0, -1));
+    candidateMoves.add(new Point(0, 0));
+    
+    List<Point> validMoves = new ArrayList<>();
+    outer: for (Point move : candidateMoves) {
+      Point next = new Point(droplet.at).add(move);
+      
+      if (!inside(next.x, next.y, array.width, array.height)) continue;
+
+      for (Droplet other : droplets) {
+        if (other.id == droplet.id) continue;
+        if (mergeSibling != null && other.id == mergeSibling.id) continue;
+        
+        if (!mutuallySatifiesConstraints(droplet.at, next, other.at, other.to)) continue outer;
+      }
+      
+      if (mergeSibling != null) {
+        if (!mutuallySatisfiesCompanionConstraints(droplet.at, next, mergeSibling.at, mergeSibling.to)) continue;
+      }
+      
+      validMoves.add(move);
+    }
+    
+    return validMoves;
   }
 
   private Droplet getDroplet(int id, List<Droplet> droplets) {
@@ -429,38 +598,55 @@ public class MergeRouter {
   }
 
   private Point getBestMergeMove(Droplet droplet, Droplet toMerge, List<Droplet> droplets, BioArray array) {
-    List<Point> candidates = new ArrayList<>();
-    candidates.add(new Point(-1, 0));
-    candidates.add(new Point(1, 0));
-    candidates.add(new Point(0, 1));
-    candidates.add(new Point(0, -1));
-    candidates.add(new Point(0, 0));
-
+    List<Point> validMoves = getValidMoves(droplet, toMerge, timestamp, droplets, array);
+    
     Point best = null;
     int shortestDistance = Integer.MAX_VALUE;
 
     Point at = droplet.at;
     Point target = (toMerge.to == null) ? toMerge.at : toMerge.to;
 
-    for (Point dt : candidates) {
-      Point next = new Point();
-      next.x = at.x + dt.x;
-      next.y = at.y + dt.y;
-
-      if (!inside(next.x, next.y, array.width, array.height)) continue;
-      if (!validMergeMove(droplet, next, droplets, toMerge)) continue;
+    for (Point move : validMoves) {
+      Point next = new Point(at).add(move);
 
       int distance = getManhattenDistance(next.x, next.y, target.x, target.y);
 
       if (distance < shortestDistance) {
         shortestDistance = distance;
-        best = dt;
+        best = move;
       }
     }
 
     return best;
   }
+
   
+  private Point getBestSplitMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
+    Point bestMove = null;
+    int longestDistance = 0;
+
+    List<Point> validMoves = getValidMoves(droplet, null, timestamp, droplets, array);
+
+    for (Point move : validMoves) {
+      Point to = new Point(droplet.at).add(move);
+
+      // select move which is not at a wall.
+      int distance1 = getManhattenDistance(to.x, to.y, 0, 0);
+      int distance2 = getManhattenDistance(to.x, to.y, array.width - 1, 0);
+      int distance3 = getManhattenDistance(to.x, to.y, 0, array.height - 1);
+      int distance4 = getManhattenDistance(to.x, to.y, array.width - 1, array.height - 1);
+
+      int minimumDistance = Math.min(Math.min(distance1, distance2), Math.min(distance3, distance4));
+      
+      if (minimumDistance >= longestDistance) {
+        longestDistance = minimumDistance;
+        bestMove = move;
+      }
+    }
+
+    return bestMove;
+  }
+
   private int getManhattenDistance(int sx, int sy, int tx, int ty) {
     return Math.abs(sx - tx) + Math.abs(sy - ty);
   }
@@ -566,6 +752,8 @@ class Droplet { // global?
 
   public Point at; // at is not always the last element of the route, because when we do a spawn of a descended, then we ignore the first position.
   public Point to;
+  
+  public Operation operation;
 
   public Route route;
 }
@@ -577,7 +765,7 @@ class OperationExtra { // algorithm specific
 
   public boolean active;
   public boolean running;
-  public boolean done; // @NOTE: input operations do not set this true currently
-  // public int forwardIndex; // this becomes relevant when an input is a split,
-  // as some droplets after a split may be assigned as inputs already.
+  public boolean done;
+  
+  public int mixingPercentage;  // only used for mixing operations.
 }

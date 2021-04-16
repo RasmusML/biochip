@@ -19,7 +19,7 @@ public class Window {
 	private Dimension dimensions;
 
 	public Window() {
-		setUILookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		//setUILookAndFeel(UIManager.getSystemLookAndFeelClassName());
 	}
 
 	public void init(String title, int width, int height, boolean resizable, WindowAdapter onCloseListener) {

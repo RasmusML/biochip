@@ -1,8 +1,8 @@
 package pack.algorithms;
 
-public class MergeBioArray extends BioArray {
+public class Test1BioArray extends BioArray {
 	
-	public MergeBioArray() {
+	public Test1BioArray() {
 		width = 7;
 		height = 7;
 		

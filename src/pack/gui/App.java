@@ -2,7 +2,6 @@ package pack.gui;
 
 import java.awt.Canvas;
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.List;
 
 import engine.ApplicationAdapter;
@@ -11,16 +10,16 @@ import engine.graphics.FitViewport;
 import engine.graphics.Renderer;
 import engine.input.Button;
 import engine.input.Keys;
-import engine.math.MathUtils;
 import engine.math.Vector2;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
+import pack.algorithms.DefaultMixingPercentages;
+import pack.algorithms.MergeRouter;
 import pack.algorithms.MixingPercentages;
 import pack.algorithms.Point;
-import pack.algorithms.MergeRouter;
 import pack.algorithms.Route;
-import pack.algorithms.MergeBioArray;
-import pack.algorithms.MergeBioAssay;
+import pack.algorithms.Test2BioArray;
+import pack.algorithms.Test2BioAssay;
 
 public class App extends ApplicationAdapter {
 
@@ -68,9 +67,9 @@ public class App extends ApplicationAdapter {
 		camera.lookAtNow(cx, cy);
 		camera.zoomNow(2f);
 
-		BioAssay assay = new MergeBioAssay();
-		BioArray array = new MergeBioArray();
-		MixingPercentages percentages = new MixingPercentages();
+		BioAssay assay = new Test2BioAssay();
+		BioArray array = new Test2BioArray();
+		MixingPercentages percentages = new DefaultMixingPercentages();
 		
 		MergeRouter router = new MergeRouter();
 		routes = router.compute(assay, array, percentages);

@@ -19,11 +19,7 @@ public class Grasp {
 		 *  
 		 *  To simplify, just assume the input ports are given.
 		 */
-		
-		/*
-		 * Goal is to implement the algorithm in the paper above.
-		 * In the stream today, I am implementing stuff related to "biochips". Sounds fancy but is not that fancy :P
-		 */
+
 	}
 }
 
