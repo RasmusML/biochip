@@ -1,11 +1,11 @@
 package pack.algorithms;
 
-public class MergeBioAssay extends BioAssay {
+public class Test1BioAssay extends BioAssay {
 	
-	public MergeBioAssay() {
+	public Test1BioAssay() {
 		name = "test_1";
 		sink = build();
-		count = 6;
+		count = 7;
 	}
 
 	private Operation build() {
@@ -38,8 +38,7 @@ public class MergeBioAssay extends BioAssay {
     
 		Operation sink = new Operation();
 		sink.type = "sink";
-		//sink.id = 7;
-		sink.id = 6;
+		sink.id = 7;
     
 		input1.outputs.add(merge1);
 		input2.outputs.add(merge1);
@@ -52,9 +51,6 @@ public class MergeBioAssay extends BioAssay {
 		
     merge2.inputs.add(merge1);
     merge2.inputs.add(input3);
-    merge2.outputs.add(sink);
-    
-    /*
     merge2.outputs.add(split1);
 
     split1.inputs.add(merge2);
@@ -63,9 +59,6 @@ public class MergeBioAssay extends BioAssay {
     
 		sink.inputs.add(split1);
     sink.inputs.add(split1);
-    */
-    
-    sink.inputs.add(merge2);
 
 		return sink;
 	}

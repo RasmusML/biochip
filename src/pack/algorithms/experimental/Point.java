@@ -1,4 +1,4 @@
-package pack.algorithms;
+package pack.algorithms.experimental;
 
 public class Point {
 

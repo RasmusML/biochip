@@ -1,4 +1,4 @@
-package pack.algorithms;
+package pack.algorithms.experimental;
 
 import java.io.IOException;
 import java.util.List;

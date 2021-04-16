@@ -1,4 +1,4 @@
-package pack.algorithms;
+package pack.algorithms.experimental;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +20,7 @@ public class MergeRouter {
   private List<Reservior> reserviors;
 
   private Map<Integer, OperationExtra> operationIdToExtra;
-
+  
   int nextDropletId;
   
   int timestamp;
@@ -73,20 +73,24 @@ public class MergeRouter {
         }
         
         if (stalled.type.equals("input")) {
-          Operation descendant = stalled.outputs.get(0);
+          SpawnOperation spawnOp = (SpawnOperation) stalled;
+          Operation descendant = spawnOp.output;
           
           List<Point> dropletPositions = getDropletPositions(runningDroplets);
           List<Point> reservedSpawns = new ArrayList<>();
           
+          List<Operation> descendantInputs = extractor.getInputs(descendant);
+          
           boolean canParallelSpawn = true;
-          for (Operation input : descendant.inputs) {
+          for (Operation input : descendantInputs) {
             if (input.type.equals("input")) {
+              SpawnOperation spawnInput = (SpawnOperation) input;
               
               // getDropletSpawn
               Point spawn = null;
               {
                 outer: for (Reservior reservior : reserviors) {
-                  if (!reservior.substance.equals(input.substance)) continue;
+                  if (!reservior.substance.equals(spawnInput.substance)) continue;
                   
                   for (Droplet droplet : runningDroplets) {
                     if (!satifiesConstraints(reservior.position, droplet.at, droplet.to)) {
@@ -124,7 +128,7 @@ public class MergeRouter {
           if (canParallelSpawn) {
             it.remove();
 
-            for (Operation input : descendant.inputs) {
+            for (Operation input : descendantInputs) {
               
               if (input.type.equals("input")) {
                 Point spawn = reservedSpawns.remove(0);
@@ -155,7 +159,8 @@ public class MergeRouter {
           runningOperations.add(stalled);
           stalledExtra.running = true;
 
-          for (Operation input : stalled.inputs) {
+          List<Operation> inputOps = extractor.getInputs(stalled);
+          for (Operation input : inputOps) {
             OperationExtra ascendantExtra = operationIdToExtra.get(input.id);
             int ascendantDropletId = ascendantExtra.dropletId.remove(0);
             Droplet ascendantDroplet = getDroplet(ascendantDropletId, runningDroplets);
@@ -370,13 +375,15 @@ public class MergeRouter {
 
           System.out.printf("completed %d (%s)\n", operation.id, operation.type);
 
-          for (Operation descendant : operation.outputs) {
+          List<Operation> outputs = extractor.getOutputs(operation);
+          for (Operation descendant : outputs) {
             OperationExtra descendantExtra = operationIdToExtra.get(descendant.id);
             if (descendantExtra.active) continue;
             if (descendant.type.equals("sink")) continue;
 
+            List<Operation> inputs = extractor.getInputs(descendant);
             boolean canRun = true;
-            for (Operation input : descendant.inputs) {
+            for (Operation input : inputs) {
               OperationExtra inputExtra = operationIdToExtra.get(input.id);
               if (!inputExtra.done) canRun = false;
             }
@@ -540,19 +547,19 @@ public class MergeRouter {
     int inputIndex = 0;
 
     while (inputIndex < inputoperations.size()) {
-      Operation inputoperation = inputoperations.get(inputIndex);
+      SpawnOperation inputOperation = (SpawnOperation) inputoperations.get(inputIndex);
       inputIndex += 1;
 
-      if (assigned.contains(inputoperation.substance)) {
-        pending.add(inputoperation.substance);
+      if (assigned.contains(inputOperation.substance)) {
+        pending.add(inputOperation.substance);
       } else {
-        assigned.add(inputoperation.substance);
+        assigned.add(inputOperation.substance);
 
         Point reserviorTile = reserviorTiles.get(reserviorIndex);
         reserviorIndex += 1;
 
         Reservior reservior = new Reservior();
-        reservior.substance = inputoperation.substance;
+        reservior.substance = inputOperation.substance;
         reservior.position = reserviorTile.copy();
         reserviors.add(reservior);
 
