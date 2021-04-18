@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.util.List;
 
 import engine.ApplicationAdapter;
+import engine.graphics.Alignment;
 import engine.graphics.Camera;
 import engine.graphics.FitViewport;
 import engine.graphics.Renderer;
@@ -14,12 +15,12 @@ import engine.math.Vector2;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.DefaultMixingPercentages;
-import pack.algorithms.MergeRouter;
+import pack.algorithms.GreedyRouter;
 import pack.algorithms.MixingPercentages;
 import pack.algorithms.Point;
 import pack.algorithms.Route;
-import pack.algorithms.Test2BioArray;
-import pack.algorithms.Test2BioAssay;
+import pack.tests.Test1BioArray;
+import pack.tests.Test1BioAssay;
 
 public class App extends ApplicationAdapter {
 
@@ -51,13 +52,13 @@ public class App extends ApplicationAdapter {
 
 		canvas.createBufferStrategy(3);
 
-		viewport = new FitViewport(2 * 640, 2 * 480);
+		viewport = new FitViewport(640, 480, true);
 		camera = new Camera();
 		renderer = new Renderer(viewport);
 
 		viewport.setCamera(camera);
 		renderer.setCanvas(canvas);
-
+		
 		grid = new Grid();
 		grid.width = 7;
 		grid.height = 7;
@@ -65,21 +66,17 @@ public class App extends ApplicationAdapter {
 		float cx = grid.width * tilesize / 2f;
 		float cy = grid.height * tilesize / 2f;
 		camera.lookAtNow(cx, cy);
-		camera.zoomNow(2f);
-
-		BioAssay assay = new Test2BioAssay();
-		BioArray array = new Test2BioArray();
+		
+		BioAssay assay = new Test1BioAssay();
+		BioArray array = new Test1BioArray();
 		MixingPercentages percentages = new DefaultMixingPercentages();
 		
-		MergeRouter router = new MergeRouter();
+		GreedyRouter router = new GreedyRouter();
 		routes = router.compute(assay, array, percentages);
-		
-		System.out.println(routes.size());
 	}
 
 	@Override
 	public void update() {
-		camera.update();
 
 		String title = String.format("@%d", app.getFps());
 		app.setTitle(title);
@@ -94,7 +91,7 @@ public class App extends ApplicationAdapter {
 			Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
 			oldX = mouse.x;
 			oldY = mouse.y;
-
+			
 		}
 
 		if (input.isMouseJustReleased(Button.LEFT)) {
@@ -123,11 +120,15 @@ public class App extends ApplicationAdapter {
 		  timestamp -= 1;
 		  if (timestamp < 0) timestamp = 0;
 		}
+
+		camera.update();
 	}
 
 	@Override
 	public void draw() {
 		renderer.begin();
+		
+		
 		renderer.clear();
 
 		{ // frame
@@ -157,29 +158,6 @@ public class App extends ApplicationAdapter {
 			}
 		}
 
-		/*
-		{	// routes
-			
-			for (int i = 0; i < routes.size(); i++) {
-				Route route = routes.get(i);
-				
-				float r = i / (float) routes.size();
-				Color color = new Color(r, r, r);
-				renderer.setColor(color);
-				
-				for (Point tile : route.path) {
-					float xx = tile.x * tilesize + gap;
-					float yy = tile.y * tilesize + gap;
-
-					float width = tilesize - gap * 2f;
-					float height = tilesize - gap * 2f;
-					
-					renderer.fillRect(xx, yy, width, height);
-				}
-			}
-		}
-		*/
-		
     { // routes
       
       for (int i = 0; i < routes.size(); i++) {
@@ -204,11 +182,11 @@ public class App extends ApplicationAdapter {
         
         String id = String.format("%d", i);
         
-        renderer.setColor(Color.white);
-        renderer.drawText(id, xx + width / 2f, yy + height / 2f);
+        renderer.setColor(Color.ORANGE);
+        renderer.drawText(id, xx + width / 2f, yy + height / 2f, Alignment.Center);
       }
     }
-
+    
 		renderer.end();
 	}
 

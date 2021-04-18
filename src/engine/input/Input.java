@@ -12,6 +12,5 @@ public interface Input {
 	public boolean isKeyJustPressed(int keyCode);
 	public boolean isKeyPressed(int keyCode);
 	public boolean isKeyJustReleased(int keyCode);
-	public void releaseAllKeys();
 
 }

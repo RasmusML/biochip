@@ -1,46 +1,71 @@
 package pack.algorithms;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Operation {
 
-	public int id;
-	public String type;
-	
-	public List<Operation> inputs = new ArrayList<>();
-	public List<Operation> outputs = new ArrayList<>();
+  public int id;
+  public OperationType type;
+  
+  public Operation[] inputs;
+  public Operation[] outputs;
 
-	public String substance;	// only used for input.
-	
+  public String substance;  // only used for spawn.
 }
 
 /*
-class Operation {
+public class Operation {
   public int id;
-  public String type;
+  public OperationType type;
+  
+  public Operation[] inputs;
+  public Operation[] outputs;
 }
 
 class SpawnOperation extends Operation {
+  
   public String substance;
+  
+  public SpawnOperation(String substance) {
+    this.substance = substance;
+
+    type = OperationType.Spawn;
+    
+    inputs = new Operation[0];
+    outputs = new Operation[1];
+  }
 }
 
 class MixOperation extends Operation {
-  public Operation input;
-  public Operation output;
+  
+  public MixOperation() {
+    type = OperationType.Mix;
+    
+    inputs = new Operation[1];
+    outputs = new Operation[1];
+  }
 }
 
 class MergeOperation extends Operation {
-  public Operation input1, input2;
-  public Operation output;
+  
+  public MergeOperation() {
+    type = OperationType.Merge;
+    
+    inputs = new Operation[2];
+    outputs = new Operation[1];
+  }
 }
 
 class SplitOperation extends Operation {
-  public Operation input;
-  public Operation output1, output2;
+  
+  public SplitOperation() {
+    type = OperationType.Split;
+    
+    inputs = new Operation[1];
+    outputs = new Operation[2];
+  }
+  
 }
 
-class Sink {
-  public List<Operation> operations = new ArrayList<>();
-}
 */
+
+
+

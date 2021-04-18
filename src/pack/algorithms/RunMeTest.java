@@ -1,18 +1,16 @@
 package pack.algorithms;
 
 import java.io.IOException;
-import java.util.List;
+
+import pack.tests.Test2BioAssay;
 
 public class RunMeTest {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-		BioAssay assay = new Test1BioAssay();
-		BioArray array = new Test1BioArray();
-		MixingPercentages percentages = new DefaultMixingPercentages();
-		
-		//assay.saveAsPng();
-		
-		MergeRouter router = new MergeRouter();
-		List<Route> routes = router.compute(assay, array, percentages);
+		BioAssay assay = new Test2BioAssay();
+		String graph = assay.asGraphvizGraph();
+		String pngPath = String.format("./assays/%s.png", assay.name);
+		String graphvizPath = "C:\\Program Files (x86)\\Graphviz";
+		GraphvizUtil.createPngFromString(graph, pngPath, graphvizPath);
 	}
 }

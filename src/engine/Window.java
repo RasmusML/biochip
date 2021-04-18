@@ -2,6 +2,7 @@ package engine;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
@@ -19,10 +20,12 @@ public class Window {
 	private Dimension dimensions;
 
 	public Window() {
-		//setUILookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		setUILookAndFeel(UIManager.getSystemLookAndFeelClassName());
 	}
 
 	public void init(String title, int width, int height, boolean resizable, WindowAdapter onCloseListener) {
+	  Toolkit.getDefaultToolkit().setDynamicLayout(false); // don't re-draw/flicker on resize
+	  
 		frame = new JFrame(title);
 
 		dimensions = new Dimension();

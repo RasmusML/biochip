@@ -5,6 +5,11 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
+import java.awt.font.TextLayout;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
@@ -20,7 +25,8 @@ public class Renderer {
 	private BufferStrategy bufferStrategy;
 	private Graphics2D graphics;
 
-	private String activeFontName;
+	private Font activeFont;
+	private FontRenderContext frc;
 
 	private Viewport viewport;
 
@@ -30,6 +36,12 @@ public class Renderer {
 		this.viewport = viewport;
 
 		fonts = new HashMap<>();
+		
+		Font font = getFont("consolas", Font.PLAIN, 12);
+		activeFont = font;
+		
+		AffineTransform transform = new AffineTransform();
+		frc = new FontRenderContext(transform, true, true);
 	}
 
 	public void setCanvas(Canvas canvas) {
@@ -71,16 +83,60 @@ public class Renderer {
 		graphics.setColor(color);
 	}
 
-	public void drawText(String text, float x, float y) {
+	public void drawText(String text, float x, float y, Alignment alignment) {
 		ensureDrawing();
 
-		Vector2 screen = viewport.worldToScreen(x, y);
+		float zoom = viewport.getCameraZoom();
+		int scaledFontSize = (int) Math.round(activeFont.getSize() * viewport.getScaleY() * zoom);
+		
+		Font font = getFont(activeFont.getName(), activeFont.getStyle(), scaledFontSize);
+    graphics.setFont(font);
+    
+    TextLayout layout = new TextLayout(text, font, frc);
+    Rectangle2D bounds = layout.getBounds();
+    
+    float offsetX, offsetY;
+    switch (alignment) {
+    case Center:
+      offsetX = (float) -bounds.getWidth() / 2f;
+      offsetY = (float) bounds.getHeight() / 2f;
+      break;
+  	case BottomLeft:
+      offsetX = 0;
+      offsetY = 0;
+      break;
+    case TopLeft:
+      offsetX = 0;
+      offsetY = (float) bounds.getHeight();
+      break;
+    default: 
+      throw new IllegalStateException("invalid alignment!");
+    }
 
-		int wx = Math.round(screen.x);
-		int wy = Math.round(screen.y);
-
+    Vector2 screen = viewport.worldToScreen(x, y);
+    int wx = Math.round(screen.x + offsetX);
+    int wy = Math.round(screen.y + offsetY);
+		
 		graphics.drawString(text, wx, wy);
 	}
+	
+	 public void setFont(String name, int style, int size) {
+	    Font font = getFont(name, style, size);
+	    activeFont = font;
+	  }
+	  
+  private Font getFont(String name, int style, int size) {
+    Font font = null;
+    String id = String.format("%s-%d-%d", name, style, size);
+    Font maybe = fonts.get(id);
+    if (maybe != null) {
+      font = maybe;
+    } else {
+      font = new Font(name, style, size);
+      fonts.put(id, font);
+    }
+    return font;
+  }
 
 	public void drawRect(float x, float y, float width, float height) {
 		ensureDrawing();
@@ -154,27 +210,6 @@ public class Renderer {
 		fillOval(x, y, radius * 2f, radius * 2f);
 	}
 
-	public void setFont(String name, int style, int size) {
-		ensureDrawing();
-		
-		// @todo: just use images to do this, so we can scale.
-		String id = String.format("%s-%d-%d", name, style, size);
-		if (id.equals(activeFontName)) return;
-		
-		Font font = null;
-		Font maybe = fonts.get(id);
-		if (maybe != null) {
-			font = maybe;
-		} else {
-			font = new Font(name, style, size);
-			fonts.put(id, font);
-		}
-
-		graphics.setFont(font);
-		
-		activeFontName = id;
-	}
-
 	public void drawImage(BufferedImage img, float dx, float dy, float dw, float dh, int sx, int sy, int sw, int sh, float opacity) {
 		ensureDrawing();
 
@@ -206,7 +241,6 @@ public class Renderer {
 		ensureDrawing();
 		
 		drawing = false;
-		activeFontName = null;
 
 		graphics.dispose();
 		bufferStrategy.show();

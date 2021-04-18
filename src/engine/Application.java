@@ -138,14 +138,14 @@ public class Application {
 	}
 
 	double accumulatedDelta;
-	long theta = 3;
+	long theta = 2;
 
 	private void sync(double elapsed) {
 		accumulatedDelta += (elapsed - msPerFrame);
 
 		long correctedMsPerFrame = (long) (msPerFrame - accumulatedDelta - theta);
 		long msSleep = (correctedMsPerFrame < 0) ? 0 : correctedMsPerFrame; // @todo: yield when 0 ?
-		sleep(msSleep);
+		if (msSleep > 0) sleep(msSleep);
 	}
 
 	private void initWindow() {

@@ -49,12 +49,4 @@ public class InputHandler implements Input {
 	public boolean isKeyJustReleased(int keyCode) {
 		return keyboardHandler.isJustReleased[keyCode];
 	}
-	
-	@Override
-	public void releaseAllKeys() {
-		for(int i = 0; i < Keys.numberOfKeys; i++) {
-			keyboardHandler.isPressed[i] = false;
-		}
-	}
-
 }

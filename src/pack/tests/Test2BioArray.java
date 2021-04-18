@@ -1,4 +1,7 @@
-package pack.algorithms;
+package pack.tests;
+
+import pack.algorithms.BioArray;
+import pack.algorithms.Point;
 
 public class Test2BioArray extends BioArray {
 	

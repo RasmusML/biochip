@@ -1,37 +1,37 @@
 package pack.algorithms;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-
-import engine.IOUtils;
-import engine.ShellUtil;
 
 public class BioAssay {
 
   public String name;
 
-  public Operation sink;
+  public Operation[] sink;
 
   public int count;
 
-  public void traverse(Consumer<Operation> fn, Operation sink) {
+  public void traverse(Consumer<Operation> fn, Operation... sink) {
     boolean[] visited = new boolean[count];
 
     List<Operation> pending = new ArrayList<>();
-    pending.add(sink);
+    for (Operation operation : sink) {
+      pending.add(operation);
+    }
 
     while (pending.size() > 0) {
       Operation current = pending.remove(0);
 
-      int index = current.id - 1;
+      int index = current.id;
       if (visited[index]) continue;
       visited[index] = true;
 
       fn.accept(current);
-      
-      pending.addAll(current.inputs);
+
+      for (Operation input : current.inputs) {
+        pending.add(input);
+      }
     }
   }
 
@@ -39,7 +39,7 @@ public class BioAssay {
     Wrapper<Integer> routes = new Wrapper<>();
     routes.value = 0;
 
-    traverse(operation -> routes.value += operation.inputs.size(), sink);
+    traverse(operation -> routes.value += operation.inputs.length, sink);
     return routes.value;
   }
 
@@ -48,7 +48,7 @@ public class BioAssay {
     inputs.value = 0;
 
     traverse(operation -> {
-      if ("input".equals(operation.type)) inputs.value += 1;
+      if (operation.type == OperationType.Spawn) inputs.value += 1;
     }, sink);
 
     return inputs.value;
@@ -57,23 +57,23 @@ public class BioAssay {
   public List<String> getInputSubstances() {
     List<String> substances = new ArrayList<>();
     traverse(operation -> {
-      if ("input".equals(operation.type)) substances.add(operation.substance);
+      if (operation.type == OperationType.Spawn) substances.add(operation.substance);
     }, sink);
     return substances;
   }
 
-  public List<Operation> getOperationsOfType(String type) {
+  public List<Operation> getOperationsOfType(OperationType type) {
     List<Operation> desired = new ArrayList<>();
     traverse(operation -> {
-      if (type.equals(operation.type)) desired.add(operation);
+      if (operation.type == type) desired.add(operation);
     }, sink);
     return desired;
   }
 
-  public List<Integer> getOperationIdsOfType(String type) {
+  public List<Integer> getOperationIdsOfType(OperationType type) {
     List<Integer> ids = new ArrayList<>();
     traverse(operation -> {
-      if (type.equals(operation.type)) ids.add(operation.id);
+      if (operation.type == type) ids.add(operation.id);
     }, sink);
     return ids;
   }
@@ -82,10 +82,10 @@ public class BioAssay {
     List<Operation> operations = new ArrayList<>();
 
     traverse(operation -> {
-      if ("input".equals(operation.type)) return;
+      if (operation.type == OperationType.Spawn) return;
 
       for (Operation child : operation.inputs) {
-        if (!"input".equals(child.type)) return;
+        if (child.type != OperationType.Spawn) return;
       }
 
       operations.add(operation);
@@ -115,12 +115,8 @@ public class BioAssay {
     return operations;
   }
 
-  private static class Wrapper<T> {
-    public T value;
-  }
-
   // https://stackoverflow.com/questions/19280229/graphviz-putting-a-caption-on-a-operation-in-addition-to-a-label
-  public String getGraphvizGraph() {
+  public String asGraphvizGraph() {
     StringBuilder graphBuilder = new StringBuilder();
 
     graphBuilder.append("digraph G {\n");
@@ -128,17 +124,18 @@ public class BioAssay {
     traverse(operation -> {
 
       String operationAttributes;
-      if (operation.type.equals("input")) {
+      if (operation.type == OperationType.Spawn) {
         operationAttributes = String.format("\t%d [label = \"%d - %s\"];\n", operation.id, operation.id,
             operation.substance);
-      } else if (operation.type.equals("merge")) {
+      } else if (operation.type == OperationType.Merge) {
         operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = red, style = filled];\n", operation.id,
             operation.id);
-      } else if (operation.type.equals("split")) {
+      } else if (operation.type == OperationType.Split) {
         operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = blue, style = filled];\n", operation.id,
             operation.id);
-      } else if (operation.type.equals("sink")) {
-        operationAttributes = String.format("\t%d [label = \"%d\"];\n", operation.id, operation.id);
+      } else if (operation.type == OperationType.Mix) {
+        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = green, style = filled];\n", operation.id,
+            operation.id);
       } else {
         throw new IllegalStateException("unsupported type: " + operation.type);
       }
@@ -155,24 +152,5 @@ public class BioAssay {
     graphBuilder.append("}");
 
     return graphBuilder.toString();
-  }
-
-  public void saveAsPng() {
-    String directory = "./assays";
-    String graphPath = String.format("%s/%s.gvz", directory, name);
-    String pngPath = String.format("%s/%s.png", directory, name);
-
-    String graphString = getGraphvizGraph();
-    IOUtils.writeStringToFile(graphString, graphPath);
-
-    String graphvizPath = "C:\\Program Files (x86)\\Graphviz"; // @cleanup
-    String command = String.format("\"%s\\bin\\dot.exe\" %s -Tpng -o %s", graphvizPath, graphPath, pngPath);
-
-    int result = ShellUtil.execute(command);
-    if (result != 0) throw new IllegalStateException("failed to create PNG of BioAssay");
-
-    // remove .gvz after creating the .png
-    new File(graphPath).delete();
-
   }
 }

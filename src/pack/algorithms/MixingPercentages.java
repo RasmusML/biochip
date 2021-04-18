@@ -1,9 +1,9 @@
 package pack.algorithms;
 
 public class MixingPercentages {
-	public int forwardPercentage;
-	public int turnPercentage;
-	public int reversePercentage;
-	public int firstPercentage;
-	public int stationaryPercentage;
+	public float forwardPercentage;
+	public float turnPercentage;
+	public float reversePercentage;
+	public float firstPercentage;
+	public float stationaryPercentage;
 }

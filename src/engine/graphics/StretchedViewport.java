@@ -60,8 +60,9 @@ public class StretchedViewport implements Viewport {
 		float centerX = virtualWidth / 2.0f;
 		float centerY = virtualHeight / 2.0f;
 
+		float flippedScreenY = flipped ? screenHeight - y : y;
 		float worldX = (x / scaleX - centerX) / camera.zoom + camera.x;
-		float worldY = (y / scaleY - centerY) / camera.zoom + camera.y;
+		float worldY = (flippedScreenY / scaleY - centerY) / camera.zoom + camera.y;
 
 		return tmp.set(worldX, worldY);
 	}
