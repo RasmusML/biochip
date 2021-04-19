@@ -84,7 +84,8 @@ public class Application {
 				runMainLoop();
 			}
 		});
-
+		
+		appThread.setPriority(Thread.MAX_PRIORITY);
 		appThread.start();
 	}
 
@@ -132,19 +133,19 @@ public class Application {
 			}
 
 			appAdapter.draw();
-
-			sync(elapsed);
+			
+			accumulatedDelta += (elapsed - msPerFrame);
+			
+			sync();
 		}
 	}
 
 	double accumulatedDelta;
-	long theta = 2;
+	long theta = 3;
 
-	private void sync(double elapsed) {
-		accumulatedDelta += (elapsed - msPerFrame);
-
+	private void sync() {
 		long correctedMsPerFrame = (long) (msPerFrame - accumulatedDelta - theta);
-		long msSleep = (correctedMsPerFrame < 0) ? 0 : correctedMsPerFrame; // @todo: yield when 0 ?
+		long msSleep = (correctedMsPerFrame < 0) ? 0 : correctedMsPerFrame;
 		if (msSleep > 0) sleep(msSleep);
 	}
 

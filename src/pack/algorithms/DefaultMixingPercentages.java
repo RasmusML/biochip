@@ -3,10 +3,10 @@ package pack.algorithms;
 public class DefaultMixingPercentages extends MixingPercentages {
 
   public DefaultMixingPercentages() {
-    forwardPercentage = 10;
-    reversePercentage = -5;
-    turnPercentage = 5;
-    firstPercentage = 3;
-    stationaryPercentage = 0;
+    forwardPercentage = 0.58f;
+    reversePercentage = -0.5f;
+    turnPercentage = 0.1f;
+    firstPercentage = 0.29f;
+    stationaryPercentage = 0f;
   }
 }

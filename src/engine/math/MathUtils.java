@@ -25,4 +25,8 @@ public class MathUtils {
 		if (wrap < 0) wrap += max;
 		return wrap;
 	}
+	
+  public static int getManhattenDistance(int sx, int sy, int tx, int ty) {
+    return Math.abs(sx - tx) + Math.abs(sy - ty);
+  }  
 }

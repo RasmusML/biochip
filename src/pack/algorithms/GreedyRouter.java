@@ -6,8 +6,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class GreedyRouter {
+import engine.math.MathUtils;
 
+public class GreedyRouter {
+  
+  private BioConstraintsChecker checker;
+  private ReserviorSubstanceSelector reserviorSubstanceSelector;
+  
   private List<Operation> stalledOperations;
   private List<Operation> activatedOperations;
   private List<Operation> runningOperations;
@@ -22,13 +27,14 @@ public class GreedyRouter {
   private Map<Integer, OperationExtra> operationIdToExtra;
   
   private UidGenerator dropletIdGenerator;
-
+  
   int timestamp;
 
-  public List<Route> compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
-    dropletIdGenerator = new UidGenerator();
-
-    reserviors = bindSubstancesToReserviors(assay, array);
+  public List<Droplet> compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
+    checker = new BioConstraintsChecker();
+    reserviorSubstanceSelector = new ReserviorSubstanceSelector();
+    
+    reserviors = reserviorSubstanceSelector.select(assay, array);
 
     operationIdToExtra = new HashMap<>();
 
@@ -38,9 +44,11 @@ public class GreedyRouter {
       extra.priority = operation.type == OperationType.Spawn ? 1 : 2;
       extra.done = false;
       extra.active = false;
-
+      
       operationIdToExtra.put(operation.id, extra);
     }
+    
+    dropletIdGenerator = new UidGenerator();
 
     stalledOperations = new ArrayList<>();
     activatedOperations = new ArrayList<>();
@@ -49,7 +57,7 @@ public class GreedyRouter {
     runningDroplets = new ArrayList<>();
     retiredDroplets = new ArrayList<>();
 
-    List<Operation> spawnOperations = assay.getOperationsOfType(OperationType.Spawn);
+    List<Operation> spawnOperations = assay.getOperations(OperationType.Spawn);
     activatedOperations.addAll(spawnOperations);
     
     aliveOperationsCount += activatedOperations.size();
@@ -75,13 +83,12 @@ public class GreedyRouter {
         }
         
         if (stalled.type == OperationType.Spawn) {
-          Operation descendant = stalled.outputs[0];
+          Operation successor = stalled.outputs[0];
           
-          List<Point> dropletPositions = getDropletPositions(runningDroplets);
           List<Point> reservedSpawns = new ArrayList<>();
           
           boolean canParallelSpawn = true;
-          for (Operation input : descendant.inputs) {
+          for (Operation input : successor.inputs) {
             if (input.type == OperationType.Spawn) {
               
               // getDropletSpawn
@@ -91,13 +98,13 @@ public class GreedyRouter {
                   if (!reservior.substance.equals(input.substance)) continue;
                   
                   for (Droplet droplet : runningDroplets) {
-                    if (!satifiesConstraints(reservior.position, droplet.at, droplet.to)) {
+                    if (!checker.satifiesConstraints(reservior.position, droplet.at, droplet.to)) {
                       continue outer;
                     }
                   }
                   
                   for (Point otherSpawn : reservedSpawns) {
-                    if (!satisfiesSpacingConstraint(reservior.position, otherSpawn)) {
+                    if (!checker.satisfiesSpacingConstraint(reservior.position, otherSpawn)) {
                       continue outer;
                     }
                   }
@@ -111,7 +118,6 @@ public class GreedyRouter {
                 canParallelSpawn = false;
               } else {
                 reservedSpawns.add(spawn);
-                dropletPositions.add(spawn);
               }
 
             } else {
@@ -126,26 +132,25 @@ public class GreedyRouter {
           if (canParallelSpawn) {
             it.remove();
 
-            for (Operation input : descendant.inputs) {
+            for (Operation input : successor.inputs) {
               
               if (input.type == OperationType.Spawn) {
                 Point spawn = reservedSpawns.remove(0);
 
                 runningOperations.add(input);
                 
-                Route route = new Route();
-                route.start = timestamp;
-                
                 Droplet droplet = new Droplet();
-                droplet.route = route;
+                droplet.route.start = timestamp;
                 droplet.to = spawn;
                 droplet.id = dropletIdGenerator.getId();
                 
                 runningDroplets.add(droplet);
                 
                 OperationExtra extra = operationIdToExtra.get(input.id);
-                extra.dropletId.add(droplet.id);
                 extra.running = true;
+                
+                int forwardIndex = ArrayUtils.getFirstEmptySlotIndex(input.forwarding);
+                input.forwarding[forwardIndex] = droplet;
               }
             }
           }
@@ -157,11 +162,15 @@ public class GreedyRouter {
           stalledExtra.running = true;
 
           for (Operation input : stalled.inputs) {
-            OperationExtra ascendantExtra = operationIdToExtra.get(input.id);
-            int ascendantDropletId = ascendantExtra.dropletId.remove(0);
-            Droplet ascendantDroplet = getDroplet(ascendantDropletId, runningDroplets);
+            OperationExtra inputExtra = operationIdToExtra.get(input.id);
             
-            stalledExtra.dropletId.add(ascendantDroplet.id);
+            Droplet forwardedDroplet = input.forwarding[inputExtra.forwardIndex];
+            inputExtra.forwardIndex += 1;
+
+            forwardedDroplet.operation = stalled;
+            
+            int manipulatingIndex = ArrayUtils.getFirstEmptySlotIndex(stalled.manipulating);
+            stalled.manipulating[manipulatingIndex] = forwardedDroplet;
           }
         }
       }
@@ -174,17 +183,12 @@ public class GreedyRouter {
 
       // choose action
       for (Operation operation : runningOperations) {
-        OperationExtra extra = operationIdToExtra.get(operation.id);
-
         if (operation.type == OperationType.Spawn) {
           // spawn location is already selected at this point. Do nothing.
           
         } else if (operation.type == OperationType.Merge) {
-          int id0 = extra.dropletId.get(0);
-          int id1 = extra.dropletId.get(1);
-
-          Droplet droplet0 = getDroplet(id0, runningDroplets);
-          Droplet droplet1 = getDroplet(id1, runningDroplets);
+          Droplet droplet0 = operation.manipulating[0];
+          Droplet droplet1 = operation.manipulating[1];
 
           Point move0 = getBestMergeMove(droplet0, droplet1, runningDroplets, array);
 
@@ -206,31 +210,26 @@ public class GreedyRouter {
             retiredDroplets.add(droplet0);
             retiredDroplets.add(droplet1);
             
-            extra.dropletId.clear();
-
-            Route route = new Route();
-            route.start = timestamp;
-            
             Droplet mergedDroplet = new Droplet();
-            mergedDroplet.route = route;
+            mergedDroplet.route.start = timestamp;
             mergedDroplet.to = newPosition1.copy();
             mergedDroplet.id = dropletIdGenerator.getId();
             
-            extra.dropletId.add(mergedDroplet.id);
-
+            int forwardIndex = ArrayUtils.getFirstEmptySlotIndex(operation.forwarding);
+            operation.forwarding[forwardIndex] = mergedDroplet;
+            
             runningDroplets.add(mergedDroplet);
           }
 
         } else if (operation.type == OperationType.Split) {
-          
-          int id = extra.dropletId.get(0);
-          
-          Droplet droplet = getDroplet(id, runningDroplets);
+          Droplet droplet = operation.manipulating[0];
 
           boolean horizontalSplit = true;
           
-          Point left = new Point(-1, 0).add(droplet.at);
-          Point right = new Point(1, 0).add(droplet.at);
+          Point at = droplet.at;
+          
+          Point left = new Point(-1, 0).add(at);
+          Point right = new Point(1, 0).add(at);
           
           if (!inside(left.x, left.y, array.width, array.height)) horizontalSplit = false;
           if (!inside(right.x, right.y, array.width, array.height)) horizontalSplit = false;
@@ -238,16 +237,18 @@ public class GreedyRouter {
           for (Droplet other : runningDroplets) {
             if (other.id == droplet.id) continue;
             
-            boolean ok1 = mutuallySatifiesConstraints(droplet.at, left, other.at, other.to);
-            boolean ok2 = mutuallySatifiesConstraints(droplet.at, right, other.at, other.to);
+            Point otherAt = other.at;
+            
+            boolean ok1 = checker.satifiesConstraints(at, left, otherAt, other.to);
+            boolean ok2 = checker.satifiesConstraints(at, right, otherAt, other.to);
             
             if (!ok1 || !ok2) horizontalSplit = false;
           }
 
           boolean verticalSplit = true;
           
-          Point up = new Point(0, 1).add(droplet.at);
-          Point down = new Point(0, -1).add(droplet.at);
+          Point up = new Point(0, 1).add(at);
+          Point down = new Point(0, -1).add(at);
           
           if (!inside(up.x, up.y, array.width, array.height)) verticalSplit = false;
           if (!inside(down.x, down.y, array.width, array.height)) verticalSplit = false;
@@ -255,8 +256,8 @@ public class GreedyRouter {
           for (Droplet other : runningDroplets) {
             if (other.id == droplet.id) continue;
             
-            boolean ok1 = mutuallySatifiesConstraints(droplet.at, up, other.at, other.to);
-            boolean ok2 = mutuallySatifiesConstraints(droplet.at, down, other.at, other.to);
+            boolean ok1 = checker.satifiesConstraints(droplet.at, up, other.at, other.to);
+            boolean ok2 = checker.satifiesConstraints(droplet.at, down, other.at, other.to);
             
             if (!ok1 || !ok2) verticalSplit = false;
           }
@@ -269,29 +270,25 @@ public class GreedyRouter {
             runningDroplets.remove(droplet);
             retiredDroplets.add(droplet);
             
-            extra.dropletId.clear();
-
-            Route r1 = new Route();
-            r1.start = timestamp;
-            
             Droplet s1 = new Droplet();
-            s1.route = r1;
+            s1.route.start = timestamp;
             s1.to = to1;
             s1.id = dropletIdGenerator.getId();
             
-            Route r2 = new Route();
-            r2.start = timestamp;
-            
             Droplet s2 = new Droplet();
-            s2.route = r2;
+            s2.route.start = timestamp;
             s2.to = to2;
             s2.id = dropletIdGenerator.getId();
             
             runningDroplets.add(s1);
             runningDroplets.add(s2);
             
-            extra.dropletId.add(s1.id);
-            extra.dropletId.add(s2.id);
+            int forwardIndex1 = ArrayUtils.getFirstEmptySlotIndex(operation.forwarding);
+            operation.forwarding[forwardIndex1] = s1;
+            
+            int forwardIndex2 = ArrayUtils.getFirstEmptySlotIndex(operation.forwarding);
+            operation.forwarding[forwardIndex2] = s2;
+            
           } else {
             // move somewhere, where it can split.
             Point move = getBestSplitMove(droplet, runningDroplets, array);
@@ -300,11 +297,13 @@ public class GreedyRouter {
             droplet.to = new Point(droplet.at).add(move);
           }
         } else if (operation.type == OperationType.Mix) {
-          int id = extra.dropletId.get(0);
-          Droplet droplet = getDroplet(id, runningDroplets);
+          Droplet droplet = operation.manipulating[0];
           
           Point move = getBestMixMove(droplet, percentages, array);
           droplet.to = new Point(droplet.at).add(move);
+          
+          // @TODO: fix Mix. When is the Operation Mix setting forwarding? I don't think it ever does! 
+          // I should figure out when forwarding is set (droplet created), before or after making the move.
           
         } else {
           throw new IllegalStateException("unsupported operation!");
@@ -317,13 +316,12 @@ public class GreedyRouter {
         if (operation.type != OperationType.Mix) continue;
         OperationExtra extra = operationIdToExtra.get(operation.id);
         
-        int dropletId = extra.dropletId.get(0);
-        Droplet droplet = getDroplet(dropletId, runningDroplets);
-        
+        Droplet droplet = operation.manipulating[0];
+
         Point previousMove = getPreviousMove(droplet);
         Point move = droplet.to.copy().sub(droplet.at);
         
-        float mixing = getMixingPercentage(move, previousMove, percentages);
+        float mixing = percentages.getMixingPercentage(move, previousMove);
         extra.mixingPercentage += mixing;
         if (extra.mixingPercentage > 100) extra.mixingPercentage = 100;
       }
@@ -346,15 +344,13 @@ public class GreedyRouter {
         OperationExtra extra = operationIdToExtra.get(operation.id);
         
         if (operation.type == OperationType.Spawn) {
-          int id = extra.dropletId.get(0);
-          
-          Droplet droplet = getDroplet(id, runningDroplets);
+          Droplet droplet = operation.forwarding[0];
           if (droplet.at != null) extra.done = true;
           
         } else if (operation.type == OperationType.Merge) {
-          extra.done = (extra.dropletId.size() == 1);
+          extra.done = ArrayUtils.countOccupiedSlots(operation.forwarding) == 1;
         } else if (operation.type == OperationType.Split) {
-          extra.done = (extra.dropletId.size() == 2);
+          extra.done = ArrayUtils.countOccupiedSlots(operation.forwarding) == 2;
         } else if (operation.type == OperationType.Mix) {
           extra.done = (extra.mixingPercentage == 100);
         } else {
@@ -394,56 +390,14 @@ public class GreedyRouter {
     
     retiredDroplets.addAll(runningDroplets);
     runningDroplets.clear();
+    
+    List<Droplet> result = new ArrayList<>();
+    result.addAll(retiredDroplets);
 
-    List<Route> routes = new ArrayList<>();
-    for (Droplet droplet : retiredDroplets) {
-      routes.add(droplet.route);
-    }
-
-    return routes;
+    return result;
   }
   
-  private float getMixingPercentage(Point move, Point previousMove, MixingPercentages mixingPercentages) {
-    if (previousMove == null) {
-      boolean stay1 = (move.x == 0 && move.y == 0);
-      if (stay1) return mixingPercentages.stationaryPercentage;
-      return mixingPercentages.firstPercentage;
-    } else {
-
-      boolean stay1 = (move.x == 0 && move.y == 0);
-      boolean left1 = (move.x == -1 && move.y == 0);
-      boolean right1 = (move.x == 1 && move.y == 0);
-      boolean up1 = (move.x == 0 && move.y == 1);
-      boolean down1 = (move.x == 0 && move.y == -1);
-      
-      boolean stay0 = (previousMove.x == 0 && previousMove.y == 0);
-      boolean left0 = (previousMove.x == -1 && previousMove.y == 0);
-      boolean right0 = (previousMove.x == 1 && previousMove.y == 0);
-      boolean up0 = (previousMove.x == 0 && previousMove.y == 1);
-      boolean down0 = (previousMove.x == 0 && previousMove.y == -1);
-      
-      if (stay1) return mixingPercentages.stationaryPercentage;
-      
-      if (!stay1 && stay0) return mixingPercentages.firstPercentage;
-
-      if (left1 && left0) return mixingPercentages.forwardPercentage;
-      if (right1 && right0) return mixingPercentages.forwardPercentage;
-      if (up1 && up0) return mixingPercentages.forwardPercentage;
-      if (down1 && down0) return mixingPercentages.forwardPercentage;
-      
-      if (left1 && right0) return mixingPercentages.reversePercentage;
-      if (right1 && left0) return mixingPercentages.reversePercentage;
-      if (up1 && down0) return mixingPercentages.reversePercentage;
-      if (down1 && up0) return mixingPercentages.reversePercentage;
-      
-      if ((up1 || down1) && (right0 || left0)) return mixingPercentages.turnPercentage;
-      if ((left1 || right1) && (up0 || down0)) return mixingPercentages.turnPercentage;
-      
-      throw new IllegalStateException("broken! forgot mixing percentage.");
-    }
-  }
-
-  private Point getBestMixMove(Droplet droplet, MixingPercentages mixingPercentages, BioArray array) {
+  private Point getBestMixMove(Droplet droplet, MixingPercentages percentages, BioArray array) {
     List<Point> validMoves = getValidMoves(droplet, null, timestamp, runningDroplets, array);
     Point prevMove = getPreviousMove(droplet);
     
@@ -451,7 +405,7 @@ public class GreedyRouter {
     Point bestMove = null;
     
     for (Point move : validMoves) {
-      float percentage = getMixingPercentage(move, prevMove, mixingPercentages);
+      float percentage = percentages.getMixingPercentage(move, prevMove);
       
       if (percentage > bestPercentage) {
         bestPercentage = percentage;
@@ -497,104 +451,17 @@ public class GreedyRouter {
         if (other.id == droplet.id) continue;
         if (mergeSibling != null && other.id == mergeSibling.id) continue;
         
-        if (!mutuallySatifiesConstraints(droplet.at, next, other.at, other.to)) continue outer;
+        if (!checker.satifiesConstraints(droplet.at, next, other.at, other.to)) continue outer;
       }
       
       if (mergeSibling != null) {
-        if (!mutuallySatisfiesCompanionConstraints(droplet.at, next, mergeSibling.at, mergeSibling.to)) continue;
+        if (!checker.satisfiesCompanionConstraints(droplet.at, next, mergeSibling.at, mergeSibling.to)) continue;
       }
       
       validMoves.add(move);
     }
     
     return validMoves;
-  }
-
-  private Droplet getDroplet(int id, List<Droplet> droplets) {
-    for (Droplet droplet : droplets) {
-      if (id == droplet.id) return droplet;
-    }
-    throw new IllegalStateException("no droplet with id: " + id);
-  }
-
-  private List<Point> getDropletPositions(List<Droplet> droplets) {
-    List<Point> positions = new ArrayList<>();
-
-    for (Droplet droplet : droplets) {
-      positions.add(droplet.at);
-    }
-
-    return positions;
-  }
-
-  private List<Reservior> bindSubstancesToReserviors(BioAssay assay, BioArray array) {
-    List<Operation> inputoperations = assay.getOperationsOfType(OperationType.Spawn);
-    List<Point> reserviorTiles = array.reserviorTiles;
-
-    List<String> assigned = new ArrayList<>();
-    List<String> pending = new ArrayList<>();
-
-    List<Reservior> reserviors = new ArrayList<>();
-
-    int reserviorIndex = 0;
-    int inputIndex = 0;
-
-    while (inputIndex < inputoperations.size()) {
-      Operation inputoperation = inputoperations.get(inputIndex);
-      inputIndex += 1;
-
-      if (assigned.contains(inputoperation.substance)) {
-        pending.add(inputoperation.substance);
-      } else {
-        assigned.add(inputoperation.substance);
-
-        Point reserviorTile = reserviorTiles.get(reserviorIndex);
-        reserviorIndex += 1;
-
-        Reservior reservior = new Reservior();
-        reservior.substance = inputoperation.substance;
-        reservior.position = reserviorTile.copy();
-        reserviors.add(reservior);
-
-        if (reserviorIndex > reserviorTiles.size()) {
-          throw new IllegalStateException("not enough reservior tiles!");
-        }
-      }
-    }
-
-    while (reserviorIndex < reserviorTiles.size() && pending.size() > 0) {
-      String substance = pending.remove(0);
-
-      Point reserviorTile = reserviorTiles.get(reserviorIndex);
-      reserviorIndex += 1;
-
-      Reservior reservior = new Reservior();
-      reservior.substance = substance;
-      reservior.position = reserviorTile.copy();
-      reserviors.add(reservior);
-    }
-
-    for (Reservior reservior : reserviors) {
-      System.out.printf("reservior %s: %s\n", reservior.position, reservior.substance);
-    }
-
-    return reserviors;
-  }
-
-  private Point getDropletSpawn(String substance, List<Reservior> reserviors, List<Point> otherDroplets) {
-    outer: for (Reservior reservior : reserviors) {
-      if (!reservior.substance.equals(substance)) continue;
-      
-      for (Point other : otherDroplets) {
-        if (other.x == reservior.position.x && other.y == reservior.position.y) continue outer;
-      }
-
-      return reservior.position.copy();
-    }
-
-    // throw new IllegalStateException("Could not spawn droplet. The tile is
-    // occupied or substance reservior does not exist!");
-    return null;
   }
 
   private Point getBestMergeMove(Droplet droplet, Droplet toMerge, List<Droplet> droplets, BioArray array) {
@@ -609,7 +476,7 @@ public class GreedyRouter {
     for (Point move : validMoves) {
       Point next = new Point(at).add(move);
 
-      int distance = getManhattenDistance(next.x, next.y, target.x, target.y);
+      int distance = MathUtils.getManhattenDistance(next.x, next.y, target.x, target.y);
 
       if (distance < shortestDistance) {
         shortestDistance = distance;
@@ -628,13 +495,14 @@ public class GreedyRouter {
     List<Point> validMoves = getValidMoves(droplet, null, timestamp, droplets, array);
 
     // select move which is furthest away from wall corner.
+    Point to = new Point();
     for (Point move : validMoves) {
-      Point to = new Point(droplet.at).add(move);
+      to.set(droplet.at).add(move);
 
-      int distance1 = getManhattenDistance(to.x, to.y, 0, 0);
-      int distance2 = getManhattenDistance(to.x, to.y, array.width - 1, 0);
-      int distance3 = getManhattenDistance(to.x, to.y, 0, array.height - 1);
-      int distance4 = getManhattenDistance(to.x, to.y, array.width - 1, array.height - 1);
+      int distance1 = MathUtils.getManhattenDistance(to.x, to.y, 0, 0);
+      int distance2 = MathUtils.getManhattenDistance(to.x, to.y, array.width - 1, 0);
+      int distance3 = MathUtils.getManhattenDistance(to.x, to.y, 0, array.height - 1);
+      int distance4 = MathUtils.getManhattenDistance(to.x, to.y, array.width - 1, array.height - 1);
 
       int minimumDistance = Math.min(Math.min(distance1, distance2), Math.min(distance3, distance4));
       
@@ -647,101 +515,26 @@ public class GreedyRouter {
     return bestMove;
   }
 
-  private int getManhattenDistance(int sx, int sy, int tx, int ty) {
-    return Math.abs(sx - tx) + Math.abs(sy - ty);
-  }
-  
-  public boolean satisfiesSpacingConstraint(Point p1, Point p2) {
-    // If 1 or more points are null, then we assume that those points are not placed. Thus, the placement is valid, because the points do not interfere. @docs
-    if (p1 == null || p2 == null) return true;  
-    
-    int dx = Math.abs(p1.x - p2.x);
-    int dy = Math.abs(p1.y - p2.y);
-
-    return dx >= 2 || dy >= 2;
-  }
-  
-  public boolean satifiesConstraints(Point to0, Point at1, Point to1) {
-    // dynamic constraint
-    if (!satisfiesSpacingConstraint(to0, at1)) return false;
-    
-    // static constraint
-    if (!satisfiesSpacingConstraint(to0, to1)) return false;
-    
-    return true;
-  }
-  
-  public boolean mutuallySatifiesConstraints(Point at0, Point to0, Point at1, Point to1) {
-    // dynamic constraint
-    if (!satisfiesSpacingConstraint(to0, at1)) return false;
-    if (!satisfiesSpacingConstraint(to1, at0)) return false;
-    
-    // static constraint
-    if (!satisfiesSpacingConstraint(to0, to1)) return false;
-    
-    return true;
-  }
-  
-  public boolean mutuallySatisfiesCompanionConstraints(Point at0, Point to0, Point at1, Point to1) {
-    if (mutuallySatifiesConstraints(at0, to0, at1, to1)) return true;
-    
-    if (to0 != null && at1 != null) {
-      int dx = Math.abs(to0.x - at1.x);
-      int dy = Math.abs(to0.y - at1.y);
-      
-      // we assume that if there is 1 spacing in "time", then the other one will do a move which handles the problem through a split or merge.
-      boolean dynamicOk = (dx == 1 && dy == 0) || (dx == 0 && dy == 1);
-      if (!dynamicOk) return false;
-    }
-    
-    if (to1 != null && at0 != null) {
-      int dx = Math.abs(to1.x - at0.x);
-      int dy = Math.abs(to1.y - at0.y);
-      
-      // we assume that if there is 1 spacing in "time", then the other one will do a move which handles the problem through a split or merge.
-      boolean dynamicOk = (dx == 1 && dy == 0) || (dx == 0 && dy == 1);
-      if (!dynamicOk) return false;
-    }
-      
-    if (to0 != null && to1 != null) {
-      // special case for a merge and split points can't be next to each other, but they may overlap.
-      
-      // Illegal:
-      // o o o o
-      // o x x o
-      // o o o o
-      int dx = Math.abs(to0.x - to1.x);
-      int dy = Math.abs(to0.y - to1.y);
-      
-      boolean staticOk = dx == 0 && dy == 0;
-      if (!staticOk) return false;
-      
-    }
-    
-    return true;
-  }
-
   private boolean inside(int x, int y, int width, int height) {
     return x >= 0 && x <= width - 1 && y >= 0 && y <= height - 1;
   }
-
-}
-
-class Reservior { // global
-  public Point position;
-  public String substance;
-}
-
-class Droplet { // global?
-  public int id;
-
-  public Point at; // at is not always the last element of the route, because when we do a spawn of a descended, then we ignore the first position.
-  public Point to;
-  
-  public Route route;
 }
 
 class OperationExtra { // algorithm specific
+  public int priority;
+
+  public boolean active;
+  public boolean running;
+  public boolean done;
+  
+  public float mixingPercentage;  // only used for mixing operations.
+
+  public int forwardIndex;
+}
+
+
+/*
+class GreedyOperation extends Operation {
   public List<Integer> dropletId = new ArrayList<>();
 
   public int priority;
@@ -752,3 +545,4 @@ class OperationExtra { // algorithm specific
   
   public float mixingPercentage;  // only used for mixing operations.
 }
+*/

@@ -24,6 +24,8 @@ public class BioAssayBuilder {
     operation.type = OperationType.Spawn;
     operation.inputs = new Operation[0];
     operation.outputs = new Operation[1];
+    operation.manipulating = new Droplet[0];
+    operation.forwarding = new Droplet[1];
     
     idToOperation.put(id, operation);
     
@@ -38,6 +40,9 @@ public class BioAssayBuilder {
     operation.type = OperationType.Mix;
     operation.inputs = new Operation[1];
     operation.outputs = new Operation[1];
+    operation.manipulating = new Droplet[1];
+    operation.forwarding = new Droplet[1];
+
     
     idToOperation.put(id, operation);
     
@@ -52,6 +57,8 @@ public class BioAssayBuilder {
     operation.type = OperationType.Merge;
     operation.inputs = new Operation[2];
     operation.outputs = new Operation[1];
+    operation.manipulating = new Droplet[2];
+    operation.forwarding = new Droplet[1];
     
     idToOperation.put(id, operation);
     
@@ -66,6 +73,8 @@ public class BioAssayBuilder {
     operation.type = OperationType.Split;
     operation.inputs = new Operation[1];
     operation.outputs = new Operation[2];
+    operation.manipulating = new Droplet[1];
+    operation.forwarding = new Droplet[2];
     
     idToOperation.put(id, operation);
     
@@ -76,8 +85,8 @@ public class BioAssayBuilder {
     Operation from = idToOperation.get(fromId);
     Operation to = idToOperation.get(toId);
     
-    int toInput = getFirstEmptySlotIndex(to.inputs);
-    int fromOutput = getFirstEmptySlotIndex(from.outputs);
+    int toInput = ArrayUtils.getFirstEmptySlotIndex(to.inputs);
+    int fromOutput = ArrayUtils.getFirstEmptySlotIndex(from.outputs);
     
     if (toInput == -1) {
       String error = String.format("all %d input operations of operation %d are occupied.", from.inputs.length, from.id);
@@ -91,14 +100,6 @@ public class BioAssayBuilder {
 
     to.inputs[toInput] = from;
     from.outputs[fromOutput] = to;
-  }
-  
-  private <T> int getFirstEmptySlotIndex(T[] array) {
-    for (int i = 0; i < array.length; i++) {
-      if (array[i] == null) return i;
-    }
-    
-    return -1;
   }
   
   public int getOperationCount() {

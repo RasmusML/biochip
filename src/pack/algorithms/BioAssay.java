@@ -7,14 +7,13 @@ import java.util.function.Consumer;
 public class BioAssay {
 
   public String name;
-
-  public Operation[] sink;
-
   public int count;
 
+  public Operation[] sink;
+  
   public void traverse(Consumer<Operation> fn, Operation... sink) {
     boolean[] visited = new boolean[count];
-
+    
     List<Operation> pending = new ArrayList<>();
     for (Operation operation : sink) {
       pending.add(operation);
@@ -34,12 +33,16 @@ public class BioAssay {
       }
     }
   }
+  
+  public void traverse(Consumer<Operation> fn) {
+    traverse(fn, sink);
+  }
 
   public int getRouteCount() {
     Wrapper<Integer> routes = new Wrapper<>();
     routes.value = 0;
 
-    traverse(operation -> routes.value += operation.inputs.length, sink);
+    traverse(operation -> routes.value += operation.inputs.length);
     return routes.value;
   }
 
@@ -49,7 +52,7 @@ public class BioAssay {
 
     traverse(operation -> {
       if (operation.type == OperationType.Spawn) inputs.value += 1;
-    }, sink);
+    });
 
     return inputs.value;
   }
@@ -58,15 +61,15 @@ public class BioAssay {
     List<String> substances = new ArrayList<>();
     traverse(operation -> {
       if (operation.type == OperationType.Spawn) substances.add(operation.substance);
-    }, sink);
+    });
     return substances;
   }
 
-  public List<Operation> getOperationsOfType(OperationType type) {
+  public List<Operation> getOperations(OperationType type) {
     List<Operation> desired = new ArrayList<>();
     traverse(operation -> {
       if (operation.type == type) desired.add(operation);
-    }, sink);
+    });
     return desired;
   }
 
@@ -74,7 +77,7 @@ public class BioAssay {
     List<Integer> ids = new ArrayList<>();
     traverse(operation -> {
       if (operation.type == type) ids.add(operation.id);
-    }, sink);
+    });
     return ids;
   }
 
@@ -90,7 +93,7 @@ public class BioAssay {
 
       operations.add(operation);
 
-    }, sink);
+    });
 
     return operations;
   }
@@ -99,19 +102,19 @@ public class BioAssay {
     Wrapper<Operation> match = new Wrapper<>();
     traverse(operation -> {
       if (operation.id == id) match.value = operation;
-    }, sink);
+    });
     return match.value;
   }
 
   public List<Integer> getOperationIds() {
     List<Integer> ids = new ArrayList<>();
-    traverse(operation -> ids.add(operation.id), sink);
+    traverse(operation -> ids.add(operation.id));
     return ids;
   }
 
   public List<Operation> getOperations() {
     List<Operation> operations = new ArrayList<>();
-    traverse(operation -> operations.add(operation), sink);
+    traverse(operation -> operations.add(operation));
     return operations;
   }
 
@@ -147,7 +150,7 @@ public class BioAssay {
         graphBuilder.append(edge);
       }
 
-    }, sink);
+    });
 
     graphBuilder.append("}");
 

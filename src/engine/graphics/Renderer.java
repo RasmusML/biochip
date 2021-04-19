@@ -6,7 +6,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.font.FontRenderContext;
-import java.awt.font.GlyphVector;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
@@ -37,8 +36,8 @@ public class Renderer {
 
 		fonts = new HashMap<>();
 		
-		Font font = getFont("consolas", Font.PLAIN, 12);
-		activeFont = font;
+		Font defaultFont = getFont("consolas", Font.PLAIN, 12);
+		activeFont = defaultFont;
 		
 		AffineTransform transform = new AffineTransform();
 		frc = new FontRenderContext(transform, true, true);
@@ -242,8 +241,8 @@ public class Renderer {
 		
 		drawing = false;
 
-		graphics.dispose();
 		bufferStrategy.show();
+		graphics.dispose();
 	}
 
 	private void ensureDrawing() {
