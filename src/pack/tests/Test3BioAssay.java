@@ -24,9 +24,9 @@ public class Test3BioAssay extends BioAssay {
 	  int mix1 = builder.createMixOperation();
 	  int mix2 = builder.createMixOperation();
 
-	  //int split1 = builder.createSplitOperation();
+	  int split1 = builder.createSplitOperation();
 
-	  //int merge3 = builder.createMergeOperation();
+	  int merge3 = builder.createMergeOperation();
     
 		builder.connect(input1, merge1);
 		builder.connect(input2, merge1);
@@ -37,11 +37,10 @@ public class Test3BioAssay extends BioAssay {
     builder.connect(merge1, mix1);
     builder.connect(merge2, mix2);
     
-    // @bug: fixing mixing.
-    //builder.connect(mix1, split1);
+    builder.connect(mix1, split1);
     
-    //builder.connect(split1, merge3);
-    //builder.connect(mix2, merge3);
+    builder.connect(split1, merge3);
+    builder.connect(mix2, merge3);
 
 		sink = builder.getSink();
 		count = builder.getOperationCount();

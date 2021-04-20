@@ -41,7 +41,7 @@ public class GreedyRouter {
     List<Operation> operations = assay.getOperations();
     for (Operation operation : operations) {
       OperationExtra extra = new OperationExtra();
-      extra.priority = operation.type == OperationType.Spawn ? 1 : 2;
+      extra.priority = 1;
       extra.done = false;
       extra.active = false;
       
@@ -161,7 +161,8 @@ public class GreedyRouter {
           runningOperations.add(stalled);
           stalledExtra.running = true;
 
-          for (Operation input : stalled.inputs) {
+          for (int i = 0; i < stalled.inputs.length; i++) {
+            Operation input = stalled.inputs[i];
             OperationExtra inputExtra = operationIdToExtra.get(input.id);
             
             Droplet forwardedDroplet = input.forwarding[inputExtra.forwardIndex];
@@ -169,8 +170,7 @@ public class GreedyRouter {
 
             forwardedDroplet.operation = stalled;
             
-            int manipulatingIndex = ArrayUtils.getFirstEmptySlotIndex(stalled.manipulating);
-            stalled.manipulating[manipulatingIndex] = forwardedDroplet;
+            stalled.manipulating[i] = forwardedDroplet;
           }
         }
       }
@@ -191,7 +191,6 @@ public class GreedyRouter {
           Droplet droplet1 = operation.manipulating[1];
 
           Point move0 = getBestMergeMove(droplet0, droplet1, runningDroplets, array);
-
           Point newPosition0 = droplet0.at.copy().add(move0);
           droplet0.to = newPosition0;
 
@@ -199,96 +198,16 @@ public class GreedyRouter {
           Point newPosition1 = droplet1.at.copy().add(move1);
           droplet1.to = newPosition1;
           
-          boolean merged = newPosition0.x == newPosition1.x && newPosition0.y == newPosition1.y;
-          if (merged) {
-            droplet0.to = null;
-            droplet1.to = null;
-            
-            runningDroplets.remove(droplet0);
-            runningDroplets.remove(droplet1);
-
-            retiredDroplets.add(droplet0);
-            retiredDroplets.add(droplet1);
-            
-            Droplet mergedDroplet = new Droplet();
-            mergedDroplet.route.start = timestamp;
-            mergedDroplet.to = newPosition1.copy();
-            mergedDroplet.id = dropletIdGenerator.getId();
-            
-            int forwardIndex = ArrayUtils.getFirstEmptySlotIndex(operation.forwarding);
-            operation.forwarding[forwardIndex] = mergedDroplet;
-            
-            runningDroplets.add(mergedDroplet);
-          }
-
         } else if (operation.type == OperationType.Split) {
           Droplet droplet = operation.manipulating[0];
 
-          boolean horizontalSplit = true;
-          
-          Point at = droplet.at;
-          
-          Point left = new Point(-1, 0).add(at);
-          Point right = new Point(1, 0).add(at);
-          
-          if (!inside(left.x, left.y, array.width, array.height)) horizontalSplit = false;
-          if (!inside(right.x, right.y, array.width, array.height)) horizontalSplit = false;
-          
-          for (Droplet other : runningDroplets) {
-            if (other.id == droplet.id) continue;
-            
-            Point otherAt = other.at;
-            
-            boolean ok1 = checker.satifiesConstraints(at, left, otherAt, other.to);
-            boolean ok2 = checker.satifiesConstraints(at, right, otherAt, other.to);
-            
-            if (!ok1 || !ok2) horizontalSplit = false;
-          }
+          boolean verticalSplit = canSplit(droplet, true, array);
+          boolean horizontalSplit = canSplit(droplet, false, array);
 
-          boolean verticalSplit = true;
-          
-          Point up = new Point(0, 1).add(at);
-          Point down = new Point(0, -1).add(at);
-          
-          if (!inside(up.x, up.y, array.width, array.height)) verticalSplit = false;
-          if (!inside(down.x, down.y, array.width, array.height)) verticalSplit = false;
-          
-          for (Droplet other : runningDroplets) {
-            if (other.id == droplet.id) continue;
-            
-            boolean ok1 = checker.satifiesConstraints(droplet.at, up, other.at, other.to);
-            boolean ok2 = checker.satifiesConstraints(droplet.at, down, other.at, other.to);
-            
-            if (!ok1 || !ok2) verticalSplit = false;
-          }
-
-          Point to1 = verticalSplit ? up : left;
-          Point to2 = verticalSplit ? down : right;
-          
           boolean split = verticalSplit || horizontalSplit;
           if (split) {
-            runningDroplets.remove(droplet);
-            retiredDroplets.add(droplet);
-            
-            Droplet s1 = new Droplet();
-            s1.route.start = timestamp;
-            s1.to = to1;
-            s1.id = dropletIdGenerator.getId();
-            
-            Droplet s2 = new Droplet();
-            s2.route.start = timestamp;
-            s2.to = to2;
-            s2.id = dropletIdGenerator.getId();
-            
-            runningDroplets.add(s1);
-            runningDroplets.add(s2);
-            
-            int forwardIndex1 = ArrayUtils.getFirstEmptySlotIndex(operation.forwarding);
-            operation.forwarding[forwardIndex1] = s1;
-            
-            int forwardIndex2 = ArrayUtils.getFirstEmptySlotIndex(operation.forwarding);
-            operation.forwarding[forwardIndex2] = s2;
-            
+            droplet.split = split;
+            droplet.verticalSplit = verticalSplit;
           } else {
             // move somewhere, where it can split.
             Point move = getBestSplitMove(droplet, runningDroplets, array);
@@ -300,41 +219,110 @@ public class GreedyRouter {
           Droplet droplet = operation.manipulating[0];
           
           Point move = getBestMixMove(droplet, percentages, array);
-          droplet.to = new Point(droplet.at).add(move);
+          Point next = new Point(droplet.at).add(move);
+          droplet.to = next;
           
-          // @TODO: fix Mix. When is the Operation Mix setting forwarding? I don't think it ever does! 
-          // I should figure out when forwarding is set (droplet created), before or after making the move.
-          
-        } else {
+        } else { 
           throw new IllegalStateException("unsupported operation!");
         }
       }
 
       // ====================
-
+      
+      // spawn forwarding droplets.
       for (Operation operation : runningOperations) {
-        if (operation.type != OperationType.Mix) continue;
         OperationExtra extra = operationIdToExtra.get(operation.id);
         
-        Droplet droplet = operation.manipulating[0];
+        if (operation.type == OperationType.Spawn) {
+          Droplet droplet = operation.forwarding[0];
+          if (droplet.to != null) extra.done = true;
 
-        Point previousMove = getPreviousMove(droplet);
-        Point move = droplet.to.copy().sub(droplet.at);
-        
-        float mixing = percentages.getMixingPercentage(move, previousMove);
-        extra.mixingPercentage += mixing;
-        if (extra.mixingPercentage > 100) extra.mixingPercentage = 100;
-      }
-      
-      // perform action
-      for (Droplet droplet : runningDroplets) {
-        Point next = (droplet.to == null) ? droplet.at.copy() : droplet.to;
-        droplet.route.path.add(next);
-        droplet.at = next;
-        droplet.to = null;
-      }
+        } else if (operation.type == OperationType.Merge) {
+          Droplet droplet0 = operation.manipulating[0];
+          Droplet droplet1 = operation.manipulating[1];
+          
+          boolean merged = droplet0.to.x == droplet1.to.x && droplet0.to.y == droplet1.to.y;
+          if (merged) {
+            extra.done = true;
+            
+            Droplet mergedDroplet = new Droplet();
+            mergedDroplet.route.start = timestamp;
+            mergedDroplet.to = droplet0.to.copy();
+            mergedDroplet.id = dropletIdGenerator.getId();
+            
+            operation.forwarding[0] = mergedDroplet;
+            
+            runningDroplets.add(mergedDroplet);
+            
+            droplet0.to = null;
+            droplet1.to = null;
+            
+            runningDroplets.remove(droplet0);
+            runningDroplets.remove(droplet1);
 
-      timestamp += 1;
+            retiredDroplets.add(droplet0);
+            retiredDroplets.add(droplet1);
+          }
+
+        } else if (operation.type == OperationType.Split) {
+          Droplet droplet = operation.manipulating[0];
+          
+          if (droplet.split) {
+            extra.done = true;
+            
+            runningDroplets.remove(droplet);
+            retiredDroplets.add(droplet);
+            
+            Point move1 = droplet.verticalSplit ? new Point(0, 1) : new Point (1,0);
+            Point move2 = droplet.verticalSplit ? new Point(0, -1) : new Point (-1,0);
+            
+            Droplet s1 = new Droplet();
+            s1.route.start = timestamp;
+            s1.to = droplet.at.copy().add(move1);
+            s1.id = dropletIdGenerator.getId();
+            
+            Droplet s2 = new Droplet();
+            s2.route.start = timestamp;
+            s2.to = droplet.at.copy().add(move2);
+            s2.id = dropletIdGenerator.getId();
+            
+            runningDroplets.add(s1);
+            runningDroplets.add(s2);
+            
+            operation.forwarding[0] = s1;
+            operation.forwarding[1] = s2;
+            
+            droplet.to = null;
+          }
+          
+        } else if (operation.type == OperationType.Mix) {
+          Droplet droplet = operation.manipulating[0];
+          
+          Point previousMove = getPreviousMove(droplet);
+          Point move = droplet.to.copy().sub(droplet.at);
+          float mixing = percentages.getMixingPercentage(move, previousMove);
+          
+          extra.mixingPercentage += mixing;
+          if (extra.mixingPercentage >= 100f) {
+            extra.mixingPercentage = 100;
+            extra.done = true;
+            
+            Droplet forward = new Droplet();
+            forward.route.start = timestamp;
+            forward.id = dropletIdGenerator.getId();
+            forward.to = droplet.to.copy();
+
+            droplet.to = null;
+            
+            operation.forwarding[0] = forward;
+            
+            runningDroplets.remove(droplet);
+            retiredDroplets.add(droplet);
+            
+            runningDroplets.add(forward);
+          }
+        }
+      }
 
       // cleanup done operations and queue descended operations
       activatedOperations.clear();
@@ -343,20 +331,6 @@ public class GreedyRouter {
         Operation operation = it.next();
         OperationExtra extra = operationIdToExtra.get(operation.id);
         
-        if (operation.type == OperationType.Spawn) {
-          Droplet droplet = operation.forwarding[0];
-          if (droplet.at != null) extra.done = true;
-          
-        } else if (operation.type == OperationType.Merge) {
-          extra.done = ArrayUtils.countOccupiedSlots(operation.forwarding) == 1;
-        } else if (operation.type == OperationType.Split) {
-          extra.done = ArrayUtils.countOccupiedSlots(operation.forwarding) == 2;
-        } else if (operation.type == OperationType.Mix) {
-          extra.done = (extra.mixingPercentage == 100);
-        } else {
-          throw new IllegalStateException("unsupported operation!");
-        }
-
         if (extra.done) {
           it.remove();
           aliveOperationsCount -= 1;
@@ -383,6 +357,16 @@ public class GreedyRouter {
           }
         }
       }
+      
+      // perform action
+      for (Droplet droplet : runningDroplets) {
+        Point next = (droplet.to == null) ? droplet.at.copy() : droplet.to;
+        droplet.route.path.add(next);
+        droplet.at = next;
+        droplet.to = null;
+      }
+
+      timestamp += 1;
       
       if (aliveOperationsCount == 0) break;
 
@@ -414,6 +398,33 @@ public class GreedyRouter {
     }
     
     return bestMove;
+  }
+  
+  private boolean canSplit(Droplet droplet, boolean vertical, BioArray array) {
+    Point to1 = droplet.at.copy();
+    Point to2 = droplet.at.copy();
+    
+    if (vertical) {
+      to1.add(0, 1);
+      to2.add(0, -1);
+    } else {
+      to1.add(1, 0);
+      to2.add(-1, 0);
+    }
+    
+    if (!inside(to1.x, to1.y, array.width, array.height)) return false;
+    if (!inside(to2.x, to2.y, array.width, array.height)) return false;
+    
+    for (Droplet other : runningDroplets) {
+      if (other.id == droplet.id) continue;
+      
+      boolean ok1 = checker.satifiesConstraints(droplet.at, to1, other.at, other.to);
+      boolean ok2 = checker.satifiesConstraints(droplet.at, to2, other.at, other.to);
+      
+      if (!ok1 || !ok2) return false;
+    }
+
+    return true;
   }
 
   private Point getPreviousMove(Droplet droplet) {

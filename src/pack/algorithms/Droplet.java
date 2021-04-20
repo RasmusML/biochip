@@ -6,8 +6,13 @@ public class Droplet {
   public Route route;
   public Operation operation;
 
+  // === MovingDroplet extends Droplet ===
   public Point to;
   public Point at;
+  
+  public boolean split;
+  public boolean verticalSplit;
+  // ===
   
   public Droplet() {
     route = new Route();

@@ -26,6 +26,12 @@ public class Point {
     y += p.y;
     return this;
   }
+  
+  public Point add(int dx, int dy) {
+    x += dx;
+    y += dy;
+    return this;
+  }
 
   public Point sub(Point p) {
     x -= p.x;
