@@ -379,6 +379,7 @@ public class GreedyRouter {
     result.completed = true;
     result.droplets.addAll(retiredDroplets);
     result.reserviors.addAll(reserviors);
+    result.executionTime = timestamp;
 
     return result;
   }
