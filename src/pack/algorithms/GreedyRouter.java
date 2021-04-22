@@ -30,7 +30,7 @@ public class GreedyRouter {
   
   int timestamp;
 
-  public List<Droplet> compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
+  public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
     checker = new BioConstraintsChecker();
     reserviorSubstanceSelector = new ReserviorSubstanceSelector();
     
@@ -375,8 +375,10 @@ public class GreedyRouter {
     retiredDroplets.addAll(runningDroplets);
     runningDroplets.clear();
     
-    List<Droplet> result = new ArrayList<>();
-    result.addAll(retiredDroplets);
+    RoutingResult result = new RoutingResult();
+    result.completed = true;
+    result.droplets.addAll(retiredDroplets);
+    result.reserviors.addAll(reserviors);
 
     return result;
   }

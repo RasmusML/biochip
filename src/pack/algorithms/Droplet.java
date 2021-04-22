@@ -6,7 +6,7 @@ public class Droplet {
   public Route route;
   public Operation operation;
 
-  // === MovingDroplet extends Droplet ===
+  // === MovingDroplet extends Droplet
   public Point to;
   public Point at;
   

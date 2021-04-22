@@ -38,6 +38,12 @@ public class Point {
     y -= p.y;
     return this;
   }
+  
+  public Point set(int nx, int ny) {
+    x = nx;
+    y = ny;
+    return this;
+  }
 
   public Point set(Point p) {
     x = p.x;

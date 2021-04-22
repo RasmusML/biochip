@@ -2,6 +2,7 @@ package pack.gui;
 
 import java.awt.Canvas;
 import java.awt.Color;
+import java.util.Comparator;
 import java.util.List;
 
 import engine.ApplicationAdapter;
@@ -17,9 +18,14 @@ import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.DefaultMixingPercentages;
 import pack.algorithms.Droplet;
+import pack.algorithms.FastMixingPercentages;
 import pack.algorithms.GreedyRouter;
 import pack.algorithms.MixingPercentages;
+import pack.algorithms.Operation;
+import pack.algorithms.OperationType;
 import pack.algorithms.Point;
+import pack.algorithms.Reservior;
+import pack.algorithms.RoutingResult;
 import pack.tests.Test3BioArray;
 import pack.tests.Test3BioAssay;
 
@@ -43,18 +49,26 @@ public class App extends ApplicationAdapter {
 	BioAssay assay;
 	MixingPercentages percentages;
 	
-	List<Droplet> droplets;
+	RoutingResult result;
 	int timestamp;
-	int moveTicks = 0;
 	
 	float dt;
-	float speed = 30*8f;
+
+	boolean running;
+
+	boolean moving;
+	float stopTime;
+	float movementTime;
+	
 
 	@Override
 	public void init() {
 		canvas = new Canvas();
 		app.setRoot(canvas);
 		app.attachInputListenersToComponent(canvas);
+		
+		movementTime = 0.12f;
+		stopTime = 0.45f;
 
 		canvas.createBufferStrategy(3);
 		canvas.setIgnoreRepaint(true);
@@ -71,7 +85,7 @@ public class App extends ApplicationAdapter {
 		percentages = new DefaultMixingPercentages();
 		
 		GreedyRouter router = new GreedyRouter();
-		droplets = router.compute(assay, array, percentages);
+		result = router.compute(assay, array, percentages);
 
 		float cx = array.width * tilesize / 2f;
 		float cy = array.height * tilesize / 2f;
@@ -80,15 +94,32 @@ public class App extends ApplicationAdapter {
 
 	@Override
 	public void update() {
-	  if (moveTicks > 0) {
-	    dt += app.getDelta() / 1000f * speed;
-	    dt = MathUtils.clamp(0, tilesize, dt);
+	  
+    if (running) {
+	    float maxTime = moving ? movementTime : stopTime;
+
+	    dt += app.getDelta() / 1000f;
+	    dt = MathUtils.clamp(0, maxTime, dt);
 	    
-	    if (dt == tilesize) {
-	      moveTicks -= 1;
-	      timestamp += 1;
+	    if (dt == maxTime) {
 	      dt = 0;
+
+	      if (moving) {
+	        timestamp += 1;
+	      }
+	      
+	      moving = !moving;
 	    }
+	  } else if (moving) { // finish executing the move before stopiing.
+      dt += app.getDelta() / 1000f;
+      dt = MathUtils.clamp(0, movementTime, dt);
+      
+      if (dt == movementTime) {
+        dt = 0;
+
+        timestamp += 1;
+        moving = false;
+      }
 	  }
 	  
 		String title = String.format("@%d", app.getFps());
@@ -96,6 +127,21 @@ public class App extends ApplicationAdapter {
 
 		if (input.isMousePressed(Button.RIGHT)) {
 			camera.zoomNow(camera.targetZoom * 1.02f);
+		}
+		
+		if (input.isKeyJustPressed(Keys.SPACE)) {
+		  
+		  if (running) {
+		    if (!moving) dt = 0;
+		  }
+		  
+		  running = !running;
+		}
+		
+		if (input.isKeyJustPressed(Keys.R)) {
+		  running = false;
+		  timestamp = 0;
+		  dt = 0;
 		}
 
 		if (input.isMouseJustPressed(Button.LEFT)) {
@@ -125,15 +171,16 @@ public class App extends ApplicationAdapter {
 		}
 		
 		if (input.isKeyJustPressed(Keys.RIGHT)) {
-		  moveTicks += 1;
+		  running = false;
+		  timestamp += 1;
 		}
 		
 		if (input.isKeyJustPressed(Keys.LEFT)) {
+		  running = false;
 		  dt = 0;
 
 		  timestamp -= 1;
 		  if (timestamp < 0) timestamp = 0;
-		  moveTicks = 0;
 		}
 
 		camera.update();
@@ -145,6 +192,8 @@ public class App extends ApplicationAdapter {
 		
 		
 		renderer.clear();
+		
+		
 
 		{ // frame
 			renderer.setColor(Color.GRAY);
@@ -172,44 +221,97 @@ public class App extends ApplicationAdapter {
 				}
 			}
 		}
+		
+		{ // reserviors
+		  for (Reservior reservior : result.reserviors) {
+		    float xx = reservior.position.x * tilesize + gap;
+        float yy = reservior.position.y * tilesize + gap;
+        
+        float width = tilesize - gap * 2f;
+        float height = tilesize - gap * 2f;
+        
+        renderer.setColor(new Color(.1f, .2f, .3f, .4f));
+        renderer.fillRect(xx, yy, width, height);
+		  }
+		}
 
     { // droplets
       
+      List<Droplet> droplets = result.droplets;
       for (int i = 0; i < droplets.size(); i++) {
         Droplet droplet = droplets.get(i);
         
         Point at = droplet.getPosition(timestamp);
         if (at == null) continue;
 
-        Color color = null;
-        if (droplet.operation == null) {
-          color = Color.gray;
-        } else {
-          switch (droplet.operation.type) {
-          case Merge:
-            color = Color.orange;
-            break;
-          case Mix:
-            color = Color.green;
-            break;
-          case Split:
-            color = Color.CYAN;
-            break;
-          case Spawn:
-            break;
-          default:
-            throw new IllegalStateException("broken!");
-          }
-        }
+        Color color = getOperationColor(droplet.operation);
         
         Point move = new Point();
         Point next = droplet.getPosition(timestamp + 1);
         
-        if (next == null) {
-          if (droplet.operation == null) {
+        if (moving) {
+          if (next == null) {
+            if (droplet.operation == null) {
+              renderer.setColor(color);
+              
+              float percentage = dt / (float) movementTime;
+              
+              float xx = (at.x + move.x * percentage) * tilesize + gap;
+              float yy = (at.y + move.y * percentage) * tilesize + gap;
+              
+              float width = tilesize - gap * 2f;
+              float height = tilesize - gap * 2f;
+              
+              renderer.fillOval(xx, yy, width, height);    
+              
+              String id = String.format("%d", i);
+              
+              float tx = xx + width / 2f;
+              float ty = yy + height / 2f;
+              
+              renderer.setColor(Color.BLACK);
+              renderer.drawText(id, tx, ty, Alignment.Center);
+              
+              renderer.drawOval(xx, yy, width, height);
+              
+              
+            } else {            
+              Droplet[] successors = droplet.operation.forwarding;
+              
+              for (Droplet successor : successors) {
+                renderer.setColor(color);
+                
+                next = successor.getPosition(timestamp + 1);
+                move.set(next).sub(at);
+                
+                float percentage = dt / (float) movementTime;
+                
+                float xx = (at.x + move.x * percentage) * tilesize + gap;
+                float yy = (at.y + move.y * percentage) * tilesize + gap;
+                
+                float width = tilesize - gap * 2f;
+                float height = tilesize - gap * 2f;
+                
+                renderer.fillOval(xx, yy, width, height);    
+                
+                String id = String.format("%d", i);
+                
+                float tx = xx + width / 2f;
+                float ty = yy + height / 2f;
+                
+                renderer.setColor(Color.BLACK);
+                renderer.drawText(id, tx, ty, Alignment.Center);
+                
+                renderer.drawOval(xx, yy, width, height);
+                
+              }
+            }
+          } else {
             renderer.setColor(color);
             
-            float percentage = dt / (float) tilesize;
+            move.set(next).sub(at);
+  
+            float percentage = dt / (float) movementTime;
             
             float xx = (at.x + move.x * percentage) * tilesize + gap;
             float yy = (at.y + move.y * percentage) * tilesize + gap;
@@ -227,38 +329,14 @@ public class App extends ApplicationAdapter {
             renderer.setColor(Color.BLACK);
             renderer.drawText(id, tx, ty, Alignment.Center);
             
-          } else {            
-            Droplet[] successors = droplet.operation.forwarding;
+            renderer.drawOval(xx, yy, width, height);
             
-            for (Droplet successor : successors) {
-              renderer.setColor(color);
-              
-              next = successor.getPosition(timestamp + 1);
-              move.set(next).sub(at);
-              
-              float percentage = dt / (float) tilesize;
-              
-              float xx = (at.x + move.x * percentage) * tilesize + gap;
-              float yy = (at.y + move.y * percentage) * tilesize + gap;
-              
-              float width = tilesize - gap * 2f;
-              float height = tilesize - gap * 2f;
-              
-              renderer.fillOval(xx, yy, width, height);    
-              
-              String id = String.format("%d", i);
-              
-              float tx = xx + width / 2f;
-              float ty = yy + height / 2f;
-              
-              renderer.setColor(Color.BLACK);
-              renderer.drawText(id, tx, ty, Alignment.Center);
-            }
+            
           }
         } else {
           renderer.setColor(color);
           
-          move.set(next).sub(at);
+          move.set(0, 0);
 
           float percentage = dt / (float) tilesize;
           
@@ -278,12 +356,79 @@ public class App extends ApplicationAdapter {
           renderer.setColor(Color.BLACK);
           renderer.drawText(id, tx, ty, Alignment.Center);
           
+          renderer.drawOval(xx, yy, width, height);
         }
+      }
+    }
+    
+    
+    {
+      List<Operation> operations = assay.getOperations();
+      for (int i = 0; i < operations.size(); i++) {
+        Operation operation = operations.get(i);
+        
+        int start, end;
+        if (operation.type == OperationType.Mix) {
+          Droplet droplet = operation.manipulating[0];
+          start = droplet.route.start;
+          end = start + droplet.route.path.size();
+        } else if (operation.type == OperationType.Merge) {
+          Droplet droplet0 = operation.manipulating[0];
+          Droplet droplet1 = operation.manipulating[1];
+          
+          start = Math.min(droplet0.route.start, droplet0.route.start);
+          end = start + Math.max(droplet0.route.path.size(), droplet1.route.path.size());
+        } else if (operation.type == OperationType.Split) {
+          Droplet droplet = operation.manipulating[0];
+          start = droplet.route.start;
+          end = start + droplet.route.path.size();
+        } else if (operation.type == OperationType.Spawn){
+          continue;
+        } else {
+          throw new IllegalStateException("broken! " + operation.type);
+        }
+        
+        float timeScale = 2; // num pixels per step
+        
+        float outline = 0.8f;
+
+        float height = 7;
+        float width = (end - start) * timeScale;
+
+        float xx = start * timeScale;
+        float yy = height * i + outline - i * outline;
+        
+        Color color = getOperationColor(operation);
+        renderer.setColor(color);
+
+        renderer.fillRect(xx, yy, width, height - outline * 2f);
+
+        Color colorOutline = Color.black;
+        renderer.setColor(colorOutline);
+        renderer.drawRect(xx, yy, width, height - outline * 2f);
+        
       }
     }
     
 		renderer.end();
 	}
+
+  private Color getOperationColor(Operation operation) {
+    if (operation == null) return Color.gray;
+    
+    switch (operation.type) {
+    case Merge: 
+      return Color.orange;
+    case Mix:
+      return Color.green;
+    case Split:
+      return Color.cyan;
+    case Spawn:
+      return Color.blue;
+    default:
+      throw new IllegalStateException("broken!");
+    }
+  }
 
 	@Override
 	public void resize(int width, int height) {
