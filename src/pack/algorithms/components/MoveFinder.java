@@ -45,10 +45,6 @@ public class MoveFinder {
       validMoves.add(move);
     }
     
-    if (validMoves.size() == 0) {
-      int k = 42;
-    }
-    
     return validMoves;
   }
   

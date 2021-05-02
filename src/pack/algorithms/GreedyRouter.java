@@ -163,8 +163,7 @@ public class GreedyRouter {
                 OperationExtra extra = operationIdToExtra.get(input.id);
                 extra.running = true;
                 
-                int forwardIndex = ArrayUtils.getFirstEmptySlotIndex(input.forwarding);
-                input.forwarding[forwardIndex] = droplet;
+                input.forwarding[0] = droplet;
               }
             }
           }
@@ -243,17 +242,29 @@ public class GreedyRouter {
           throw new IllegalStateException("unsupported operation!");
         }
       }
+      
+      // droplets which don't have a move will stay where they are. It is only the droplets which are completely done that it will occur to.
+      for (Droplet droplet : runningDroplets) {
+        Point to = droplet.route.getPosition(timestamp);
+        
+        if (to == null) {
+          to = droplet.route.getPosition(timestamp - 1);
+          droplet.route.path.add(to.copy());
+        }
+      }
 
       // ====================
       
-      // dispense forwarding droplets.
+      // check if operations are done and prepare output droplets.
       for (Operation operation : runningOperations) {
         OperationExtra extra = operationIdToExtra.get(operation.id);
         
         if (operation.type == OperationType.Dispense) {
           Droplet droplet = operation.forwarding[0];
           Point to = droplet.route.getPosition(timestamp);
-          if (to != null) extra.done = true;
+          Assert.that(to != null);
+          
+          extra.done = true;
 
         } else if (operation.type == OperationType.Merge) {
           Droplet droplet0 = operation.manipulating[0];
@@ -358,8 +369,6 @@ public class GreedyRouter {
         }
       }
       
-      //System.out.println(runningDroplets.size());
-
       // cleanup done operations and queue descended operations
       activatedOperations.clear();
 
@@ -371,7 +380,7 @@ public class GreedyRouter {
           it.remove();
           aliveOperationsCount -= 1;
 
-          System.out.printf("completed %d (%s)\n", operation.id, operation.type);
+          Logger.log("completed %d (%s)\n", operation.id, operation.type);
 
           for (Operation descendant : operation.outputs) {
             if (descendant == null) continue;
@@ -391,19 +400,6 @@ public class GreedyRouter {
               aliveOperationsCount += 1;
             }
           }
-        }
-      }
-      
-      // perform action
-      for (Droplet droplet : runningDroplets) {
-        Point to = droplet.route.getPosition(timestamp);
-        
-        if (to == null) {
-          to = droplet.route.getPosition(timestamp - 1);
-          if (to == null) {
-            int k = 34;
-          }
-          droplet.route.path.add(to.copy());
         }
       }
 
@@ -483,10 +479,6 @@ public class GreedyRouter {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, toMerge, timestamp, droplets, array);
     Collections.shuffle(validMoves);  // if we use the manhattan distance, then reverse, turn directions yield the same manhattan distance, meaning all moves are just as good. However, we only select the 3 best moves, so if we don't shuffle, then the last one will always be ignored (due to we always insert the moves in the same order).
     
-    if (validMoves.size() == 0) {
-      int k = 42;
-    }
-    
     Point at = droplet.route.getPosition(timestamp - 1);
     
     Point toMergeAt = toMerge.route.getPosition(timestamp - 1);
@@ -516,7 +508,7 @@ public class GreedyRouter {
 
     int bestMoveIndex = indexSelector.select(weights);
     
-    System.out.printf("selected: %d, size: %d\n", bestMoveIndex, candidateSize);
+    Logger.log("selected: %d, size: %d\n", bestMoveIndex, candidateSize);
     
     return validMoves.get(bestMoveIndex);
   }
