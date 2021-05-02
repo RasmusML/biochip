@@ -24,6 +24,8 @@ import pack.algorithms.Reservior;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
+import pack.tests.BlockingDispenserTestBioArray;
+import pack.tests.BlockingDispenserTestBioAssay;
 import pack.tests.PCRMixingTreeAssay;
 import pack.tests.Test3BioArray;
 
@@ -82,8 +84,11 @@ public class App extends ApplicationAdapter {
 		renderer.setCanvas(canvas);
 		
 		assay = new PCRMixingTreeAssay();
-		//assay = new Test1BioAssay();
 		array = new Test3BioArray();
+		
+		//assay = new BlockingDispenserTestBioAssay();
+    //array = new BlockingDispenserTestBioArray();
+		
 		percentages = new DefaultMixingPercentages();
 		
 		GreedyRouter router = new GreedyRouter();

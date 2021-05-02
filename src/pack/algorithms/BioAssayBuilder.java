@@ -83,6 +83,24 @@ public class BioAssayBuilder {
     return id;
   }
   
+
+  public int createHeatingOperation(float temperature) {
+    int id = generator.getId();
+
+    Operation operation = new Operation();
+    operation.id = id;
+    operation.type = OperationType.Heat;
+    operation.inputs = new Operation[1];
+    operation.outputs = new Operation[1];
+    operation.targetTemperature = temperature;
+    operation.manipulating = new Droplet[1];
+    operation.forwarding = new Droplet[1];
+    
+    idToOperation.put(id, operation);
+    
+    return id;
+  }
+  
   public void connect(int fromId, int toId) {
     Operation from = idToOperation.get(fromId);
     Operation to = idToOperation.get(toId);
@@ -91,12 +109,12 @@ public class BioAssayBuilder {
     int fromOutput = ArrayUtils.getFirstEmptySlotIndex(from.outputs);
     
     if (toInput == -1) {
-      String error = String.format("all %d input operations of operation %d are occupied.", from.inputs.length, from.id);
+      String error = String.format("all %d input operations of operation %d (%s) are occupied.", from.inputs.length, from.id, from.type);
       throw new IllegalStateException(error);
     }
     
     if (fromOutput == -1) {
-      String error = String.format("all %d output operations of operation %d are occupied.", to.outputs.length, to.id);
+      String error = String.format("all %d output operations of operation %d (%s) are occupied.", to.outputs.length, to.id, to.type);
       throw new IllegalStateException(error);
     }
 

@@ -41,6 +41,7 @@ public class PCRMixingTreeAssay extends BioAssay {
     builder.connect(input8, merge4);
 
     
+    /*
     int mix1 = builder.createMixOperation();
     int mix2 = builder.createMixOperation();
     int mix3 = builder.createMixOperation();
@@ -75,9 +76,7 @@ public class PCRMixingTreeAssay extends BioAssay {
     int mix7 = builder.createMixOperation();
     
     builder.connect(merge7, mix7);
-    /*
     */
-    
     sink = builder.getSink();
     count = builder.getOperationCount();
   }

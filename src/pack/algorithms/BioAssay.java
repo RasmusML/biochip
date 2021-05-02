@@ -10,10 +10,10 @@ public class BioAssay {
   public int count;
 
   public Operation[] sink;
-  
+
   public void traverse(Consumer<Operation> fn, Operation... sink) {
     boolean[] visited = new boolean[count];
-    
+
     List<Operation> pending = new ArrayList<>();
     for (Operation operation : sink) {
       pending.add(operation);
@@ -33,17 +33,9 @@ public class BioAssay {
       }
     }
   }
-  
+
   public void traverse(Consumer<Operation> fn) {
     traverse(fn, sink);
-  }
-
-  public int getRouteCount() {
-    Wrapper<Integer> routes = new Wrapper<>();
-    routes.value = 0;
-
-    traverse(operation -> routes.value += operation.inputs.length);
-    return routes.value;
   }
 
   public int getInputCount() {
@@ -139,6 +131,9 @@ public class BioAssay {
       } else if (operation.type == OperationType.Mix) {
         operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = green, style = filled];\n", operation.id,
             operation.id);
+      } else if (operation.type == OperationType.Heat) {
+        operationAttributes = String.format("\t%d [label = \"%d - %.2f°C\", fillcolor = \"#FFA591\", style = filled];\n", operation.id,
+            operation.id, operation.targetTemperature, operation.id);
       } else {
         throw new IllegalStateException("unsupported type: " + operation.type);
       }

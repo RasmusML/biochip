@@ -39,12 +39,11 @@ public class TestSuite {
 
   public void runTests() {
     for (int i = 0; i < arrays.size(); i++) {
-      int id = i + 1;
-      
-      System.out.printf("running test %d", id);
-      
       BioArray array = arrays.get(i);
       BioAssay assay = assays.get(i);
+      
+      int id = i + 1;
+      System.out.printf("running test %d", id);
       
       long start = System.currentTimeMillis();
       RoutingResult result = router.compute(assay, array, percentages);
@@ -61,6 +60,7 @@ public class TestSuite {
       System.out.printf("\n");
       
       TestResult testResult = new TestResult();
+      testResult.completed = result.completed;
       testResult.id = id;
       testResult.executionTime = result.executionTime;
       testResult.runningTime = msElapsed / 1000f;
@@ -75,7 +75,15 @@ public class TestSuite {
   public void printSummary() {
     for (int i = 0; i < testResults.size(); i++) {
       TestResult result = testResults.get(i);
-      System.out.printf("test %d fould a solution with %d steps and took %.3f secs to compute.\n", result.id, result.executionTime, result.runningTime);
+     
+      String message;
+      if (result.completed) {
+        message = String.format("test %d found a solution with %d steps and took %.3f secs to compute.\n", result.id, result.executionTime, result.runningTime);
+      } else {
+        message = String.format("test %d failed.\n", result.id);
+      }
+      
+      System.out.printf(message);
     }
   }
 
@@ -84,6 +92,8 @@ public class TestSuite {
     register(new Test2BioAssay(), new Test2BioArray());
     register(new Test3BioAssay(), new Test3BioArray());
     register(new PCRMixingTreeAssay(), new Test3BioArray());
+    register(new BlockingDispenserTestBioAssay(), new BlockingDispenserTestBioArray());
+    //register(new HeatingBioAssay(), new HeatingBioArray());
   }
   
   private void register(BioAssay assay, BioArray array) {
@@ -94,6 +104,7 @@ public class TestSuite {
 
 class TestResult {
   public int id;
+  public boolean completed;
   public int executionTime;
   public float runningTime;
 }
