@@ -1,9 +1,11 @@
 package pack.algorithms;
 
 public enum OperationType {
-  Spawn,
+  Dispense,
   Merge,
   Split,
-  Mix;
+  Mix,
+  Detect,
+  Heat;
 }
 

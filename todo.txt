@@ -1,6 +1,3 @@
-- split operation
-- mix operation
-
 
 // @TODO: build verboseBioAssay from bioAssay (with merge, move etc...)
 

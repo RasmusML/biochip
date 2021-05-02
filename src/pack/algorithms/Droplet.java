@@ -3,28 +3,11 @@ package pack.algorithms;
 public class Droplet {
   public int id;
 
-  public Route route;
+  public Route route = new Route();
   public Operation operation;
-
-  // === MovingDroplet extends Droplet
-  public Point to;
-  public Point at;
-  
-  public boolean split;
-  public boolean verticalSplit;
-  // ===
-  
-  public Droplet() {
-    route = new Route();
-  }
-  
-  public Point getPosition(int timestamp) {
-    int index = timestamp - route.start;
-    if (index < 0 || index >= route.path.size()) return null;
-    return route.path.get(index);
-  }
   
 }
+
 
 /*
 class Graph<T> {

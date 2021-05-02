@@ -1,14 +1,21 @@
-package pack.algorithms;
+package pack.algorithms.components;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import pack.algorithms.BioArray;
+import pack.algorithms.BioAssay;
+import pack.algorithms.Operation;
+import pack.algorithms.OperationType;
+import pack.algorithms.Point;
+import pack.algorithms.Reservior;
+
 public class ReserviorSubstanceSelector {
   
   public List<Reservior> select(BioAssay assay, BioArray array) {
-    List<Operation> spawnOperations = assay.getOperations(OperationType.Spawn);
+    List<Operation> dispenseOperations = assay.getOperations(OperationType.Dispense);
     
-    // Collections.shuffle(spawnOperations); // RandomReserviorSubstanceSelector
+    // Collections.shuffle(dispenseOperations); // RandomReserviorSubstanceSelector
     
     List<Point> reserviorTiles = array.reserviorTiles;
 
@@ -18,22 +25,22 @@ public class ReserviorSubstanceSelector {
     List<Reservior> reserviors = new ArrayList<>();
 
     int reserviorIndex = 0;
-    int spawnIndex = 0;
+    int dispenseIndex = 0;
 
-    while (spawnIndex < spawnOperations.size()) {
-      Operation spawnOperation = spawnOperations.get(spawnIndex);
-      spawnIndex += 1;
+    while (dispenseIndex < dispenseOperations.size()) {
+      Operation dispenseOperation = dispenseOperations.get(dispenseIndex);
+      dispenseIndex += 1;
 
-      if (assigned.contains(spawnOperation.substance)) {
-        pending.add(spawnOperation.substance);
+      if (assigned.contains(dispenseOperation.substance)) {
+        pending.add(dispenseOperation.substance);
       } else {
-        assigned.add(spawnOperation.substance);
+        assigned.add(dispenseOperation.substance);
 
         Point reserviorTile = reserviorTiles.get(reserviorIndex);
         reserviorIndex += 1;
 
         Reservior reservior = new Reservior();
-        reservior.substance = spawnOperation.substance;
+        reservior.substance = dispenseOperation.substance;
         reservior.position = reserviorTile.copy();
         reserviors.add(reservior);
 

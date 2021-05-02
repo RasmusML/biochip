@@ -13,10 +13,10 @@ public class Test3BioAssay extends BioAssay {
 	private void build() {
 	  BioAssayBuilder builder = new BioAssayBuilder();
 	  
-	  int input1 = builder.createSpawnOperation("NaOH");
-	  int input2 = builder.createSpawnOperation("COOH");
-	  int input3 = builder.createSpawnOperation("H2O");
-	  int input4 = builder.createSpawnOperation("Fe3O");
+	  int input1 = builder.createDispenseOperation("NaOH");
+	  int input2 = builder.createDispenseOperation("COOH");
+	  int input3 = builder.createDispenseOperation("H2O");
+	  int input4 = builder.createDispenseOperation("Fe3O");
 
 	  int merge1 = builder.createMergeOperation();
 	  int merge2 = builder.createMergeOperation();

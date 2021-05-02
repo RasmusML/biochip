@@ -26,7 +26,24 @@ public class MathUtils {
 		return wrap;
 	}
 	
-  public static int getManhattenDistance(int sx, int sy, int tx, int ty) {
-    return Math.abs(sx - tx) + Math.abs(sy - ty);
+  public static int getManhattanDistance(int sx, int sy, int tx, int ty) {
+    return getManhattanDistance(sx - tx, sy - ty);
+  }
+  
+  public static int getManhattanDistance(int dx, int dy) {
+    return Math.abs(dx) + Math.abs(dy);
+  }
+  
+  public static float distance(float dx, float dy) {
+    return (float) Math.sqrt(dx * dx + dy * dy);
+  }
+
+  /**
+   * @param min
+   * @param max
+   * @return random integer in the range [min;max] (both inclusive)
+   */
+  public static int randomInt(int min, int max) {
+    return (int) (min + Math.random() * ((max + 1)- min));
   }  
 }

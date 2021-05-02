@@ -15,17 +15,17 @@ import engine.math.MathUtils;
 import engine.math.Vector2;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
-import pack.algorithms.DefaultMixingPercentages;
 import pack.algorithms.Droplet;
 import pack.algorithms.GreedyRouter;
-import pack.algorithms.MixingPercentages;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
 import pack.algorithms.Reservior;
 import pack.algorithms.RoutingResult;
+import pack.algorithms.components.DefaultMixingPercentages;
+import pack.algorithms.components.MixingPercentages;
+import pack.tests.PCRMixingTreeAssay;
 import pack.tests.Test3BioArray;
-import pack.tests.Test3BioAssay;
 
 public class App extends ApplicationAdapter {
 
@@ -81,7 +81,8 @@ public class App extends ApplicationAdapter {
 		renderer = new Renderer(viewport);
 		renderer.setCanvas(canvas);
 		
-		assay = new Test3BioAssay();
+		assay = new PCRMixingTreeAssay();
+		//assay = new Test1BioAssay();
 		array = new Test3BioArray();
 		percentages = new DefaultMixingPercentages();
 		
@@ -228,11 +229,11 @@ public class App extends ApplicationAdapter {
 
 		
     {
-      timeline.timescale = 2f;
+      timeline.timescale = 1f;
       timeline.operationGap = 0.8f;
       timeline.operationHeight = 7;
       
-      int nonSpawnOperations = 0;
+      int nonDispenseOperat = 0;
       
       List<Operation> operations = assay.getOperations();
       for (int i = 0; i < operations.size(); i++) {
@@ -254,13 +255,13 @@ public class App extends ApplicationAdapter {
           Droplet droplet = operation.manipulating[0];
           start = droplet.route.start;
           end = start + droplet.route.path.size();
-        } else if (operation.type == OperationType.Spawn){
+        } else if (operation.type == OperationType.Dispense){
           continue;
         } else {
           throw new IllegalStateException("broken! " + operation.type);
         }
         
-        nonSpawnOperations += 1;
+        nonDispenseOperat += 1;
         
         float width = (end - start) * timeline.timescale;
         float height = timeline.operationHeight;
@@ -284,7 +285,7 @@ public class App extends ApplicationAdapter {
         float xx = timestamp * timeline.timescale;
         float yy = 0;
         float width = 1;
-        float height = nonSpawnOperations * (timeline.operationHeight + gap) - gap;
+        float height = nonDispenseOperat * (timeline.operationHeight + gap) - gap;
         
         renderer.fillRect(xx, yy, width, height);
         
@@ -297,7 +298,7 @@ public class App extends ApplicationAdapter {
         float xx = timeline.suggestedTime * timeline.timescale;
         float yy = 0;
         float width = 1;
-        float height = nonSpawnOperations * (timeline.operationHeight + gap) - gap;
+        float height = nonDispenseOperat * (timeline.operationHeight + gap) - gap;
         
         renderer.fillRect(xx, yy, width, height);
 
@@ -354,13 +355,13 @@ public class App extends ApplicationAdapter {
       for (int i = 0; i < droplets.size(); i++) {
         Droplet droplet = droplets.get(i);
         
-        Point at = droplet.getPosition(timestamp);
+        Point at = droplet.route.getPosition(timestamp);
         if (at == null) continue;
 
         Color color = getOperationColor(droplet.operation);
         
         Point move = new Point();
-        Point next = droplet.getPosition(timestamp + 1);
+        Point next = droplet.route.getPosition(timestamp + 1);
         
         if (moving) {
           if (next == null) {
@@ -394,7 +395,7 @@ public class App extends ApplicationAdapter {
               for (Droplet successor : successors) {
                 renderer.setColor(color);
                 
-                next = successor.getPosition(timestamp + 1);
+                next = successor.route.getPosition(timestamp + 1);
                 move.set(next).sub(at);
                 
                 float percentage = dt / (float) movementTime;
@@ -485,7 +486,7 @@ public class App extends ApplicationAdapter {
       return Color.green;
     case Split:
       return Color.cyan;
-    case Spawn:
+    case Dispense:
       return Color.blue;
     default:
       throw new IllegalStateException("broken!");

@@ -1,9 +1,10 @@
-package pack.gui;
+package pack.run;
 
 import engine.Application;
 import engine.ApplicationConfiguration;
+import pack.gui.App;
 
-public class RunMe {
+public class RunMeGUI {
 
 	public static void main(String[] args) {
 		ApplicationConfiguration cfg = new ApplicationConfiguration();

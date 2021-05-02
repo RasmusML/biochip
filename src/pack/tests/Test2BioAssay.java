@@ -13,7 +13,7 @@ public class Test2BioAssay extends BioAssay {
 	private void build() {
 	  BioAssayBuilder builder = new BioAssayBuilder();
 	  
-		int input1 = builder.createSpawnOperation("A");
+		int input1 = builder.createDispenseOperation("A");
     int split1 = builder.createSplitOperation();
     int merge1 = builder.createMergeOperation();
     int mix1 = builder.createMixOperation();

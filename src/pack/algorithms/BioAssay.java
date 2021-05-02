@@ -51,7 +51,7 @@ public class BioAssay {
     inputs.value = 0;
 
     traverse(operation -> {
-      if (operation.type == OperationType.Spawn) inputs.value += 1;
+      if (operation.type == OperationType.Dispense) inputs.value += 1;
     });
 
     return inputs.value;
@@ -60,7 +60,7 @@ public class BioAssay {
   public List<String> getInputSubstances() {
     List<String> substances = new ArrayList<>();
     traverse(operation -> {
-      if (operation.type == OperationType.Spawn) substances.add(operation.substance);
+      if (operation.type == OperationType.Dispense) substances.add(operation.substance);
     });
     return substances;
   }
@@ -85,10 +85,10 @@ public class BioAssay {
     List<Operation> operations = new ArrayList<>();
 
     traverse(operation -> {
-      if (operation.type == OperationType.Spawn) return;
+      if (operation.type == OperationType.Dispense) return;
 
       for (Operation child : operation.inputs) {
-        if (child.type != OperationType.Spawn) return;
+        if (child.type != OperationType.Dispense) return;
       }
 
       operations.add(operation);
@@ -127,7 +127,7 @@ public class BioAssay {
     traverse(operation -> {
 
       String operationAttributes;
-      if (operation.type == OperationType.Spawn) {
+      if (operation.type == OperationType.Dispense) {
         operationAttributes = String.format("\t%d [label = \"%d - %s\"];\n", operation.id, operation.id,
             operation.substance);
       } else if (operation.type == OperationType.Merge) {

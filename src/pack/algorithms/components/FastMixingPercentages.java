@@ -1,4 +1,4 @@
-package pack.algorithms;
+package pack.algorithms.components;
 
 public class FastMixingPercentages extends MixingPercentages {
 

@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import pack.algorithms.components.UidGenerator;
+
 public class BioAssayBuilder {
   
   private UidGenerator generator;
@@ -15,13 +17,13 @@ public class BioAssayBuilder {
     idToOperation = new HashMap<>();
   }
   
-  public int createSpawnOperation(String substance) {
+  public int createDispenseOperation(String substance) {
     int id = generator.getId();
     
     Operation operation = new Operation();
     operation.substance = substance;
     operation.id = id;
-    operation.type = OperationType.Spawn;
+    operation.type = OperationType.Dispense;
     operation.inputs = new Operation[0];
     operation.outputs = new Operation[1];
     operation.manipulating = new Droplet[0];

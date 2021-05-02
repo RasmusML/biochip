@@ -1,4 +1,6 @@
-package pack.algorithms;
+package pack.algorithms.components;
+
+import pack.algorithms.Point;
 
 public class BioConstraintsChecker {
   
@@ -27,7 +29,7 @@ public class BioConstraintsChecker {
     if (satifiesConstraints(to0, at1, to1)) return true;
     if (!satisfiesDynamicCompanionConstraint(to0, at1)) return false;
     if (!satifiesStaticCompanionConstraint(to0, to1)) return false;
-    return false;
+    return true;
   }
   
   
