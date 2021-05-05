@@ -8,5 +8,5 @@ public class RoutingResult {
   public int executionTime;
 
   public List<Droplet> droplets = new ArrayList<>();
-  public List<Reservior> reserviors = new ArrayList<>();
+  public List<Reservoir> reservoirs = new ArrayList<>();
 }

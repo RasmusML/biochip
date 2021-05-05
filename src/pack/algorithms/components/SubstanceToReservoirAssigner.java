@@ -8,11 +8,11 @@ import pack.algorithms.BioAssay;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
-import pack.algorithms.Reservior;
+import pack.algorithms.Reservoir;
 
-public class ReserviorSubstanceSelector {
+public class SubstanceToReservoirAssigner {
   
-  public List<Reservior> select(BioAssay assay, BioArray array) {
+  public List<Reservoir> assign(BioAssay assay, BioArray array) {
     List<Operation> dispenseOperations = assay.getOperations(OperationType.Dispense);
     
     // Collections.shuffle(dispenseOperations); // RandomReserviorSubstanceSelector
@@ -22,7 +22,7 @@ public class ReserviorSubstanceSelector {
     List<String> assigned = new ArrayList<>();
     List<String> pending = new ArrayList<>();
 
-    List<Reservior> reserviors = new ArrayList<>();
+    List<Reservoir> reserviors = new ArrayList<>();
 
     int reserviorIndex = 0;
     int dispenseIndex = 0;
@@ -39,7 +39,7 @@ public class ReserviorSubstanceSelector {
         Point reserviorTile = reserviorTiles.get(reserviorIndex);
         reserviorIndex += 1;
 
-        Reservior reservior = new Reservior();
+        Reservoir reservior = new Reservoir();
         reservior.substance = dispenseOperation.substance;
         reservior.position = reserviorTile.copy();
         reserviors.add(reservior);
@@ -56,7 +56,7 @@ public class ReserviorSubstanceSelector {
       Point reserviorTile = reserviorTiles.get(reserviorIndex);
       reserviorIndex += 1;
 
-      Reservior reservior = new Reservior();
+      Reservoir reservior = new Reservoir();
       reservior.substance = substance;
       reservior.position = reserviorTile.copy();
       reserviors.add(reservior);

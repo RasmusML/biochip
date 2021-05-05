@@ -20,7 +20,7 @@ import pack.algorithms.GreedyRouter;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
-import pack.algorithms.Reservior;
+import pack.algorithms.Reservoir;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
@@ -342,7 +342,7 @@ public class App extends ApplicationAdapter {
 		}
 		
 		{ // reserviors
-		  for (Reservior reservior : result.reserviors) {
+		  for (Reservoir reservior : result.reservoirs) {
 		    float xx = reservior.position.x * tilesize + gap;
         float yy = reservior.position.y * tilesize + gap;
         
