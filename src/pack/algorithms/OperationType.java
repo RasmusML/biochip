@@ -5,7 +5,6 @@ public enum OperationType {
   Merge,
   Split,
   Mix,
-  Detect,
   Heat;
 }
 

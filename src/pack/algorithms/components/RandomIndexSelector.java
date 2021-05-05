@@ -7,8 +7,7 @@ public class RandomIndexSelector {
   private Random random;
 
   public RandomIndexSelector() {
-    long seed = 42;
-    random = new Random(seed);
+    random = RandomUtil.get();
   }
 
   public int select(float[] weights) {

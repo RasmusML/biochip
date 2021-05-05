@@ -13,11 +13,11 @@ public class MathUtils {
 	}
 
 	public static int ceil(float value) {
-		return (int) Math.round(value + 0.499);
+		return (int) Math.round(value + 1 / 2 - Double.MIN_VALUE);
 	}
 	
 	public static int floor(float value) {
-		return (int) Math.round(value - 0.499);
+		return (int) Math.round(value - 1 / 2 - Double.MIN_VALUE);
 	}
 	
 	public static int wrap(int value, int max) {
@@ -37,13 +37,4 @@ public class MathUtils {
   public static float distance(float dx, float dy) {
     return (float) Math.sqrt(dx * dx + dy * dy);
   }
-
-  /**
-   * @param min
-   * @param max
-   * @return random integer in the range [min;max] (both inclusive)
-   */
-  public static int randomInt(int min, int max) {
-    return (int) (min + Math.random() * ((max + 1)- min));
-  }  
 }

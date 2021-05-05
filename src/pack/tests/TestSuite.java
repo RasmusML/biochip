@@ -85,6 +85,21 @@ public class TestSuite {
       
       System.out.printf(message);
     }
+    
+    int completedCount = 0;
+    int avgStepSize = 0;
+    
+    for (int i = 0; i < testResults.size(); i++) {
+      TestResult result = testResults.get(i);
+      if (result.completed) {
+        completedCount += 1;
+        avgStepSize += result.executionTime;
+      }
+    }
+    
+    System.out.printf("\n%d/%d routes succeeded!\n", completedCount, testResults.size());
+    System.out.printf("avg. steps: %d\n", avgStepSize / completedCount);
+    
   }
 
   private void registerAllTests() {
@@ -93,7 +108,7 @@ public class TestSuite {
     register(new Test3BioAssay(), new Test3BioArray());
     register(new PCRMixingTreeAssay(), new Test3BioArray());
     register(new BlockingDispenserTestBioAssay(), new BlockingDispenserTestBioArray());
-    //register(new HeatingBioAssay(), new HeatingBioArray());
+    register(new HeatingBioAssay(), new HeatingBioArray());
   }
   
   private void register(BioAssay assay, BioArray array) {

@@ -12,6 +12,7 @@ import pack.algorithms.components.BioConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
 import pack.algorithms.components.MoveFinder;
 import pack.algorithms.components.RandomIndexSelector;
+import pack.algorithms.components.RandomUtil;
 import pack.algorithms.components.ReservoirManager;
 import pack.algorithms.components.SubstanceToReservoirAssigner;
 import pack.algorithms.components.UidGenerator;
@@ -37,7 +38,7 @@ public class GreedyRouter {
   private UidGenerator dropletIdGenerator;
 
   private int maxIterations;
-
+  
   int timestamp;
 
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
@@ -445,11 +446,12 @@ public class GreedyRouter {
 
   private Move getBestMergeMove(Droplet droplet, Droplet toMerge, List<Droplet> droplets, BioArray array) {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, toMerge, timestamp, droplets, array);
-    Collections.shuffle(validMoves); // if we use the manhattan distance, then reverse, turn directions yield the
+    Collections.shuffle(validMoves, RandomUtil.get());
+    // if we use the manhattan distance, then reverse, turn directions yield the
                                      // same manhattan distance, meaning all moves are just as good. However, we only
                                      // select the 3 best moves, so if we don't shuffle, then the last one will
                                      // always be ignored (due to we always insert the moves in the same order).
-
+    
     Point at = droplet.route.getPosition(timestamp - 1);
 
     Point toMergeAt = toMerge.route.getPosition(timestamp - 1);
@@ -482,6 +484,7 @@ public class GreedyRouter {
     int bestMoveIndex = indexSelector.select(weights);
 
     return validMoves.get(bestMoveIndex);
+    
   }
 
   private Move getBestSplitMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
