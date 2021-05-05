@@ -86,8 +86,8 @@ public class App extends ApplicationAdapter {
 		assay = new PCRMixingTreeAssay();
 		array = new Test3BioArray();
 		
-		//assay = new BlockingDispenserTestBioAssay();
-    //array = new BlockingDispenserTestBioArray();
+		assay = new BlockingDispenserTestBioAssay();
+    array = new BlockingDispenserTestBioArray();
 		
 		percentages = new DefaultMixingPercentages();
 		

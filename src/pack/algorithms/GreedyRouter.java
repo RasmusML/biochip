@@ -7,8 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.ibm.jvm.format.Merge;
-
 import engine.math.MathUtils;
 import pack.algorithms.components.BioConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
@@ -330,29 +328,6 @@ public class GreedyRouter {
         }
       }
 
-      // droplets which don't have a move will stay where they are. It is only the
-      // droplets which are completely done that it will occur to.
-      for (Droplet droplet : runningDroplets) {
-        Point to = droplet.route.getPosition(timestamp);
-
-        if (to == null) {
-          Point at = droplet.route.getPosition(timestamp - 1);
-          
-          // TODO: figure out when either of the cases occur!
-          if (droplet.operation == null) {
-            to = at.copy();
-            droplet.route.path.add(to.copy());
-          } else {
-            List<Move> validMoves = moveFinder.getValidMoves(droplet, null, timestamp, runningDroplets, array);
-            int selectedIndex = indexSelector.selectUniformly(validMoves.size() - 1);
-
-            Move move = validMoves.get(selectedIndex);
-            to = at.copy().add(move.x, move.y);
-            droplet.route.path.add(to);
-          }
-        }
-      }
-
       // ====================
 
       // check if operations are done and prepare output droplets.
@@ -435,7 +410,7 @@ public class GreedyRouter {
 
             runningDroplets.add(s1);
             runningDroplets.add(s2);
-
+            
             operation.forwarding[0] = s1;
             operation.forwarding[1] = s2;
           }
@@ -468,24 +443,23 @@ public class GreedyRouter {
           }
         }
       }
-      
-      /*
-      for (Operation stalled : readyOperations) {
+
+      for (Droplet droplet : runningDroplets) {
+        Point to = droplet.route.getPosition(timestamp);
+        if (to != null) continue;
         
-        for (Droplet droplet : stalled.manipulating) {
-          if (droplet == null) continue;
-          
-          Point at = droplet.route.getPosition(timestamp - 1);
-          List<Move> validMoves = moveFinder.getValidMoves(droplet, null, timestamp, runningDroplets, array);
-          int selectedIndex = indexSelector.selectUniformly(validMoves.size() - 1);
+        //if (droplet.operation != null && droplet.operation.type == OperationType.Split) continue;
+        Assert.that(droplet.operation == null);
 
-          Move move = validMoves.get(selectedIndex);
-          Point to = at.copy().add(move.x, move.y);
-          droplet.route.path.add(to);
-        }
+        List<Move> validMoves = moveFinder.getValidMoves(droplet, null, timestamp, runningDroplets, array);
+        int selectedIndex = indexSelector.selectUniformly(validMoves.size() - 1);
+        
+        Point at = droplet.route.getPosition(timestamp - 1);
+        Move move = validMoves.get(selectedIndex);
+        to = at.copy().add(move.x, move.y);
+        droplet.route.path.add(to);
       }
-      */
-
+      
       // cleanup done operations and queue descended operations
       activatedOperations.clear();
 
