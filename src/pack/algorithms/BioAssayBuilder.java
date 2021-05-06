@@ -84,15 +84,15 @@ public class BioAssayBuilder {
   }
   
 
-  public int createHeatingOperation(float temperature) {
+  public int createModuleOperation(String module) {
     int id = generator.getId();
 
     Operation operation = new Operation();
     operation.id = id;
-    operation.type = OperationType.Heat;
+    operation.module = module;
+    operation.type = OperationType.Module;
     operation.inputs = new Operation[1];
     operation.outputs = new Operation[1];
-    operation.targetTemperature = temperature;
     operation.manipulating = new Droplet[1];
     operation.forwarding = new Droplet[1];
     

@@ -9,4 +9,5 @@ public class RoutingResult {
 
   public List<Droplet> droplets = new ArrayList<>();
   public List<Reservoir> reservoirs = new ArrayList<>();
+  public List<Module> modules = new ArrayList<>();
 }

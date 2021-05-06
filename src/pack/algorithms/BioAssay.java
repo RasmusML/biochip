@@ -131,9 +131,9 @@ public class BioAssay {
       } else if (operation.type == OperationType.Mix) {
         operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = green, style = filled];\n", operation.id,
             operation.id);
-      } else if (operation.type == OperationType.Heat) {
-        operationAttributes = String.format("\t%d [label = \"%d - %.2f°C\", fillcolor = \"#FFA591\", style = filled];\n", operation.id,
-            operation.id, operation.targetTemperature, operation.id);
+      } else if (operation.type == OperationType.Module) {
+        operationAttributes = String.format("\t%d [label = \"%d - ?°C\", fillcolor = \"#FFA591\", style = filled];\n", operation.id,
+            operation.id, operation.id);
       } else {
         throw new IllegalStateException("unsupported type: " + operation.type);
       }

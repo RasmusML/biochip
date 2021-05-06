@@ -4,12 +4,12 @@ import java.io.IOException;
 
 import pack.algorithms.BioAssay;
 import pack.algorithms.GraphvizUtil;
-import pack.tests.HeatingBioAssay;
+import pack.tests.ModuleBioAssay1;
 
 public class RunMeGraphCreator {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-		BioAssay assay = new HeatingBioAssay();
+		BioAssay assay = new ModuleBioAssay1();
 		
 		String graph = assay.asGraphvizGraph();
 		System.out.println(graph);

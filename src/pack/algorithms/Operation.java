@@ -9,7 +9,7 @@ public class Operation {
   public Operation[] outputs;
   
   public String substance;  // only used for dispensing.
-  public float targetTemperature; // only used for heating.
+  public String module; // only used for modules.
   
   public Droplet[] manipulating;
   public Droplet[] forwarding;

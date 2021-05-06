@@ -17,6 +17,7 @@ import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.Droplet;
 import pack.algorithms.GreedyRouter;
+import pack.algorithms.Module;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
@@ -26,6 +27,8 @@ import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
 import pack.tests.BlockingDispenserTestBioArray;
 import pack.tests.BlockingDispenserTestBioAssay;
+import pack.tests.ModuleBioArray2;
+import pack.tests.ModuleBioAssay2;
 import pack.tests.PCRMixingTreeAssay;
 import pack.tests.Test3BioArray;
 
@@ -89,6 +92,9 @@ public class App extends ApplicationAdapter {
 		assay = new BlockingDispenserTestBioAssay();
     array = new BlockingDispenserTestBioArray();
 		
+    assay = new ModuleBioAssay2();
+    array = new ModuleBioArray2();
+    
 		percentages = new DefaultMixingPercentages();
 		
 		GreedyRouter router = new GreedyRouter();
@@ -238,7 +244,7 @@ public class App extends ApplicationAdapter {
       timeline.operationGap = 0.8f;
       timeline.operationHeight = 7;
       
-      int nonDispenseOperat = 0;
+      int nonDispenseOperation = 0;
       
       List<Operation> operations = assay.getOperations();
       for (int i = 0; i < operations.size(); i++) {
@@ -261,12 +267,17 @@ public class App extends ApplicationAdapter {
           start = droplet.route.start;
           end = start + droplet.route.path.size();
         } else if (operation.type == OperationType.Dispense){
+          //Assert.that(false);
           continue;
+        } else if (operation.type == OperationType.Module) {
+          Droplet droplet = operation.manipulating[0];
+          start = droplet.route.start;
+          end = start + droplet.route.path.size();
         } else {
           throw new IllegalStateException("broken! " + operation.type);
         }
         
-        nonDispenseOperat += 1;
+        nonDispenseOperation += 1;
         
         float width = (end - start) * timeline.timescale;
         float height = timeline.operationHeight;
@@ -290,7 +301,7 @@ public class App extends ApplicationAdapter {
         float xx = timestamp * timeline.timescale;
         float yy = 0;
         float width = 1;
-        float height = nonDispenseOperat * (timeline.operationHeight + gap) - gap;
+        float height = nonDispenseOperation * (timeline.operationHeight + gap) - gap;
         
         renderer.fillRect(xx, yy, width, height);
         
@@ -303,7 +314,7 @@ public class App extends ApplicationAdapter {
         float xx = timeline.suggestedTime * timeline.timescale;
         float yy = 0;
         float width = 1;
-        float height = nonDispenseOperat * (timeline.operationHeight + gap) - gap;
+        float height = nonDispenseOperation * (timeline.operationHeight + gap) - gap;
         
         renderer.fillRect(xx, yy, width, height);
 
@@ -340,6 +351,33 @@ public class App extends ApplicationAdapter {
 				}
 			}
 		}
+		
+		{ // module
+      
+      for (Module module : result.modules) {
+        float xx = module.position.x * tilesize;
+        float yy = module.position.y * tilesize;
+        float width = module.width * tilesize;
+        float height = module.height * tilesize;
+        
+        renderer.setColor(Color.black);
+        renderer.fillRect(xx, yy, width, height);
+      }
+      
+      for (Module module : result.modules) {
+        float xx = module.position.x * tilesize + gap;
+        float yy = module.position.y * tilesize + gap;
+        float width = module.width * tilesize - 2 * gap;
+        float height = module.height * tilesize - 2 * gap;
+        
+        renderer.setColor(Color.white);
+        renderer.fillRect(xx, yy, width, height);
+        
+        Color seeThroughRed = new Color(1f, 0f, 0f, 0.2f);
+        renderer.setColor(seeThroughRed);
+        renderer.fillRect(xx, yy, width, height);
+      }
+    }
 		
 		{ // reserviors
 		  for (Reservoir reservior : result.reservoirs) {
@@ -493,6 +531,8 @@ public class App extends ApplicationAdapter {
       return Color.cyan;
     case Dispense:
       return Color.blue;
+    case Module:
+      return Color.red;
     default:
       throw new IllegalStateException("broken!");
     }

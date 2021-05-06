@@ -3,9 +3,9 @@ package pack.tests;
 import pack.algorithms.BioArray;
 import pack.algorithms.Point;
 
-public class HeatingBioArray extends BioArray {
+public class ModuleBioArray1 extends BioArray {
   
-  public HeatingBioArray() {
+  public ModuleBioArray1() {
     width = 7;
     height = 7;
     

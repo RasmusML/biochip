@@ -106,9 +106,10 @@ public class TestSuite {
     register(new Test1BioAssay(), new Test1BioArray());
     register(new Test2BioAssay(), new Test2BioArray());
     register(new Test3BioAssay(), new Test3BioArray());
-    register(new PCRMixingTreeAssay(), new Test3BioArray());
+    register(new PCRMixingTreeAssay(), new PCRMixingTreeArray());
     register(new BlockingDispenserTestBioAssay(), new BlockingDispenserTestBioArray());
-    register(new HeatingBioAssay(), new HeatingBioArray());
+    register(new ModuleBioAssay1(), new ModuleBioArray1());
+    register(new ModuleBioAssay2(), new ModuleBioArray2());
   }
   
   private void register(BioAssay assay, BioArray array) {

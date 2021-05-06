@@ -26,15 +26,25 @@ public class MathUtils {
 		return wrap;
 	}
 	
-  public static int getManhattanDistance(int sx, int sy, int tx, int ty) {
+  public static float getManhattanDistance(float sx, float sy, float tx, float ty) {
     return getManhattanDistance(sx - tx, sy - ty);
   }
   
-  public static int getManhattanDistance(int dx, int dy) {
+  public static float getManhattanDistance(float dx, float dy) {
     return Math.abs(dx) + Math.abs(dy);
+  }
+  
+  public static float distance(float x1, float y1, float x2, float y2) {
+    return distance(x1-x2, y1-y2);
   }
   
   public static float distance(float dx, float dy) {
     return (float) Math.sqrt(dx * dx + dy * dy);
+  }
+  
+  public static float distanceToRectangle(float px, float py, float x, float y, float width, float height) {
+    float dx = Math.max(px - x, x + width - px);
+    float dy = Math.max(py - y, y + height - py);
+    return distance(dx, dy);
   }
 }

@@ -16,6 +16,8 @@ import pack.algorithms.components.RandomUtil;
 import pack.algorithms.components.ReservoirManager;
 import pack.algorithms.components.SubstanceToReservoirAssigner;
 import pack.algorithms.components.UidGenerator;
+import pack.tests.DefaultModuleCatalog;
+import pack.tests.ModuleCatalog;
 
 public class GreedyRouter {
 
@@ -32,12 +34,15 @@ public class GreedyRouter {
 
   private List<Droplet> runningDroplets;
   private List<Droplet> retiredDroplets;
+  private List<Droplet> detouringDroplets;
 
   private Map<Integer, OperationExtra> operationIdToExtra;
 
   private UidGenerator dropletIdGenerator;
 
   private int maxIterations;
+  
+  private ModuleDelegator moduleDelegator;
   
   int timestamp;
 
@@ -49,6 +54,9 @@ public class GreedyRouter {
     SubstanceToReservoirAssigner s2rAssigner = new SubstanceToReservoirAssigner();
     List<Reservoir> reservoirs = s2rAssigner.assign(assay, array);
     reservoirManager = new ReservoirManager(reservoirs, checker);
+    
+    ModuleCatalog catalog = new DefaultModuleCatalog();
+    moduleDelegator = new ModuleDelegator(catalog);
     
     maxIterations = 1000;
 
@@ -71,6 +79,7 @@ public class GreedyRouter {
 
     runningDroplets = new ArrayList<>();
     retiredDroplets = new ArrayList<>();
+    detouringDroplets = new ArrayList<>();
 
     List<Operation> dispenseOperations = assay.getOperations(OperationType.Dispense);
     readyOperations.addAll(dispenseOperations);
@@ -147,6 +156,10 @@ public class GreedyRouter {
 
           runningOperations.add(stalled);
           stalledExtra.running = true;
+          
+          if (stalled.type == OperationType.Module)  {
+            stalledExtra.module = moduleDelegator.get(stalled.module);
+          }
 
           for (int i = 0; i < stalled.inputs.length; i++) {
             Operation input = stalled.inputs[i];
@@ -294,10 +307,48 @@ public class GreedyRouter {
           } else {
             droplet.route.path.add(to);
           }
+        } else if (operation.type == OperationType.Module) {
+          Droplet droplet = operation.manipulating[0];
+          
+          Module module = extra.module;
+          
+          Point at = droplet.route.getPosition(timestamp - 1);
+          Move move = getBestModuleMove(droplet, runningDroplets, module, array);
+          Point to = at.copy().add(move.x, move.y);
+          
+          if (within(to.x, to.y, module.position.x, module.position.y, module.width, module.height)) {
+            extra.currentDurationInTimesteps += 1;
+          }
+          
+          if (extra.currentDurationInTimesteps >= module.duration) {
+            extra.done = true;
+            
+            runningDroplets.remove(droplet);
+            retiredDroplets.add(droplet);
+            
+            Droplet forward = createDroplet(to);
+            operation.forwarding[0] = forward;
+            runningDroplets.add(forward);
+            
+          } else {
+            droplet.route.path.add(to);
+          }
+          
         } else {
           throw new IllegalStateException("unsupported operation!");
         }
       }
+      
+      for (Droplet droplet : detouringDroplets) {
+        Point at = droplet.route.getPosition(timestamp - 1);
+        
+        Move move = getBestDetourMove(droplet, runningDroplets, array);
+        Point to = at.copy().add(move.x, move.y);
+
+        droplet.route.path.add(to);
+      }
+      
+      detouringDroplets.clear();
 
       for (Droplet droplet : runningDroplets) {
         Point to = droplet.route.getPosition(timestamp);
@@ -366,10 +417,52 @@ public class GreedyRouter {
     result.droplets.addAll(retiredDroplets);
     result.reservoirs.addAll(reservoirManager.getReservoirs());
     result.executionTime = timestamp;
+    
+    List<Module> modulePlacements = moduleDelegator.getAllModules();
+    result.modules.addAll(modulePlacements);
 
     return result;
   }
   
+  private Move getBestDetourMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
+    Point at = droplet.route.getPosition(timestamp - 1);
+    
+    Module within = null;
+    for (Module module : moduleDelegator.getAllModules()) {
+      if (within(at.x, at.y, module.position.x, module.position.y, module.width, module.height)) {
+        within = module;
+        break;
+      }
+    }
+    
+    Assert.that(within != null);
+    
+    Move bestMove = null;
+    float bestMoveDistance = Integer.MAX_VALUE;
+    
+    Point to = new Point();
+    
+    List<Move> moves = moveFinder.getValidMoves(droplet, null, timestamp, droplets, array);
+    for (Move move : moves) {
+      to.set(at).add(move.x, move.y);
+      
+      float mcx = within.position.x + within.width / 2f;
+      float mcy = within.position.y + within.height / 2f;
+      
+      float distance = MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
+      if (distance < bestMoveDistance) {
+        bestMoveDistance = distance;
+        bestMove = move;
+      }
+    }
+    
+    return bestMove;
+  }
+
+  private boolean within(int px, int py, int x, int y, int width, int height) {
+    return px <= x + width - 1 && px >= x && py <= y + height - 1 && py >= y;
+  }
+
   private Droplet createDroplet(Point position) {
     Droplet droplet = new Droplet();
     droplet.route.start = timestamp;
@@ -464,12 +557,12 @@ public class GreedyRouter {
       next.set(at).add(move1.x, move1.y);
       // int distance1 = (int) MathUtils.distance(next.x - target.x, next.y -
       // target.y);
-      int distance1 = MathUtils.getManhattanDistance(next.x, next.y, target.x, target.y);
+      int distance1 = (int) MathUtils.getManhattanDistance(next.x, next.y, target.x, target.y);
 
       next.set(at).add(move2.x, move2.y);
       // int distance2 = (int) MathUtils.distance(next.x - target.x, next.y -
       // target.y);
-      int distance2 = MathUtils.getManhattanDistance(next.x, next.y, target.x, target.y);
+      int distance2 = (int) MathUtils.getManhattanDistance(next.x, next.y, target.x, target.y);
 
       return distance1 - distance2;
     });
@@ -486,7 +579,29 @@ public class GreedyRouter {
     return validMoves.get(bestMoveIndex);
     
   }
-
+  
+  private Move getBestModuleMove(Droplet droplet, List<Droplet> droplets, Module module, BioArray array) {
+    Move bestMove = null;
+    float bestMoveDistance = Float.MAX_VALUE;
+    
+    List<Move> validMoves = moveFinder.getValidMoves(droplet, null, timestamp, droplets, array);
+    Point at = droplet.route.getPosition(timestamp - 1);
+    
+    Point to = new Point();
+    for (Move move : validMoves) {
+      to.set(at).add(move.x, move.y);
+      
+      float distance = MathUtils.distanceToRectangle(to.x, to.y, module.position.x, module.position.y, module.width, module.height);
+      if (distance < bestMoveDistance) {
+        bestMoveDistance = distance;
+        bestMove = move;
+      }
+    }
+    
+    return bestMove;
+  }
+  
+  
   private Move getBestSplitMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
     Move bestMove = null;
     int longestDistance = 0;
@@ -500,10 +615,10 @@ public class GreedyRouter {
     for (Move move : validMoves) {
       to.set(at).add(move.x, move.y);
 
-      int distance1 = MathUtils.getManhattanDistance(to.x, to.y, 0, 0);
-      int distance2 = MathUtils.getManhattanDistance(to.x, to.y, array.width - 1, 0);
-      int distance3 = MathUtils.getManhattanDistance(to.x, to.y, 0, array.height - 1);
-      int distance4 = MathUtils.getManhattanDistance(to.x, to.y, array.width - 1, array.height - 1);
+      int distance1 = (int )MathUtils.getManhattanDistance(to.x, to.y, 0, 0);
+      int distance2 = (int) MathUtils.getManhattanDistance(to.x, to.y, array.width - 1, 0);
+      int distance3 = (int) MathUtils.getManhattanDistance(to.x, to.y, 0, array.height - 1);
+      int distance4 = (int) MathUtils.getManhattanDistance(to.x, to.y, array.width - 1, array.height - 1);
 
       int minimumDistance = Math.min(Math.min(distance1, distance2), Math.min(distance3, distance4));
 
@@ -536,19 +651,12 @@ class OperationExtra {
   // public float mostProgress;
 
   public float mixingPercentage; // only used for mixing operations.
-  public float currentTemperature; // only used for heating operations.
+//  public float currentTemperature; // only used for heating operations.
+  
+  public int currentDurationInTimesteps;
+  public Module module;
 }
 
-class HeatingModule {
-  public int width, height;
-  public int duration; // in timesteps for now.
-}
-
-class ModulePlacement {
-  public HeatingModule module;
-  public Point at;
-  public int start, end;
-}
 
 /*
  * class GreedyOperation extends Operation { public List<Integer> dropletId =

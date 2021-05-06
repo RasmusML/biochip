@@ -3,9 +3,9 @@ package pack.tests;
 import pack.algorithms.BioAssay;
 import pack.algorithms.BioAssayBuilder;
 
-public class HeatingBioAssay extends BioAssay {
+public class ModuleBioAssay1 extends BioAssay {
 
-  public HeatingBioAssay() {
+  public ModuleBioAssay1() {
     name = "heating_1";
     build();
   }
@@ -14,7 +14,7 @@ public class HeatingBioAssay extends BioAssay {
     BioAssayBuilder builder = new BioAssayBuilder();
     
     int input1 = builder.createDispenseOperation("NaOH");
-    int heat1 = builder.createHeatingOperation(90f);
+    int heat1 = builder.createModuleOperation("heater90");
     
     builder.connect(input1, heat1);
 
