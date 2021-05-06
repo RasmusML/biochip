@@ -40,9 +40,14 @@ public class GreedyRouter {
 
   private int maxIterations;
   
-  private ModuleDelegator moduleDelegator;
+  private ModuleManager moduleManager;
   
   int timestamp;
+  
+  /*
+   * Greedy Randomized Adaptive Search Procedure
+   * http://www2.compute.dtu.dk/~paupo/publications/Maftei2012aa-Routing-based%20Synthesis%20of%20Dig-Design%20Automation%20for%20Embedded.pdf
+   */
 
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
     checker = new BioConstraintsChecker();
@@ -53,7 +58,7 @@ public class GreedyRouter {
     List<Reservoir> reservoirs = s2rAssigner.assign(assay, array);
     reservoirManager = new ReservoirManager(reservoirs, checker);
     
-    moduleDelegator = new ModuleDelegator(array.catalog);
+    moduleManager = new ModuleManager(array.catalog);
     
     maxIterations = 1000;
 
@@ -155,7 +160,7 @@ public class GreedyRouter {
           stalledExtra.running = true;
           
           if (stalled.type == OperationType.Module)  {
-            stalledExtra.module = moduleDelegator.get(stalled.module);
+            stalledExtra.module = moduleManager.allocate(stalled.module);
           }
 
           for (int i = 0; i < stalled.inputs.length; i++) {
@@ -361,7 +366,7 @@ public class GreedyRouter {
         
         //Assert.that(droplet.operation == null);
 
-        List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleDelegator.getAllModules(), array);
+        List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
         
         Point at = droplet.route.getPosition(timestamp - 1);
         if (validMoves.size() > 0) {
@@ -431,7 +436,7 @@ public class GreedyRouter {
     result.reservoirs.addAll(reservoirManager.getReservoirs());
     result.executionTime = timestamp;
     
-    List<Module> modulePlacements = moduleDelegator.getAllModules();
+    List<Module> modulePlacements = moduleManager.getModules();
     result.modules.addAll(modulePlacements);
 
     return result;
@@ -440,8 +445,10 @@ public class GreedyRouter {
   private Move getDetourMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
     Point at = droplet.route.getPosition(timestamp - 1);
     
+    List<Module> inUseModules = moduleManager.getInUseOrAlwaysLockedModules();
+    
     Module module = null;
-    for (Module other : moduleDelegator.getAllModules()) {
+    for (Module other : inUseModules) {
       if (within(at.x, at.y, other.position.x, other.position.y, other.width, other.height)) {
         module = other;
         break;
@@ -457,7 +464,7 @@ public class GreedyRouter {
     
     // @TODO: probabilistic moves, it possible for deadlocks @create test which does deadlock!
     
-    List<Move> moves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleDelegator.getAllModules(), array);
+    List<Move> moves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, inUseModules, array);
     for (Move move : moves) {
       to.set(at).add(move.x, move.y);
       
@@ -500,7 +507,7 @@ public class GreedyRouter {
   }
 
   private Move getMixMove(Droplet droplet, MixingPercentages percentages, BioArray array) {
-    List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleDelegator.getAllModules(), array);
+    List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
     Move prevMove = droplet.route.getMove(timestamp - 2);
 
     float bestPercentage = Float.NEGATIVE_INFINITY;
@@ -519,7 +526,7 @@ public class GreedyRouter {
   }
 
   private boolean canSplit(Droplet droplet, Orientation orientation, List<Droplet> droplets, BioArray array) {
-    List<Move> moves = moveFinder.getValidMoves(droplet, timestamp, droplets, moduleDelegator.getAllModules(), array);
+    List<Move> moves = moveFinder.getValidMoves(droplet, timestamp, droplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
 
     if (orientation == Orientation.Vertical) {
       if (moves.contains(Move.Up) && moves.contains(Move.Down)) return true;
@@ -533,7 +540,7 @@ public class GreedyRouter {
   }
 
   private Move getMergeMove(Droplet droplet, Droplet toMerge, List<Droplet> droplets, BioArray array) {
-    List<Move> validMoves = moveFinder.getValidMoves(droplet, toMerge, timestamp, droplets, moduleDelegator.getAllModules(), array);
+    List<Move> validMoves = moveFinder.getValidMoves(droplet, toMerge, timestamp, droplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
     
     Collections.shuffle(validMoves, RandomUtil.get());
@@ -581,7 +588,7 @@ public class GreedyRouter {
     Move bestMove = null;
     float bestMoveDistance = Float.MAX_VALUE;
     
-    List<Move> validMoves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleDelegator.getAllModules(), array);
+    List<Move> validMoves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
     Point at = droplet.route.getPosition(timestamp - 1);
     
     Point to = new Point();
@@ -603,7 +610,7 @@ public class GreedyRouter {
     Move bestMove = null;
     int longestDistance = 0;
 
-    List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, moduleDelegator.getAllModules(), array);
+    List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
 
     Point at = droplet.route.getPosition(timestamp - 1);
 
@@ -626,10 +633,6 @@ public class GreedyRouter {
     }
 
     return bestMove;
-  }
-
-  private boolean inside(int x, int y, int width, int height) {
-    return x >= 0 && x <= width - 1 && y >= 0 && y <= height - 1;
   }
 }
 

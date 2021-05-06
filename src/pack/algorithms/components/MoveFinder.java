@@ -5,6 +5,7 @@ import java.util.List;
 
 import pack.algorithms.BioArray;
 import pack.algorithms.Droplet;
+import pack.algorithms.GeometryUtil;
 import pack.algorithms.Module;
 import pack.algorithms.Move;
 import pack.algorithms.Point;
@@ -37,12 +38,12 @@ public class MoveFinder {
     outer: for (Move move : Move.values()) {
       to.set(at).add(move.x, move.y);
       
-      if (!inside(to.x, to.y, array.width, array.height)) continue;
+      if (!GeometryUtil.inside(to.x, to.y, array.width, array.height)) continue;
 
       // skip moves which overlap modules, unless the module is the target module.
       for (Module other : modules) {
         if (other == module) continue;
-        if (within(to.x, to.y, other.position.x, other.position.y, other.width, other.height)) continue outer;
+        if (GeometryUtil.inside(to.x, to.y, other.position.x, other.position.y, other.width, other.height)) continue outer;
       }
       
       // skip moves which does not satisfy droplet-droplet constraints.
@@ -67,14 +68,5 @@ public class MoveFinder {
     }
     
     return validMoves;
-  }
-  
-  // @TODO: refactor
-  private boolean inside(int x, int y, int width, int height) {
-    return x >= 0 && x <= width - 1 && y >= 0 && y <= height - 1;
-  }
-  
-  private boolean within(int px, int py, int x, int y, int width, int height) {
-    return px <= x + width - 1 && px >= x && py <= y + height - 1 && py >= y;
   }
 }

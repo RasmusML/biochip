@@ -56,6 +56,6 @@ public class ReservoirManager {
   }
 
   public List<Reservoir> getReservoirs() {
-    return new ArrayList<>(reservoirs);
+    return reservoirs;
   }
 }
