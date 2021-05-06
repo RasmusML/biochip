@@ -1,4 +1,4 @@
-package pack.algorithms;
+package pack.helpers;
 
 public enum LogMode {
   Silent,

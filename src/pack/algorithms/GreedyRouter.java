@@ -10,12 +10,15 @@ import java.util.Map;
 import engine.math.MathUtils;
 import pack.algorithms.components.BioConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
+import pack.algorithms.components.ModuleManager;
 import pack.algorithms.components.MoveFinder;
 import pack.algorithms.components.RandomIndexSelector;
 import pack.algorithms.components.RandomUtil;
 import pack.algorithms.components.ReservoirManager;
 import pack.algorithms.components.SubstanceToReservoirAssigner;
 import pack.algorithms.components.UidGenerator;
+import pack.helpers.Assert;
+import pack.helpers.Logger;
 
 public class GreedyRouter {
 
@@ -45,8 +48,12 @@ public class GreedyRouter {
   int timestamp;
   
   /*
-   * Greedy Randomized Adaptive Search Procedure
+   * The algorithm is based on the following papers with multiple additions, such as which droplets to dispense.
+   * 
+   * Greedy Randomized Adaptive Search Procedure:
    * http://www2.compute.dtu.dk/~paupo/publications/Maftei2012aa-Routing-based%20Synthesis%20of%20Dig-Design%20Automation%20for%20Embedded.pdf
+   * http://www2.compute.dtu.dk/~paupo/publications/Windh2016aa-Performance%20Improvements%20and%20C-IEEE%20Transactions%20on%20Computer-.pdf
+   * 
    */
 
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
@@ -360,12 +367,12 @@ public class GreedyRouter {
       
       detouringDroplets.clear();
 
+      // select a move to droplets which did not get a move during the operation-phase.
+      // This can happen, if a droplet is done with its operation or if a droplet should detour.
       for (Droplet droplet : runningDroplets) {
         Point to = droplet.route.getPosition(timestamp);
         if (to != null) continue;
         
-        //Assert.that(droplet.operation == null);
-
         List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
         
         Point at = droplet.route.getPosition(timestamp - 1);

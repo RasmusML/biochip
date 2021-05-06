@@ -3,7 +3,7 @@ package pack.run;
 import java.io.IOException;
 
 import pack.algorithms.BioAssay;
-import pack.algorithms.GraphvizUtil;
+import pack.helpers.GraphvizUtil;
 import pack.tests.ModuleBioAssay1;
 
 public class RunMeGraphCreator {

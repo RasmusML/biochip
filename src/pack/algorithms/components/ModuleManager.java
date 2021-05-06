@@ -1,11 +1,13 @@
-package pack.algorithms;
+package pack.algorithms.components;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import pack.tests.ModuleCatalog;
+import pack.algorithms.Module;
+import pack.algorithms.ModuleCatalog;
+import pack.algorithms.ModulePolicy;
 
 public class ModuleManager {
   
@@ -51,7 +53,7 @@ public class ModuleManager {
     return inUse;
   }
   
-  public boolean isInUse(Module module) {
+  private boolean isInUse(Module module) {
     ModuleAllocation allocation = moduleToModuleAllocation.get(module);
     return allocation.count > 0;
   }

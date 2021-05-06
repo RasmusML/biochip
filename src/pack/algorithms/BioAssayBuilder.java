@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import pack.algorithms.components.UidGenerator;
+import pack.helpers.ArrayUtils;
 
 public class BioAssayBuilder {
   

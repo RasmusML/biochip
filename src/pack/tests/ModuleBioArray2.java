@@ -2,6 +2,7 @@ package pack.tests;
 
 import pack.algorithms.BioArray;
 import pack.algorithms.Point;
+import pack.tests.catalogs.SmallModuleCatalog;
 
 public class ModuleBioArray2 extends BioArray {
   

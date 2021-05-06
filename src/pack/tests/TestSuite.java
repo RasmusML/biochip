@@ -6,11 +6,11 @@ import java.util.List;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.GreedyRouter;
-import pack.algorithms.LogMode;
-import pack.algorithms.Logger;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
+import pack.helpers.LogMode;
+import pack.helpers.Logger;
 
 public class TestSuite {
   

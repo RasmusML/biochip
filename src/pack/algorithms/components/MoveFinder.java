@@ -5,10 +5,10 @@ import java.util.List;
 
 import pack.algorithms.BioArray;
 import pack.algorithms.Droplet;
-import pack.algorithms.GeometryUtil;
 import pack.algorithms.Module;
 import pack.algorithms.Move;
 import pack.algorithms.Point;
+import pack.helpers.GeometryUtil;
 
 public class MoveFinder {
   

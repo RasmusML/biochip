@@ -1,11 +1,7 @@
-package pack.tests;
+package pack.algorithms;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import pack.algorithms.Module;
-import pack.algorithms.ModulePolicy;
-import pack.algorithms.Point;
 
 public class ModuleCatalog {
   

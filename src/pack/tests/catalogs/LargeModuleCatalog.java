@@ -1,5 +1,6 @@
-package pack.tests;
+package pack.tests.catalogs;
 
+import pack.algorithms.ModuleCatalog;
 import pack.algorithms.ModulePolicy;
 
 public class LargeModuleCatalog extends ModuleCatalog {
