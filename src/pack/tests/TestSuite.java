@@ -110,6 +110,8 @@ public class TestSuite {
     register(new BlockingDispenserTestBioAssay(), new BlockingDispenserTestBioArray());
     register(new ModuleBioAssay1(), new ModuleBioArray1());
     register(new ModuleBioAssay2(), new ModuleBioArray2());
+    register(new ModuleBioAssay3(), new ModuleBioArray3());
+    
   }
   
   private void register(BioAssay assay, BioArray array) {

@@ -14,6 +14,11 @@ public class Route {
     return path.get(index);
   }
   
+  public Point getPosition() {
+    if (path.size() == 0) return null;
+    return path.get(path.size() - 1);
+  }
+  
   public Move getMove(int timestamp) {
     Point to = getPosition(timestamp + 1);
     if (to == null) return null;

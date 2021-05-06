@@ -109,12 +109,12 @@ public class BioAssayBuilder {
     int fromOutput = ArrayUtils.getFirstEmptySlotIndex(from.outputs);
     
     if (toInput == -1) {
-      String error = String.format("all %d input operations of operation %d (%s) are occupied.", from.inputs.length, from.id, from.type);
+      String error = String.format("all %d input operations of operation %d (%s) are occupied.", to.inputs.length, to.id, to.type);
       throw new IllegalStateException(error);
     }
     
     if (fromOutput == -1) {
-      String error = String.format("all %d output operations of operation %d (%s) are occupied.", to.outputs.length, to.id, to.type);
+      String error = String.format("all %d output operations of operation %d (%s) are occupied.", from.outputs.length, from.id, from.type);
       throw new IllegalStateException(error);
     }
 

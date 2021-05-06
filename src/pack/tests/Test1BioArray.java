@@ -9,6 +9,8 @@ public class Test1BioArray extends BioArray {
 		width = 7;
 		height = 7;
 		
+		catalog = new EmptyModuleCatalog();
+		
 		reserviorTiles.add(new Point(0, 0));
 		reserviorTiles.add(new Point(5, 6));
 	}

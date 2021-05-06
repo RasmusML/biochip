@@ -27,8 +27,8 @@ import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
 import pack.tests.BlockingDispenserTestBioArray;
 import pack.tests.BlockingDispenserTestBioAssay;
-import pack.tests.ModuleBioArray2;
-import pack.tests.ModuleBioAssay2;
+import pack.tests.ModuleBioArray3;
+import pack.tests.ModuleBioAssay3;
 import pack.tests.PCRMixingTreeAssay;
 import pack.tests.Test3BioArray;
 
@@ -92,8 +92,8 @@ public class App extends ApplicationAdapter {
 		assay = new BlockingDispenserTestBioAssay();
     array = new BlockingDispenserTestBioArray();
 		
-    assay = new ModuleBioAssay2();
-    array = new ModuleBioArray2();
+    assay = new ModuleBioAssay3();
+    array = new ModuleBioArray3();
     
 		percentages = new DefaultMixingPercentages();
 		
