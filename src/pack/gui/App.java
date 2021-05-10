@@ -16,6 +16,8 @@ import engine.math.Vector2;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.Droplet;
+import pack.algorithms.ElectrodeActivation;
+import pack.algorithms.ElectrodeActivationSection;
 import pack.algorithms.GreedyRouter;
 import pack.algorithms.Module;
 import pack.algorithms.Operation;
@@ -24,6 +26,7 @@ import pack.algorithms.Point;
 import pack.algorithms.Reservoir;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
+import pack.algorithms.components.ElectrodeActivationExtractor;
 import pack.algorithms.components.MixingPercentages;
 import pack.tests.BlockingDispenserTestBioArray;
 import pack.tests.BlockingDispenserTestBioAssay;
@@ -99,7 +102,22 @@ public class App extends ApplicationAdapter {
 		
 		GreedyRouter router = new GreedyRouter();
 		result = router.compute(assay, array, percentages);
-
+		
+		ElectrodeActivationExtractor extractor = new ElectrodeActivationExtractor();
+		ElectrodeActivationSection[] sections = extractor.extractStateful(result.droplets, result.executionTime);
+		
+		for (int i = 0; i < sections.length; i++) {
+		  ElectrodeActivationSection section = sections[i];
+		  
+		  System.out.printf("--- Section %d ---\n", i);
+		  
+		  for (ElectrodeActivation activation : section.activations) {
+		    System.out.printf("%s:%s\n", activation.tile, activation.state);
+		  }
+		  
+		  System.out.printf("\n");
+		}
+		
 		float cx = array.width * tilesize / 2f;
 		float cy = array.height * tilesize / 2f;
 		boardCamera.lookAtNow(cx, cy);

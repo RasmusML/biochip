@@ -31,4 +31,8 @@ public class Route {
     
     return Move.get(dx, dy);
   }
+  
+  public int getEndTime() {
+    return start + path.size() - 1;
+  }
 }
