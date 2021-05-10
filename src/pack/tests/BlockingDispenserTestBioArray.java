@@ -12,6 +12,6 @@ public class BlockingDispenserTestBioArray extends BioArray {
 
     catalog = new EmptyModuleCatalog();
     
-    reserviorTiles.add(new Point(0, 0));
+    reservoirTiles.add(new Point(0, 0));
   }
 }

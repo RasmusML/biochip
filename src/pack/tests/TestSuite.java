@@ -111,7 +111,8 @@ public class TestSuite {
     register(new ModuleBioAssay1(), new ModuleBioArray1());
     register(new ModuleBioAssay2(), new ModuleBioArray2());
     register(new ModuleBioAssay3(), new ModuleBioArray3());
-    
+    register(new ModuleBioAssay4(), new ModuleBioArray4());
+    register(new CrowdedModuleBioAssay(), new CrowdedModuleBioArray());
   }
   
   private void register(BioAssay assay, BioArray array) {

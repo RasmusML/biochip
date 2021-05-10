@@ -94,7 +94,7 @@ public class GreedyRouter {
     readyOperations.addAll(dispenseOperations);
 
     aliveOperationsCount += readyOperations.size();
-
+    
     timestamp = 0;
 
     boolean earlyTerminated = false;
@@ -626,7 +626,7 @@ public class GreedyRouter {
     for (Move move : validMoves) {
       to.set(at).add(move.x, move.y);
 
-      int distance1 = (int )MathUtils.getManhattanDistance(to.x, to.y, 0, 0);
+      int distance1 = (int) MathUtils.getManhattanDistance(to.x, to.y, 0, 0);
       int distance2 = (int) MathUtils.getManhattanDistance(to.x, to.y, array.width - 1, 0);
       int distance3 = (int) MathUtils.getManhattanDistance(to.x, to.y, 0, array.height - 1);
       int distance4 = (int) MathUtils.getManhattanDistance(to.x, to.y, array.width - 1, array.height - 1);

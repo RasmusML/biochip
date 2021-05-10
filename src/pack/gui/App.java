@@ -26,12 +26,12 @@ import pack.algorithms.Point;
 import pack.algorithms.Reservoir;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
-import pack.algorithms.components.ElectrodeActivationExtractor;
+import pack.algorithms.components.ElectrodeActivationTranslator;
 import pack.algorithms.components.MixingPercentages;
 import pack.tests.BlockingDispenserTestBioArray;
 import pack.tests.BlockingDispenserTestBioAssay;
-import pack.tests.ModuleBioArray3;
-import pack.tests.ModuleBioAssay3;
+import pack.tests.CrowdedModuleBioArray;
+import pack.tests.CrowdedModuleBioAssay;
 import pack.tests.PCRMixingTreeAssay;
 import pack.tests.Test3BioArray;
 
@@ -95,17 +95,18 @@ public class App extends ApplicationAdapter {
 		assay = new BlockingDispenserTestBioAssay();
     array = new BlockingDispenserTestBioArray();
 		
-    assay = new ModuleBioAssay3();
-    array = new ModuleBioArray3();
+    assay = new CrowdedModuleBioAssay();
+    array = new CrowdedModuleBioArray();
     
 		percentages = new DefaultMixingPercentages();
 		
 		GreedyRouter router = new GreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
-		ElectrodeActivationExtractor extractor = new ElectrodeActivationExtractor();
-		ElectrodeActivationSection[] sections = extractor.extractStateful(result.droplets, result.executionTime);
+		ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator();
+		ElectrodeActivationSection[] sections = translator.translateStateful(result.droplets, result.executionTime);
 		
+		/*
 		for (int i = 0; i < sections.length; i++) {
 		  ElectrodeActivationSection section = sections[i];
 		  
@@ -117,6 +118,7 @@ public class App extends ApplicationAdapter {
 		  
 		  System.out.printf("\n");
 		}
+		*/
 		
 		float cx = array.width * tilesize / 2f;
 		float cy = array.height * tilesize / 2f;
@@ -397,10 +399,10 @@ public class App extends ApplicationAdapter {
       }
     }
 		
-		{ // reserviors
-		  for (Reservoir reservior : result.reservoirs) {
-		    float xx = reservior.position.x * tilesize + gap;
-        float yy = reservior.position.y * tilesize + gap;
+		{ // reservoirs
+		  for (Reservoir reservoir : result.reservoirs) {
+		    float xx = reservoir.position.x * tilesize + gap;
+        float yy = reservoir.position.y * tilesize + gap;
         
         float width = tilesize - gap * 2f;
         float height = tilesize - gap * 2f;

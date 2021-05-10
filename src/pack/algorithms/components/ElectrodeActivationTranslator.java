@@ -8,9 +8,9 @@ import pack.algorithms.ElectrodeActivationSection;
 import pack.algorithms.ElectrodeState;
 import pack.algorithms.Point;
 
-public class ElectrodeActivationExtractor {
+public class ElectrodeActivationTranslator {
   
-  public ElectrodeActivationSection[] extractStateless(List<Droplet> droplets, int timesteps) {
+  public ElectrodeActivationSection[] translateStateless(List<Droplet> droplets, int timesteps) {
     ElectrodeActivationSection[] sections = new ElectrodeActivationSection[timesteps];
     
     for (int i = 0; i < sections.length; i++) {
@@ -35,7 +35,7 @@ public class ElectrodeActivationExtractor {
     return sections;
   }
   
-  public ElectrodeActivationSection[] extractStateful(List<Droplet> droplets, int timesteps) {
+  public ElectrodeActivationSection[] translateStateful(List<Droplet> droplets, int timesteps) {
     ElectrodeActivationSection[] sections = new ElectrodeActivationSection[timesteps];
     
     for (int i = 0; i < sections.length; i++) {

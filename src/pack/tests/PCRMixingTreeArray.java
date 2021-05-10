@@ -12,10 +12,10 @@ public class PCRMixingTreeArray extends BioArray {
 		
 		catalog = new EmptyModuleCatalog();
 		
-		reserviorTiles.add(new Point(0, 0));
-		reserviorTiles.add(new Point(width - 1, 0));
-		reserviorTiles.add(new Point(0, height - 1));
-		reserviorTiles.add(new Point(width - 1, height - 1));
+		reservoirTiles.add(new Point(0, 0));
+		reservoirTiles.add(new Point(width - 1, 0));
+		reservoirTiles.add(new Point(0, height - 1));
+		reservoirTiles.add(new Point(width - 1, height - 1));
 		
 	}
 }

@@ -12,7 +12,7 @@ public class Test1BioArray extends BioArray {
 		
 		catalog = new EmptyModuleCatalog();
 		
-		reserviorTiles.add(new Point(0, 0));
-		reserviorTiles.add(new Point(5, 6));
+		reservoirTiles.add(new Point(0, 0));
+		reservoirTiles.add(new Point(5, 6));
 	}
 }

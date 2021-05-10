@@ -6,7 +6,7 @@ import java.util.List;
 public class BioArray {
 
 	public int width, height;
-	public List<Point> reserviorTiles = new ArrayList<>();
+	public List<Point> reservoirTiles = new ArrayList<>();
 	
 	public ModuleCatalog catalog;
 	

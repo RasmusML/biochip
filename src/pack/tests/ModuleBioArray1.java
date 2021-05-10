@@ -12,6 +12,6 @@ public class ModuleBioArray1 extends BioArray {
     
     catalog = new SmallModuleCatalog();
     
-    reserviorTiles.add(new Point(0, 0));
+    reservoirTiles.add(new Point(0, 0));
   }
 }

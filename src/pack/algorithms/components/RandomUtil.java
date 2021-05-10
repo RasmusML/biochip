@@ -5,6 +5,7 @@ import java.util.Random;
 public class RandomUtil {
   
   private static Random random;
+  private static long defaultSeed = 42;
   
   public static void init(long seed) {
     random = new Random(seed);
@@ -15,7 +16,7 @@ public class RandomUtil {
   }
   
   public static Random get() {
-    if (random == null) init(42);
+    if (random == null) init(defaultSeed);
     return random;
   }
 
