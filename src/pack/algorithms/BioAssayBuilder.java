@@ -22,13 +22,15 @@ public class BioAssayBuilder {
     int id = generator.getId();
     
     Operation operation = new Operation();
-    operation.substance = substance;
     operation.id = id;
-    operation.type = OperationType.Dispense;
+    operation.name = OperationType.dispense;
     operation.inputs = new Operation[0];
     operation.outputs = new Operation[1];
     operation.manipulating = new Droplet[0];
     operation.forwarding = new Droplet[1];
+
+    Map<String, Object> attributes = operation.attributes;
+    attributes.put(Tags.substance, substance);
     
     idToOperation.put(id, operation);
     
@@ -40,12 +42,11 @@ public class BioAssayBuilder {
     
     Operation operation = new Operation();
     operation.id = id;
-    operation.type = OperationType.Mix;
+    operation.name = OperationType.mix;
     operation.inputs = new Operation[1];
     operation.outputs = new Operation[1];
     operation.manipulating = new Droplet[1];
     operation.forwarding = new Droplet[1];
-
     
     idToOperation.put(id, operation);
     
@@ -57,7 +58,7 @@ public class BioAssayBuilder {
     
     Operation operation = new Operation();
     operation.id = id;
-    operation.type = OperationType.Merge;
+    operation.name = OperationType.merge;
     operation.inputs = new Operation[2];
     operation.outputs = new Operation[1];
     operation.manipulating = new Droplet[2];
@@ -73,7 +74,7 @@ public class BioAssayBuilder {
     
     Operation operation = new Operation();
     operation.id = id;
-    operation.type = OperationType.Split;
+    operation.name = OperationType.split;
     operation.inputs = new Operation[1];
     operation.outputs = new Operation[2];
     operation.manipulating = new Droplet[1];
@@ -84,18 +85,35 @@ public class BioAssayBuilder {
     return id;
   }
   
+  public int createDisposeOperation() {
+    int id = generator.getId();
+    
+    Operation operation = new Operation();
+    operation.id = id;
+    operation.name = OperationType.dispose;
+    operation.inputs = new Operation[1];
+    operation.outputs = new Operation[0];
+    operation.manipulating = new Droplet[1];
+    operation.forwarding = new Droplet[0];
+    
+    idToOperation.put(id, operation);
+    
+    return id;
+  }
 
-  public int createModuleOperation(String module) {
+  public int createHeatingOperation(float temperature) {
     int id = generator.getId();
 
     Operation operation = new Operation();
     operation.id = id;
-    operation.module = module;
-    operation.type = OperationType.Module;
+    operation.name = OperationType.heating;
     operation.inputs = new Operation[1];
     operation.outputs = new Operation[1];
     operation.manipulating = new Droplet[1];
     operation.forwarding = new Droplet[1];
+    
+    Map<String, Object> attributes = operation.attributes;
+    attributes.put(Tags.temperature, temperature);
     
     idToOperation.put(id, operation);
     
@@ -110,12 +128,12 @@ public class BioAssayBuilder {
     int fromOutput = ArrayUtils.getFirstEmptySlotIndex(from.outputs);
     
     if (toInput == -1) {
-      String error = String.format("all %d input operations of operation %d (%s) are occupied.", to.inputs.length, to.id, to.type);
+      String error = String.format("all %d input operations of operation %d (%s) are occupied.", to.inputs.length, to.id, to.name);
       throw new IllegalStateException(error);
     }
     
     if (fromOutput == -1) {
-      String error = String.format("all %d output operations of operation %d (%s) are occupied.", from.outputs.length, from.id, from.type);
+      String error = String.format("all %d output operations of operation %d (%s) are occupied.", from.outputs.length, from.id, from.name);
       throw new IllegalStateException(error);
     }
 
@@ -131,10 +149,15 @@ public class BioAssayBuilder {
     List<Operation> finalOperations = new ArrayList<>();
     
     for (Operation operation : idToOperation.values()) {
-      for (Operation output : operation.outputs) {
-        if (output == null) {
-          finalOperations.add(operation);
-          break;
+    
+      if (operation.outputs.length == 0) {
+        finalOperations.add(operation);
+      } else {
+        for (Operation output : operation.outputs) {
+          if (output == null) {
+            finalOperations.add(operation);
+            break;
+          }
         }
       }
     }

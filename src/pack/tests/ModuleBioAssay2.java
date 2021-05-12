@@ -14,10 +14,10 @@ public class ModuleBioAssay2 extends BioAssay {
     BioAssayBuilder builder = new BioAssayBuilder();
     
     int input1 = builder.createDispenseOperation("NaOH");
-    int heat1 = builder.createModuleOperation("heater90");
+    int heat1 = builder.createHeatingOperation(90f);
     
     int input2 = builder.createDispenseOperation("COOH");
-    int heat2 = builder.createModuleOperation("heater9000");
+    int heat2 = builder.createHeatingOperation(9000);
     
     int input3 = builder.createDispenseOperation("NaCl");
     int mix1 = builder.createMixOperation();

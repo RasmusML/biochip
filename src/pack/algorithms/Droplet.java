@@ -2,6 +2,8 @@ package pack.algorithms;
 
 public class Droplet {
   public int id;
+  
+  public float area;
 
   public Route route = new Route();
   public Operation operation;

@@ -45,7 +45,7 @@ public class BioAssay {
     inputs.value = 0;
 
     traverse(operation -> {
-      if (operation.type == OperationType.Dispense) inputs.value += 1;
+      if (operation.name.equals(OperationType.dispense)) inputs.value += 1;
     });
 
     return inputs.value;
@@ -54,23 +54,26 @@ public class BioAssay {
   public List<String> getInputSubstances() {
     List<String> substances = new ArrayList<>();
     traverse(operation -> {
-      if (operation.type == OperationType.Dispense) substances.add(operation.substance);
+      if (operation.name.equals(OperationType.dispense)) {
+        String substance = (String) operation.attributes.get("substance");
+        substances.add(substance);
+      }
     });
     return substances;
   }
 
-  public List<Operation> getOperations(OperationType type) {
+  public List<Operation> getOperations(String type) {
     List<Operation> desired = new ArrayList<>();
     traverse(operation -> {
-      if (operation.type == type) desired.add(operation);
+      if (operation.name.equals(type)) desired.add(operation);
     });
     return desired;
   }
 
-  public List<Integer> getOperationIdsOfType(OperationType type) {
+  public List<Integer> getOperationIdsOfType(String type) {
     List<Integer> ids = new ArrayList<>();
     traverse(operation -> {
-      if (operation.type == type) ids.add(operation.id);
+      if (operation.name.equals(type)) ids.add(operation.id);
     });
     return ids;
   }
@@ -79,10 +82,10 @@ public class BioAssay {
     List<Operation> operations = new ArrayList<>();
 
     traverse(operation -> {
-      if (operation.type == OperationType.Dispense) return;
+      if (operation.name.equals(OperationType.dispense)) return;
 
       for (Operation child : operation.inputs) {
-        if (child.type != OperationType.Dispense) return;
+        if (!child.name.equals(OperationType.dispense)) return;
       }
 
       operations.add(operation);
@@ -121,23 +124,20 @@ public class BioAssay {
     traverse(operation -> {
 
       String operationAttributes;
-      if (operation.type == OperationType.Dispense) {
-        operationAttributes = String.format("\t%d [label = \"%d - %s\"];\n", operation.id, operation.id,
-            operation.substance);
-      } else if (operation.type == OperationType.Merge) {
-        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = red, style = filled];\n", operation.id,
-            operation.id);
-      } else if (operation.type == OperationType.Split) {
-        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = blue, style = filled];\n", operation.id,
-            operation.id);
-      } else if (operation.type == OperationType.Mix) {
-        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = green, style = filled];\n", operation.id,
-            operation.id);
-      } else if (operation.type == OperationType.Module) {
-        operationAttributes = String.format("\t%d [label = \"%d - ?°C\", fillcolor = \"#FFA591\", style = filled];\n", operation.id,
-            operation.id, operation.id);
+      if (operation.name.equals(OperationType.dispense)) {
+        String substance = (String) operation.attributes.get("substance");
+        operationAttributes = String.format("\t%d [label = \"%d - %s\"];\n", operation.id, operation.id, substance);
+      } else if (operation.name.equals(OperationType.merge)) {
+        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = red, style = filled];\n", operation.id, operation.id);
+      } else if (operation.name.equals(OperationType.split)) {
+        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = blue, style = filled];\n", operation.id, operation.id);
+      } else if (operation.name.equals(OperationType.mix)) {
+        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = green, style = filled];\n", operation.id, operation.id);
+      } else if (operation.name.equals(OperationType.heating)) {
+        float temperature = (float) operation.attributes.get("temperature");
+        operationAttributes = String.format("\t%d [label = \"%d - %f°C\", fillcolor = \"#FFA591\", style = filled];\n", operation.id, operation.id, temperature);
       } else {
-        throw new IllegalStateException("unsupported type: " + operation.type);
+        throw new IllegalStateException("unsupported type: " + operation.name);
       }
 
       graphBuilder.append(operationAttributes);

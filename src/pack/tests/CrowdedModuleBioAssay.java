@@ -20,7 +20,7 @@ public class CrowdedModuleBioAssay extends BioAssay {
     builder.connect(input1, merge1);
     builder.connect(input2, merge1);
     
-    int heat1 = builder.createModuleOperation("heater9000");
+    int heat1 = builder.createHeatingOperation(9000f);
     builder.connect(merge1, heat1);
     
     int input3 = builder.createDispenseOperation("NaCl");

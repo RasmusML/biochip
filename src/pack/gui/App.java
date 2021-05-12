@@ -16,7 +16,6 @@ import engine.math.Vector2;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.Droplet;
-import pack.algorithms.ElectrodeActivation;
 import pack.algorithms.ElectrodeActivationSection;
 import pack.algorithms.GreedyRouter;
 import pack.algorithms.Module;
@@ -271,30 +270,29 @@ public class App extends ApplicationAdapter {
         Operation operation = operations.get(i);
         
         int start, end;
-        if (operation.type == OperationType.Mix) {
+        if (operation.name.equals(OperationType.mix)) {
           Droplet droplet = operation.manipulating[0];
           start = droplet.route.start;
           end = start + droplet.route.path.size();
-        } else if (operation.type == OperationType.Merge) {
+        } else if (operation.name.equals(OperationType.merge)) {
           Droplet droplet0 = operation.manipulating[0];
           Droplet droplet1 = operation.manipulating[1];
           
           int length = Math.min(droplet0.route.path.size(), droplet1.route.path.size());
           start = Math.max(droplet0.route.start, droplet1.route.start);
           end = start + length;
-        } else if (operation.type == OperationType.Split) {
+        } else if (operation.name.equals(OperationType.split)) {
           Droplet droplet = operation.manipulating[0];
           start = droplet.route.start;
           end = start + droplet.route.path.size();
-        } else if (operation.type == OperationType.Dispense){
-          //Assert.that(false);
+        } else if (operation.name.equals(OperationType.dispense)){
           continue;
-        } else if (operation.type == OperationType.Module) {
+        } else if (operation.name.equals(OperationType.heating)) {
           Droplet droplet = operation.manipulating[0];
           start = droplet.route.start;
           end = start + droplet.route.path.size();
         } else {
-          throw new IllegalStateException("broken! " + operation.type);
+          throw new IllegalStateException("broken! " + operation.name);
         }
         
         nonDispenseOperation += 1;
@@ -433,11 +431,14 @@ public class App extends ApplicationAdapter {
               
               float percentage = dt / (float) movementTime;
               
-              float xx = (at.x + move.x * percentage) * tilesize + gap;
-              float yy = (at.y + move.y * percentage) * tilesize + gap;
+              float radius = (float) Math.sqrt(droplet.area / Math.PI); 
+              float size = 2f * radius * tilesize;
               
-              float width = tilesize - gap * 2f;
-              float height = tilesize - gap * 2f;
+              float xx = (at.x + move.x * percentage) * tilesize + gap + (tilesize - size) / 2f;
+              float yy = (at.y + move.y * percentage) * tilesize + gap + (tilesize - size) / 2f;
+              
+              float width = size - gap * 2f;
+              float height = size - gap * 2f;
               
               renderer.fillOval(xx, yy, width, height);    
               
@@ -463,11 +464,14 @@ public class App extends ApplicationAdapter {
                 
                 float percentage = dt / (float) movementTime;
                 
-                float xx = (at.x + move.x * percentage) * tilesize + gap;
-                float yy = (at.y + move.y * percentage) * tilesize + gap;
+                float radius = (float) Math.sqrt(droplet.area / Math.PI); 
+                float size = 2 * radius * tilesize;
                 
-                float width = tilesize - gap * 2f;
-                float height = tilesize - gap * 2f;
+                float xx = (at.x + move.x * percentage) * tilesize + gap + (tilesize - size) / 2f;
+                float yy = (at.y + move.y * percentage) * tilesize + gap + (tilesize - size) / 2f;
+                
+                float width = size - gap * 2f;
+                float height = size - gap * 2f;
                 
                 renderer.fillOval(xx, yy, width, height);    
                 
@@ -490,11 +494,14 @@ public class App extends ApplicationAdapter {
   
             float percentage = dt / (float) movementTime;
             
-            float xx = (at.x + move.x * percentage) * tilesize + gap;
-            float yy = (at.y + move.y * percentage) * tilesize + gap;
+            float radius = (float) Math.sqrt(droplet.area / Math.PI); 
+            float size = 2 * radius * tilesize;
             
-            float width = tilesize - gap * 2f;
-            float height = tilesize - gap * 2f;
+            float xx = (at.x + move.x * percentage) * tilesize + gap + (tilesize - size) / 2f;
+            float yy = (at.y + move.y * percentage) * tilesize + gap + (tilesize - size) / 2f;
+            
+            float width = size - gap * 2f;
+            float height = size - gap * 2f;
             
             renderer.fillOval(xx, yy, width, height);    
             
@@ -517,11 +524,14 @@ public class App extends ApplicationAdapter {
 
           float percentage = dt / (float) tilesize;
           
-          float xx = (at.x + move.x * percentage) * tilesize + gap;
-          float yy = (at.y + move.y * percentage) * tilesize + gap;
+          float radius = (float) Math.sqrt(droplet.area / Math.PI); 
+          float size = 2 * radius * tilesize;
           
-          float width = tilesize - gap * 2f;
-          float height = tilesize - gap * 2f;
+          float xx = (at.x + move.x * percentage) * tilesize + gap + (tilesize - size) / 2f;
+          float yy = (at.y + move.y * percentage) * tilesize + gap + (tilesize - size) / 2f;
+          
+          float width = size - gap * 2f;
+          float height = size - gap * 2f;
           
           renderer.fillOval(xx, yy, width, height);    
           
@@ -542,16 +552,16 @@ public class App extends ApplicationAdapter {
   private Color getOperationColor(Operation operation) {
     if (operation == null) return Color.gray;
     
-    switch (operation.type) {
-    case Merge: 
+    switch (operation.name) {
+    case OperationType.merge: 
       return Color.orange;
-    case Mix:
+    case OperationType.mix:
       return Color.green;
-    case Split:
+    case OperationType.split:
       return Color.cyan;
-    case Dispense:
+    case OperationType.dispense:
       return Color.blue;
-    case Module:
+    case OperationType.heating:
       return Color.red;
     default:
       throw new IllegalStateException("broken!");

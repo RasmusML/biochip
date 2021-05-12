@@ -9,11 +9,12 @@ import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
 import pack.algorithms.Reservoir;
+import pack.algorithms.Tags;
 
 public class SubstanceToReservoirAssigner {
   
   public List<Reservoir> assign(BioAssay assay, BioArray array) {
-    List<Operation> dispenseOperations = assay.getOperations(OperationType.Dispense);
+    List<Operation> dispenseOperations = assay.getOperations(OperationType.dispense);
     
     // Collections.shuffle(dispenseOperations); // RandomReservoirSubstanceSelector
     
@@ -31,16 +32,17 @@ public class SubstanceToReservoirAssigner {
       Operation dispenseOperation = dispenseOperations.get(dispenseIndex);
       dispenseIndex += 1;
 
-      if (assigned.contains(dispenseOperation.substance)) {
-        pending.add(dispenseOperation.substance);
+      String substance = (String) dispenseOperation.attributes.get(Tags.substance);
+      if (assigned.contains(substance)) {
+        pending.add(substance);
       } else {
-        assigned.add(dispenseOperation.substance);
+        assigned.add(substance);
 
         Point reservoirTile = reservoirTiles.get(reservoirIndex);
         reservoirIndex += 1;
 
         Reservoir reservoir = new Reservoir();
-        reservoir.substance = dispenseOperation.substance;
+        reservoir.substance = substance;
         reservoir.position = reservoirTile.copy();
         reservoirs.add(reservoir);
 

@@ -1,15 +1,17 @@
 package pack.algorithms;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Operation {
 
   public int id;
-  public OperationType type;
+  public String name;
   
   public Operation[] inputs;
   public Operation[] outputs;
   
-  public String substance;  // only used for dispensing.
-  public String module; // only used for modules.
+  public Map<String, Object> attributes = new HashMap<>();
   
   public Droplet[] manipulating;
   public Droplet[] forwarding;
@@ -52,24 +54,6 @@ class DetectionOperation extends Operation {
   public String type;
 }
 
-
-class Module {
-  public String type;
-}
-
-class HeaterXXX extends Module {
-  public float maxTemperature;
-  public float heatingTime;
-  public int width, height;
-}
-*/
-
-/*
- * Module:
- * name: "Heature9000"
- * duration: "2 sec"
- * area: 4x3
- */
 
 // @TODO: we will have a BioAssay/BioOperation and OperationalGraph/Operation. The above is actually the OperationalGraph/Operation
 
@@ -134,42 +118,4 @@ class SplitOperation extends Operation {
   
 }
 
-*/
-
-
-/*
-public class Operation {
-  public int id;
-  public OperationType type;
-  
-  public String substance;  // only used for spawn.
-  
-  public Droplet[] input;
-  public Droplet[] output;
-}
-
-class Droplet {
-  public int uid;
-  
-  public int id;
-  public Route route;
-
-  public Operation createdBy;
-  public Operation processedBy;
-}
-*/
-
-/*
-class Module {
-  public int id;
-  public int flags;
-}
-
-class Dispenser extends Module {
-  public int duration;
-}
-
-class Heater extends Module {
-  
-}
 */

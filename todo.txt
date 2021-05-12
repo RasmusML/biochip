@@ -1,3 +1,4 @@
+waste operation
 greedy router change probabilities on deadlock
 probabilities for all moves (greedy router)
 

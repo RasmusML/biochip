@@ -8,13 +8,14 @@ import java.util.Map;
 import pack.algorithms.Module;
 import pack.algorithms.ModuleCatalog;
 import pack.algorithms.ModulePolicy;
+import pack.helpers.Assert;
 
 public class ModuleManager {
   
   private ModuleCatalog catalog;
   private Map<Module, ModuleAllocation> moduleToModuleAllocation;
   
-  public ModuleManager(ModuleCatalog catalog) {
+  public ModuleManager(ModuleCatalog catalog /*, ModuleAllocationStrategy strategy */) {
     this.catalog = catalog;
     
     moduleToModuleAllocation = new HashMap<>();
@@ -26,17 +27,21 @@ public class ModuleManager {
   }
   
   public Module allocate(String moduleName) {
-    Module module = getModule(moduleName);
-    ModuleAllocation allocation = moduleToModuleAllocation.get(module);
-    allocation.count += 1;
+    List<Module> modules = getModulesOfType(moduleName);
+    Assert.that(modules.size() > 0);
+    
+    Module module = modules.get(0); // @TODO: better policy
+    allocate(module);
     
     return module;
   }
+
+  public void allocate(Module module) {
+    ModuleAllocation allocation = moduleToModuleAllocation.get(module);
+    allocation.count += 1;
+  }
   
-  //@TODO: handle when 2 modules are identical
-  
-  public void free(String moduleName) {
-    Module module = getModule(moduleName);
+  public void free(Module module) {
     ModuleAllocation allocation = moduleToModuleAllocation.get(module);
     allocation.count -= 1;
   }
@@ -58,13 +63,16 @@ public class ModuleManager {
     return allocation.count > 0;
   }
   
-  private Module getModule(String name) {
+  private List<Module> getModulesOfType(String moduleName) {
+    List<Module> matches = new ArrayList<>();
+    
     for (Module module : catalog.modules) {
-      if (module.name.equals(name)) {
-        return module;
+      if (module.name.equals(moduleName)) {
+        matches.add(module);
       }
     }
-    return null;
+
+    return matches;
   }
 
   public List<Module> getModules() {

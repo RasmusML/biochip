@@ -14,7 +14,7 @@ public class ModuleBioAssay4 extends BioAssay {
     BioAssayBuilder builder = new BioAssayBuilder();
     
     int input1 = builder.createDispenseOperation("NaOH");
-    int heat1 = builder.createModuleOperation("heater90");
+    int heat1 = builder.createHeatingOperation(90f);
     
     builder.connect(input1, heat1);
 
@@ -30,7 +30,7 @@ public class ModuleBioAssay4 extends BioAssay {
     builder.connect(input4, merge1);
     builder.connect(input5, merge1);
     
-    int heat2 = builder.createModuleOperation("heater9000");
+    int heat2 = builder.createHeatingOperation(9000f);
     builder.connect(merge1, heat2);
 
     int input6 = builder.createDispenseOperation("C");
