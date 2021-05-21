@@ -19,6 +19,7 @@ import pack.algorithms.Droplet;
 import pack.algorithms.ElectrodeActivationSection;
 import pack.algorithms.GreedyRouter;
 import pack.algorithms.Module;
+import pack.algorithms.Move;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
@@ -247,102 +248,95 @@ public class App extends ApplicationAdapter {
 	@Override
 	public void draw() {
 		renderer.begin();
-		
-		
 		renderer.clear();
-		
-    viewport.setCamera(boardCamera);
 
 		drawBoard();
-    
-    viewport.setCamera(timelineCamera);
-
-		
-    {
-      timeline.timescale = 1f;
-      timeline.operationGap = 0.8f;
-      timeline.operationHeight = 7;
-      
-      int nonDispenseOperation = 0;
-      
-      List<Operation> operations = assay.getOperations();
-      for (int i = 0; i < operations.size(); i++) {
-        Operation operation = operations.get(i);
-        
-        int start, end;
-        if (operation.name.equals(OperationType.mix)) {
-          Droplet droplet = operation.manipulating[0];
-          start = droplet.route.start;
-          end = start + droplet.route.path.size();
-        } else if (operation.name.equals(OperationType.merge)) {
-          Droplet droplet0 = operation.manipulating[0];
-          Droplet droplet1 = operation.manipulating[1];
-          
-          int length = Math.min(droplet0.route.path.size(), droplet1.route.path.size());
-          start = Math.max(droplet0.route.start, droplet1.route.start);
-          end = start + length;
-        } else if (operation.name.equals(OperationType.split)) {
-          Droplet droplet = operation.manipulating[0];
-          start = droplet.route.start;
-          end = start + droplet.route.path.size();
-        } else if (operation.name.equals(OperationType.dispense)){
-          continue;
-        } else if (operation.name.equals(OperationType.heating)) {
-          Droplet droplet = operation.manipulating[0];
-          start = droplet.route.start;
-          end = start + droplet.route.path.size();
-        } else {
-          throw new IllegalStateException("broken! " + operation.name);
-        }
-        
-        nonDispenseOperation += 1;
-        
-        float width = (end - start) * timeline.timescale;
-        float height = timeline.operationHeight;
-
-        float xx = start * timeline.timescale;
-        float yy = (height + gap) * i;
-        
-        Color color = getOperationColor(operation);
-        renderer.setColor(color);
-
-        renderer.fillRect(xx, yy, width, height);
-
-        Color colorOutline = Color.black;
-        renderer.setColor(colorOutline);
-        renderer.drawRect(xx, yy, width, height);
-        
-      }
-      
-      {
-        
-        float xx = timestamp * timeline.timescale;
-        float yy = 0;
-        float width = 1;
-        float height = nonDispenseOperation * (timeline.operationHeight + gap) - gap;
-        
-        renderer.fillRect(xx, yy, width, height);
-        
-      }
-      
-      {
-        
-        renderer.setColor(Color.gray);
-        
-        float xx = timeline.suggestedTime * timeline.timescale;
-        float yy = 0;
-        float width = 1;
-        float height = nonDispenseOperation * (timeline.operationHeight + gap) - gap;
-        
-        renderer.fillRect(xx, yy, width, height);
-
-      }
-    }
+    drawTimeline();
     
 		renderer.end();
 	}
 
+  private void drawTimeline() {
+    viewport.setCamera(timelineCamera);
+    
+    timeline.timescale = 1f;
+    timeline.operationGap = 0.8f;
+    timeline.operationHeight = 7;
+    
+    int nonDispenseOperation = 0;
+    
+    List<Operation> operations = assay.getOperations();
+    for (int i = 0; i < operations.size(); i++) {
+      Operation operation = operations.get(i);
+      
+      int start, end;
+      if (operation.name.equals(OperationType.mix)) {
+        Droplet droplet = operation.manipulating[0];
+        start = droplet.route.start;
+        end = start + droplet.route.path.size();
+      } else if (operation.name.equals(OperationType.merge)) {
+        Droplet droplet0 = operation.manipulating[0];
+        Droplet droplet1 = operation.manipulating[1];
+        
+        int length = Math.min(droplet0.route.path.size(), droplet1.route.path.size());
+        start = Math.max(droplet0.route.start, droplet1.route.start);
+        end = start + length;
+      } else if (operation.name.equals(OperationType.split)) {
+        Droplet droplet = operation.manipulating[0];
+        start = droplet.route.start;
+        end = start + droplet.route.path.size();
+      } else if (operation.name.equals(OperationType.dispense)){
+        continue;
+      } else if (operation.name.equals(OperationType.heating)) {
+        Droplet droplet = operation.manipulating[0];
+        start = droplet.route.start;
+        end = start + droplet.route.path.size();
+      } else {
+        throw new IllegalStateException("broken! " + operation.name);
+      }
+      
+      nonDispenseOperation += 1;
+      
+      float width = (end - start) * timeline.timescale;
+      float height = timeline.operationHeight;
+
+      float x = start * timeline.timescale;
+      float y = (height + gap) * i;
+      
+      Color color = getOperationColor(operation);
+      renderer.setColor(color);
+
+      renderer.fillRect(x, y, width, height);
+
+      Color colorOutline = Color.black;
+      renderer.setColor(colorOutline);
+      renderer.drawRect(x, y, width, height);
+    }
+    
+    {
+      float xx = timestamp * timeline.timescale;
+      float yy = 0;
+      float width = 1;
+      float height = nonDispenseOperation * (timeline.operationHeight + gap) - gap;
+      
+      renderer.fillRect(xx, yy, width, height);
+    }
+    
+    {
+      renderer.setColor(Color.gray);
+      
+      float xx = timeline.suggestedTime * timeline.timescale;
+      float yy = 0;
+      float width = 1;
+      float height = nonDispenseOperation * (timeline.operationHeight + gap) - gap;
+      
+      renderer.fillRect(xx, yy, width, height);
+    }
+  }
+
   private void drawBoard() {
+    viewport.setCamera(boardCamera);
+    
     { // frame
 			renderer.setColor(Color.GRAY);
 
@@ -373,27 +367,27 @@ public class App extends ApplicationAdapter {
 		{ // module
       
       for (Module module : result.modules) {
-        float xx = module.position.x * tilesize;
-        float yy = module.position.y * tilesize;
+        float x = module.position.x * tilesize;
+        float y = module.position.y * tilesize;
         float width = module.width * tilesize;
         float height = module.height * tilesize;
         
         renderer.setColor(Color.black);
-        renderer.fillRect(xx, yy, width, height);
+        renderer.fillRect(x, y, width, height);
       }
       
       for (Module module : result.modules) {
-        float xx = module.position.x * tilesize + gap;
-        float yy = module.position.y * tilesize + gap;
+        float x = module.position.x * tilesize + gap;
+        float y = module.position.y * tilesize + gap;
         float width = module.width * tilesize - 2 * gap;
         float height = module.height * tilesize - 2 * gap;
         
         renderer.setColor(Color.white);
-        renderer.fillRect(xx, yy, width, height);
+        renderer.fillRect(x, y, width, height);
         
         Color seeThroughRed = new Color(1f, 0f, 0f, 0.2f);
         renderer.setColor(seeThroughRed);
-        renderer.fillRect(xx, yy, width, height);
+        renderer.fillRect(x, y, width, height);
       }
     }
 		
@@ -419,134 +413,70 @@ public class App extends ApplicationAdapter {
         Point at = droplet.route.getPosition(timestamp);
         if (at == null) continue;
 
-        Color color = getOperationColor(droplet.operation);
-        
+        Point target = droplet.route.getPosition(timestamp + 1);
         Point move = new Point();
-        Point next = droplet.route.getPosition(timestamp + 1);
+        
+        if (target != null) move.set(target).sub(at);
         
         if (moving) {
-          if (next == null) {
+          if (target == null) {
             if (droplet.operation == null) {
-              renderer.setColor(color);
-              
-              float percentage = dt / (float) movementTime;
-              
-              float radius = (float) Math.sqrt(droplet.area / Math.PI); 
-              float size = 2f * radius * tilesize;
-              
-              float xx = (at.x + move.x * percentage) * tilesize + gap + (tilesize - size) / 2f;
-              float yy = (at.y + move.y * percentage) * tilesize + gap + (tilesize - size) / 2f;
-              
-              float width = size - gap * 2f;
-              float height = size - gap * 2f;
-              
-              renderer.fillOval(xx, yy, width, height);    
-              
-              String id = String.format("%d", i);
-              
-              float tx = xx + width / 2f;
-              float ty = yy + height / 2f;
-              
-              renderer.setColor(Color.BLACK);
-              renderer.drawText(id, tx, ty, Alignment.Center);
-              
-              renderer.drawOval(xx, yy, width, height);
-              
-              
+              drawDroplet(droplet, at, move.x, move.y);
             } else {            
               Droplet[] successors = droplet.operation.forwarding;
               
               for (Droplet successor : successors) {
-                renderer.setColor(color);
-                
-                next = successor.route.getPosition(timestamp + 1);
-                move.set(next).sub(at);
-                
-                float percentage = dt / (float) movementTime;
-                
-                float radius = (float) Math.sqrt(droplet.area / Math.PI); 
-                float size = 2 * radius * tilesize;
-                
-                float xx = (at.x + move.x * percentage) * tilesize + gap + (tilesize - size) / 2f;
-                float yy = (at.y + move.y * percentage) * tilesize + gap + (tilesize - size) / 2f;
-                
-                float width = size - gap * 2f;
-                float height = size - gap * 2f;
-                
-                renderer.fillOval(xx, yy, width, height);    
-                
-                String id = String.format("%d", i);
-                
-                float tx = xx + width / 2f;
-                float ty = yy + height / 2f;
-                
-                renderer.setColor(Color.BLACK);
-                renderer.drawText(id, tx, ty, Alignment.Center);
-                
-                renderer.drawOval(xx, yy, width, height);
-                
+                target = successor.route.getPosition(timestamp + 1);
+                move.set(target).sub(at);
+                 
+                drawDroplet(droplet, at, move.x, move.y);
               }
             }
           } else {
-            renderer.setColor(color);
-            
-            move.set(next).sub(at);
-  
-            float percentage = dt / (float) movementTime;
-            
-            float radius = (float) Math.sqrt(droplet.area / Math.PI); 
-            float size = 2 * radius * tilesize;
-            
-            float xx = (at.x + move.x * percentage) * tilesize + gap + (tilesize - size) / 2f;
-            float yy = (at.y + move.y * percentage) * tilesize + gap + (tilesize - size) / 2f;
-            
-            float width = size - gap * 2f;
-            float height = size - gap * 2f;
-            
-            renderer.fillOval(xx, yy, width, height);    
-            
-            String id = String.format("%d", i);
-            
-            float tx = xx + width / 2f;
-            float ty = yy + height / 2f;
-            
-            renderer.setColor(Color.BLACK);
-            renderer.drawText(id, tx, ty, Alignment.Center);
-            
-            renderer.drawOval(xx, yy, width, height);
-            
-            
+            drawDroplet(droplet, at, move.x, move.y);
           }
         } else {
-          renderer.setColor(color);
-          
-          move.set(0, 0);
-
-          float percentage = dt / (float) tilesize;
-          
-          float radius = (float) Math.sqrt(droplet.area / Math.PI); 
-          float size = 2 * radius * tilesize;
-          
-          float xx = (at.x + move.x * percentage) * tilesize + gap + (tilesize - size) / 2f;
-          float yy = (at.y + move.y * percentage) * tilesize + gap + (tilesize - size) / 2f;
-          
-          float width = size - gap * 2f;
-          float height = size - gap * 2f;
-          
-          renderer.fillOval(xx, yy, width, height);    
-          
-          String id = String.format("%d", i);
-          
-          float tx = xx + width / 2f;
-          float ty = yy + height / 2f;
-          
-          renderer.setColor(Color.BLACK);
-          renderer.drawText(id, tx, ty, Alignment.Center);
-          
-          renderer.drawOval(xx, yy, width, height);
+          drawDroplet(droplet, at, 0, 0);
         }
       }
     }
+  }
+
+  private void drawDroplet(Droplet droplet, Point at, int dx, int dy) {
+    float percentage = dt / (float) movementTime;
+    
+    float baseRadius = (float) Math.sqrt(1f / Math.PI);
+    float baseDiameter = 2f * baseRadius;
+    float diameterScaler = 1f / baseDiameter;
+
+    float unscaledRadius = (float) Math.sqrt(droplet.area / Math.PI); 
+    float unscaledDiameter = 2f * unscaledRadius;
+    
+    float diameter = diameterScaler * unscaledDiameter;
+    float size = tilesize * diameter;
+    
+    float offset = (tilesize - size) / 2f;
+    
+    float x = (at.x + dx * percentage) * tilesize + gap + offset;
+    float y = (at.y + dy * percentage) * tilesize + gap + offset;
+    
+    float width = size - gap * 2f;
+    float height = size - gap * 2f;
+    
+    Color color = getOperationColor(droplet.operation);
+    renderer.setColor(color);
+    
+    renderer.fillOval(x, y, width, height);    
+    
+    String id = String.format("%d", droplet.id);
+    
+    float tx = x + width / 2f;
+    float ty = y + height / 2f;
+    
+    renderer.setColor(Color.BLACK);
+    renderer.drawText(id, tx, ty, Alignment.Center);
+    
+    renderer.drawOval(x, y, width, height);
   }
 
   private Color getOperationColor(Operation operation) {

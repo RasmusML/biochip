@@ -328,7 +328,7 @@ public class GreedyRouter {
               extra.mixingPercentage = 100;
               extra.done = true;
 
-              Droplet forward = createDroplet(to);
+              Droplet forward = createDroplet(to, droplet.area);
 
               operation.forwarding[0] = forward;
 
@@ -391,7 +391,7 @@ public class GreedyRouter {
               runningDroplets.remove(droplet);
               retiredDroplets.add(droplet);
               
-              Droplet forward = createDroplet(to);
+              Droplet forward = createDroplet(to, droplet.area);
               operation.forwarding[0] = forward;
               runningDroplets.add(forward);
               
@@ -548,7 +548,7 @@ public class GreedyRouter {
   }
 
   private Droplet createDroplet(Point position) {
-    return createDroplet(position, 0.80f);
+    return createDroplet(position, 1f);
   }
   
   private Droplet createDroplet(Point position, float area) {
