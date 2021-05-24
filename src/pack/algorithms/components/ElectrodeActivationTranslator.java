@@ -47,7 +47,7 @@ public class ElectrodeActivationTranslator {
       {
         int time = droplet.route.start;
         Point tile = droplet.route.getPosition(time);
-        
+
         ElectrodeActivation activation = new ElectrodeActivation();
         activation.tile = tile.copy();
         activation.state = ElectrodeState.On;

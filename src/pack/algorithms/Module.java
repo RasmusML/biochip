@@ -20,7 +20,7 @@ class Setup {
   void setup() {
     
     {
-      Operation2 operation = new Operation2();
+      Operation operation = new Operation();
       operation.name = "heating";
       
       Map<String, Object> attributes = new HashMap<>();
@@ -31,7 +31,7 @@ class Setup {
     }
     
     {
-      Operation2 operation = new Operation2();
+      Operation operation = new Operation();
       operation.name = "mix";
     }
     
@@ -67,19 +67,6 @@ class Setup {
       imp.attributes = attributes;
     }
   }
-}
-
-class Operation2 {
-  public int id;
-  public String name;
-  
-  public Operation[] inputs;
-  public Operation[] outputs;
-  
-  public Map<String, Object> attributes;
-  
-  public Droplet[] manipulating;
-  public Droplet[] forwarding;
 }
 
 class OperationImp {

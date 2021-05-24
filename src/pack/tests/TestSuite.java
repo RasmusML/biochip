@@ -113,6 +113,7 @@ public class TestSuite {
     register(new ModuleBioAssay3(), new ModuleBioArray3());
     register(new ModuleBioAssay4(), new ModuleBioArray4());
     register(new CrowdedModuleBioAssay(), new CrowdedModuleBioArray());
+    register(new ParallelMixingAssay(), new ParallelMixingArray());
     //register(new DisposeBioAssay(), new DisposeBioArray());
   }
   

@@ -1,6 +1,7 @@
 package pack.algorithms.components;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import pack.algorithms.BioArray;
@@ -16,7 +17,7 @@ public class SubstanceToReservoirAssigner {
   public List<Reservoir> assign(BioAssay assay, BioArray array) {
     List<Operation> dispenseOperations = assay.getOperations(OperationType.dispense);
     
-    // Collections.shuffle(dispenseOperations); // RandomReservoirSubstanceSelector
+    Collections.shuffle(dispenseOperations, RandomUtil.get());
     
     List<Point> reservoirTiles = array.reservoirTiles;
 

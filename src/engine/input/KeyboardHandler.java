@@ -110,7 +110,7 @@ public class KeyboardHandler {
 		}
 	}
 
-	// @incomplete: register as neccessary.
+	// @incomplete: register as necessary.
 	private void registerAllKeys() {
 		registerKey(KeyEvent.VK_A, Keys.A);
 		registerKey(KeyEvent.VK_B, Keys.B);

@@ -18,9 +18,10 @@ import pack.algorithms.components.ReservoirManager;
 import pack.algorithms.components.SubstanceToReservoirAssigner;
 import pack.algorithms.components.UidGenerator;
 import pack.helpers.Assert;
+import pack.helpers.GeometryUtil;
 import pack.helpers.Logger;
 
-public class GreedyRouter {
+public class GreedyRouter implements Router {
 
   private BioConstraintsChecker checker;
   private RandomIndexSelector indexSelector;
@@ -52,11 +53,12 @@ public class GreedyRouter {
    * Greedy Randomized Adaptive Search Procedure:
    * http://www2.compute.dtu.dk/~paupo/publications/Maftei2012aa-Routing-based%20Synthesis%20of%20Dig-Design%20Automation%20for%20Embedded.pdf
    * 
-   * Performance Improvements and Congestion ReductionforRouting-based Synthesis forDigital Microfluidic Biochips:
+   * Performance Improvements and Congestion Reduction for Routing-based Synthesis for Digital Microfluidic Biochips:
    * http://www2.compute.dtu.dk/~paupo/publications/Windh2016aa-Performance%20Improvements%20and%20C-IEEE%20Transactions%20on%20Computer-.pdf
    * 
    */
 
+  @Override
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
     checker = new BioConstraintsChecker();
     indexSelector = new RandomIndexSelector();
@@ -341,26 +343,26 @@ public class GreedyRouter {
               droplet.route.path.add(to);
             }
           } else if(operation.name.equals(OperationType.dispose)) { 
-            // @TODO: implement
-            
             /*
             Droplet droplet = operation.manipulating[0];
             
             Point at = droplet.route.getPosition(timestamp - 1);
             
-            boolean arrived = false;
+            Point waste = null; // @TODO
+            
+            boolean arrived = (at.x == extra.waste.x && at.y == extra.waste.y);
             if (arrived) {
               extra.done = true;
               runningDroplets.remove(droplet);
             } else {
-              Move move = getDisposeMove(droplet, runningDroplets, array);
+              Move move = getDisposeMove(droplet, extra.waste, runningDroplets, array);
               if (move == null) continue;
               
               Point to = at.copy().add(move.x, move.y);
               droplet.route.path.add(to);
             }
-            */
             
+            */
             throw new IllegalStateException("unsupported operation!");
             
           } else {
@@ -382,7 +384,7 @@ public class GreedyRouter {
           Point to = at.copy().add(move.x, move.y);
           
           // @TODO: modules may take control, if they want to.
-          if (within(to.x, to.y, module.position.x, module.position.y, module.width, module.height)) {
+          if (GeometryUtil.inside(to.x, to.y, module.position.x, module.position.y, module.width, module.height)) {
             extra.currentDurationInTimesteps += 1;
             
             if (extra.currentDurationInTimesteps >= module.duration) {
@@ -500,8 +502,45 @@ public class GreedyRouter {
     return result;
   }
   
-  private Move getDisposeMove(Droplet droplet, List<Droplet> runningDroplets2, BioArray array) {
-    return null;
+  private Move getDisposeMove(Droplet droplet, Point wasteTile, List<Droplet> droplets, BioArray array) {
+    List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
+    if (validMoves.size() == 0) return null;
+    
+    Collections.shuffle(validMoves, RandomUtil.get());
+    // if we use the manhattan distance, then reverse, turn directions yield the
+                                     // same manhattan distance, meaning all moves are just as good. However, we only
+                                     // select the 3 best moves, so if we don't shuffle, then the last one will
+                                     // always be ignored (due to we always insert the moves in the same order).
+    
+    Point at = droplet.route.getPosition(timestamp - 1);
+
+    Point target = wasteTile;
+    Point next = new Point();
+
+    validMoves.sort((move1, move2) -> {
+      next.set(at).add(move1.x, move1.y);
+      // int distance1 = (int) MathUtils.distance(next.x - target.x, next.y -
+      // target.y);
+      int distance1 = (int) MathUtils.getManhattanDistance(next.x, next.y, target.x, target.y);
+
+      next.set(at).add(move2.x, move2.y);
+      // int distance2 = (int) MathUtils.distance(next.x - target.x, next.y -
+      // target.y);
+      int distance2 = (int) MathUtils.getManhattanDistance(next.x, next.y, target.x, target.y);
+
+      return distance1 - distance2;
+    });
+
+    float[] allWeights = { 50f, 33.3f, 16.6f };
+
+    int candidateSize = (int) MathUtils.clamp(1, 3, validMoves.size());
+
+    float[] weights = new float[candidateSize];
+    System.arraycopy(allWeights, 0, weights, 0, candidateSize);
+
+    int bestMoveIndex = indexSelector.select(weights);
+
+    return validMoves.get(bestMoveIndex);
   }
 
   private Move getDetourMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
@@ -511,7 +550,7 @@ public class GreedyRouter {
     
     Module module = null;
     for (Module other : inUseModules) {
-      if (within(at.x, at.y, other.position.x, other.position.y, other.width, other.height)) {
+      if (GeometryUtil.inside(at.x, at.y, other.position.x, other.position.y, other.width, other.height)) {
         module = other;
         break;
       }
@@ -543,14 +582,6 @@ public class GreedyRouter {
     return bestMove;
   }
 
-  private boolean within(int px, int py, int x, int y, int width, int height) {
-    return px <= x + width - 1 && px >= x && py <= y + height - 1 && py >= y;
-  }
-
-  private Droplet createDroplet(Point position) {
-    return createDroplet(position, 1f);
-  }
-  
   private Droplet createDroplet(Point position, float area) {
     Droplet droplet = new Droplet();
     droplet.area = area;
@@ -566,7 +597,7 @@ public class GreedyRouter {
     
     runningOperations.add(operation);
 
-    Droplet droplet = createDroplet(position);
+    Droplet droplet = createDroplet(position, 1f);
 
     runningDroplets.add(droplet);
 
@@ -722,6 +753,7 @@ class OperationExtra {
   
   public int currentDurationInTimesteps;
   public Module module;
+  public Point waste;
 }
 
 
