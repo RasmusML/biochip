@@ -138,9 +138,9 @@ public class KeyboardHandler {
 		registerKey(KeyEvent.VK_X, Keys.X);
 		registerKey(KeyEvent.VK_Y, Keys.Y);
 		registerKey(KeyEvent.VK_Z, Keys.Z);
-		registerKey(16777414, Keys.Ã†);
-		registerKey(16777432, Keys.Ã˜);
-		registerKey(16777413, Keys.Ã…);
+		registerKey(16777414, Keys.Æ);
+		registerKey(16777432, Keys.Ø);
+		registerKey(16777413, Keys.Å);
 		registerKey(KeyEvent.VK_SHIFT, Keys.SHIFT);
 		registerKey(KeyEvent.VK_SPACE, Keys.SPACE);
 		registerKey(KeyEvent.VK_UP, Keys.UP);
