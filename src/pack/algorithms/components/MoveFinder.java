@@ -19,19 +19,19 @@ public class MoveFinder {
   }
   
   public List<Move> getValidMoves(Droplet droplet, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
-    return getValidMoves(droplet, null, null, timestamp, droplets, modules, array);
+    return getValidMoves(droplet.id, droplet.route.getPosition(timestamp - 1), null, null, timestamp, droplets, modules, array, false);
   }
   
   public List<Move> getValidMoves(Droplet droplet, Droplet mergeSibling, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
-    return getValidMoves(droplet, mergeSibling, null, timestamp, droplets, modules, array);
+    return getValidMoves(droplet.id, droplet.route.getPosition(timestamp - 1), mergeSibling, null, timestamp, droplets, modules, array, false);
   }
   
   public List<Move> getValidMoves(Droplet droplet, Module module, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
-    return getValidMoves(droplet, null, module, timestamp, droplets, modules, array);
+    return getValidMoves(droplet.id, droplet.route.getPosition(timestamp - 1), null, module, timestamp, droplets, modules, array, false);
   }
   
-  private List<Move> getValidMoves(Droplet droplet, Droplet mergeSibling, Module module, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
-    Point at = droplet.route.getPosition(timestamp - 1);
+  public List<Move> getValidMoves(int dropletId, Point dropletPosition, Droplet mergeSibling, Module module, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array, boolean useLastKnownPositionAsNextPosition) {
+    Point at = dropletPosition;
     Point to = new Point();
     
     List<Move> validMoves = new ArrayList<>();
@@ -48,11 +48,16 @@ public class MoveFinder {
       
       // skip moves which does not satisfy droplet-droplet constraints.
       for (Droplet other : droplets) {
+        if (other.id == dropletId) continue;
+        if (mergeSibling != null && other.id == mergeSibling.id) continue;
+
         Point otherAt = other.route.getPosition(timestamp - 1);
         Point otherTo = other.route.getPosition(timestamp);
         
-        if (other.id == droplet.id) continue;
-        if (mergeSibling != null && other.id == mergeSibling.id) continue;
+        if (useLastKnownPositionAsNextPosition) {
+          if (otherAt == null) otherAt = other.route.getPosition();
+          if (otherTo == null) otherTo = other.route.getPosition();
+        }
         
         if (!checker.satifiesConstraints(at, to, otherAt, otherTo)) continue outer;
       }
@@ -61,6 +66,12 @@ public class MoveFinder {
       if (mergeSibling != null) {
         Point siblingAt = mergeSibling.route.getPosition(timestamp - 1);
         Point siblingTo = mergeSibling.route.getPosition(timestamp);
+        
+        if (useLastKnownPositionAsNextPosition) {
+          if (siblingAt == null) siblingAt = mergeSibling.route.getPosition();
+          if (siblingTo == null) siblingTo = mergeSibling.route.getPosition();
+        }
+        
         if (!checker.satisfiesCompanionConstraints(at, to, siblingAt, siblingTo)) continue;
       }
       

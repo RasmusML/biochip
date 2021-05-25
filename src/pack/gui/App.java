@@ -93,6 +93,9 @@ public class App extends ApplicationAdapter {
 		assay = new PCRMixingTreeAssay();
     array = new PCRMixingTreeArray();
 		
+    assay = new CrowdedModuleBioAssay();
+    array = new CrowdedModuleBioArray();
+    
 		percentages = new DefaultMixingPercentages();
 		
 //		Router router = new TrafficRouter();

@@ -10,6 +10,7 @@ import java.util.Map;
 import engine.math.MathUtils;
 import pack.algorithms.components.BioConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
+import pack.algorithms.components.ModifiedAStarPathFinder;
 import pack.algorithms.components.ModuleManager;
 import pack.algorithms.components.MoveFinder;
 import pack.algorithms.components.RandomIndexSelector;
@@ -26,6 +27,7 @@ public class GreedyRouter implements Router {
   private BioConstraintsChecker checker;
   private RandomIndexSelector indexSelector;
   private MoveFinder moveFinder;
+  private ModifiedAStarPathFinder pathFinder;
   
   private ReservoirManager reservoirManager;
   private ModuleManager moduleManager;
@@ -71,6 +73,8 @@ public class GreedyRouter implements Router {
     probabilitiesA = new float[] {85f, 10f, 5f};
     probabilitiesB = new float[] {50f, 33f, 17f};
     probabilitiesC = new float[] {34f, 33f, 33f};
+    
+    pathFinder = new ModifiedAStarPathFinder();
     
     moduleManager = new ModuleManager(array.catalog);
     
@@ -174,12 +178,6 @@ public class GreedyRouter implements Router {
           runningOperations.add(stalled);
           stalledExtra.running = true;
           
-          if (stalled.name.equals(OperationType.heating))  {
-            float temperature = (float) stalled.attributes.get(Tags.temperature);
-            String moduleIdentifier = String.format("heater%d", (int) temperature); // @TODO: hack
-            stalledExtra.module = moduleManager.allocate(moduleIdentifier);
-          }
-
           for (int i = 0; i < stalled.inputs.length; i++) {
             Operation input = stalled.inputs[i];
             OperationExtra inputExtra = operationIdToExtra.get(input.id);
@@ -190,6 +188,22 @@ public class GreedyRouter implements Router {
             forwardedDroplet.operation = stalled;
 
             stalled.manipulating[i] = forwardedDroplet;
+          }
+
+          if (stalled.name.equals(OperationType.heating))  {
+            float temperature = (float) stalled.attributes.get(Tags.temperature);
+            String moduleIdentifier = String.format("heater%d", (int) temperature); // @TODO: hack
+            stalledExtra.module = moduleManager.allocate(moduleIdentifier);
+            
+            Droplet droplet = stalled.manipulating[0];
+            
+            Point target = stalledExtra.module.position;
+            List<Point> path = pathFinder.search(droplet, target, stalledExtra.module, runningDroplets, array, moveFinder, moduleManager.getInUseOrAlwaysLockedModules(), timestamp - 1, 30);
+            droplet.route.path.addAll(path);
+            
+            for (Point point : path) {
+              System.out.printf("%s\n", point.toString());
+            }
           }
         }
       }
@@ -404,6 +418,9 @@ public class GreedyRouter implements Router {
             }
             
           } else {
+            Point next = droplet.route.getPosition(timestamp);
+            if (next != null) continue;
+            
             droplet.route.path.add(to);
           }
         }

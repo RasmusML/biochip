@@ -28,9 +28,11 @@ public class Keys {
 	public static final int X = 22;
 	public static final int Y = 23;
 	public static final int Z = 24;
-	public static final int Æ = 25;
-	public static final int Ø = 26;
-	public static final int Å = 27;
+	/*
+	public static final int ï¿½ = 25;
+	public static final int ï¿½ = 26;
+	public static final int ï¿½ = 27;
+	*/
 	
 	public static final int SHIFT = 28;
 	public static final int SPACE = 29;
