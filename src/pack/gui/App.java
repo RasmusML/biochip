@@ -16,24 +16,22 @@ import engine.math.Vector2;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.Droplet;
-import pack.algorithms.ElectrodeActivationSection;
 import pack.algorithms.GreedyRouter;
 import pack.algorithms.Module;
-import pack.algorithms.Move;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
 import pack.algorithms.Reservoir;
+import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
-import pack.algorithms.components.ElectrodeActivationTranslator;
 import pack.algorithms.components.MixingPercentages;
-import pack.tests.BlockingDispenserTestBioArray;
-import pack.tests.BlockingDispenserTestBioAssay;
 import pack.tests.CrowdedModuleBioArray;
 import pack.tests.CrowdedModuleBioAssay;
+import pack.tests.PCRMixingTreeArray;
 import pack.tests.PCRMixingTreeAssay;
-import pack.tests.Test3BioArray;
+import pack.tests.Test1BioArray;
+import pack.tests.Test1BioAssay;
 
 public class App extends ApplicationAdapter {
 
@@ -89,24 +87,22 @@ public class App extends ApplicationAdapter {
 		renderer = new Renderer(viewport);
 		renderer.setCanvas(canvas);
 		
-		assay = new PCRMixingTreeAssay();
-		array = new Test3BioArray();
-		
-		assay = new BlockingDispenserTestBioAssay();
-    array = new BlockingDispenserTestBioArray();
-		
-    assay = new CrowdedModuleBioAssay();
-    array = new CrowdedModuleBioArray();
+		assay = new Test1BioAssay();
+		array = new Test1BioArray();
     
+		assay = new PCRMixingTreeAssay();
+    array = new PCRMixingTreeArray();
+		
 		percentages = new DefaultMixingPercentages();
 		
-		GreedyRouter router = new GreedyRouter();
+//		Router router = new TrafficRouter();
+		Router router = new GreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
+		/*
 		ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator();
 		ElectrodeActivationSection[] sections = translator.translateStateful(result.droplets, result.executionTime);
-		
-		/*
+
 		for (int i = 0; i < sections.length; i++) {
 		  ElectrodeActivationSection section = sections[i];
 		  

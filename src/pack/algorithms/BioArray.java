@@ -7,6 +7,7 @@ public class BioArray {
 
 	public int width, height;
 	public List<Point> reservoirTiles = new ArrayList<>();
+	public List<Point> wasteTiles = new ArrayList<>();
 	
 	public ModuleCatalog catalog;
 	

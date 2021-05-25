@@ -78,8 +78,8 @@ public class ModuleManager {
   public List<Module> getModules() {
     return catalog.modules;
   }
-}
 
-class ModuleAllocation {
-  public int count;
+  class ModuleAllocation {
+    public int count;
+  }
 }
