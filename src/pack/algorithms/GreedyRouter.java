@@ -43,7 +43,8 @@ public class GreedyRouter implements Router {
 
   private UidGenerator dropletIdGenerator;
 
-  private int maxIterations;
+  private int maxIterationsPerOperation;
+  private int iteration;
   
   private int timestamp;
   
@@ -78,7 +79,8 @@ public class GreedyRouter implements Router {
     
     moduleManager = new ModuleManager(array.catalog);
     
-    maxIterations = 1000;
+    maxIterationsPerOperation = 500;  // if no operation terminates before iteration is this value, then we assume that no solution can be found.
+    iteration = 0;
 
     operationIdToExtra = new HashMap<>();
 
@@ -202,7 +204,7 @@ public class GreedyRouter implements Router {
             droplet.route.path.addAll(path);
             
             for (Point point : path) {
-              System.out.printf("%s\n", point.toString());
+              System.out.printf(">>%s\n", point.toString());
             }
           }
         }
@@ -471,6 +473,8 @@ public class GreedyRouter implements Router {
 
           Logger.log("completed %d (%s)\n", operation.id, operation.name);
 
+          iteration = 0;
+
           for (Operation descendant : operation.outputs) {
             if (descendant == null) continue;
 
@@ -490,11 +494,12 @@ public class GreedyRouter implements Router {
           }
         }
       }
-
+      
+      iteration += 1;
       timestamp += 1;
-
+      
       // early terminate.
-      if (timestamp > maxIterations) {
+      if (iteration > maxIterationsPerOperation) {
         earlyTerminated = true;
 
         break;

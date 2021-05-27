@@ -1,6 +1,6 @@
 package pack.algorithms;
 
-public class ElectrodeActivation {
+public class ElectrodeActuation {
   public Point tile;
   public ElectrodeState state;
 }

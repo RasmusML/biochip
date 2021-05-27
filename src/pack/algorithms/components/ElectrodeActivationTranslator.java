@@ -3,18 +3,18 @@ package pack.algorithms.components;
 import java.util.List;
 
 import pack.algorithms.Droplet;
-import pack.algorithms.ElectrodeActivation;
-import pack.algorithms.ElectrodeActivationSection;
+import pack.algorithms.ElectrodeActuation;
+import pack.algorithms.ElectrodeActivations;
 import pack.algorithms.ElectrodeState;
 import pack.algorithms.Point;
 
 public class ElectrodeActivationTranslator {
   
-  public ElectrodeActivationSection[] translateStateless(List<Droplet> droplets, int timesteps) {
-    ElectrodeActivationSection[] sections = new ElectrodeActivationSection[timesteps];
+  public ElectrodeActivations[] translateStateless(List<Droplet> droplets, int timesteps) {
+    ElectrodeActivations[] sections = new ElectrodeActivations[timesteps];
     
     for (int i = 0; i < sections.length; i++) {
-      sections[i] = new ElectrodeActivationSection();
+      sections[i] = new ElectrodeActivations();
     }
     
     for (Droplet droplet : droplets) {
@@ -22,12 +22,12 @@ public class ElectrodeActivationTranslator {
         int time = droplet.route.start + i;
         Point tile = droplet.route.getPosition(time);
         
-        ElectrodeActivation activation = new ElectrodeActivation();
-        activation.tile = tile.copy();
-        activation.state = ElectrodeState.On;
+        ElectrodeActuation actuation = new ElectrodeActuation();
+        actuation.tile = tile.copy();
+        actuation.state = ElectrodeState.On;
         
-        ElectrodeActivationSection section = sections[time];
-        section.activations.add(activation);
+        ElectrodeActivations section = sections[time];
+        section.activations.add(actuation);
         
       }
     }
@@ -35,11 +35,11 @@ public class ElectrodeActivationTranslator {
     return sections;
   }
   
-  public ElectrodeActivationSection[] translateStateful(List<Droplet> droplets, int timesteps) {
-    ElectrodeActivationSection[] sections = new ElectrodeActivationSection[timesteps];
+  public ElectrodeActivations[] translateStateful(List<Droplet> droplets, int timesteps) {
+    ElectrodeActivations[] sections = new ElectrodeActivations[timesteps];
     
     for (int i = 0; i < sections.length; i++) {
-      sections[i] = new ElectrodeActivationSection();
+      sections[i] = new ElectrodeActivations();
     }
     
     for (Droplet droplet : droplets) {
@@ -48,12 +48,12 @@ public class ElectrodeActivationTranslator {
         int time = droplet.route.start;
         Point tile = droplet.route.getPosition(time);
 
-        ElectrodeActivation activation = new ElectrodeActivation();
-        activation.tile = tile.copy();
-        activation.state = ElectrodeState.On;
+        ElectrodeActuation actuation = new ElectrodeActuation();
+        actuation.tile = tile.copy();
+        actuation.state = ElectrodeState.On;
         
-        ElectrodeActivationSection section = sections[time];
-        section.activations.add(activation);
+        ElectrodeActivations section = sections[time];
+        section.activations.add(actuation);
       }
       
       for (int i = 1; i < droplet.route.path.size(); i++) {
@@ -64,14 +64,14 @@ public class ElectrodeActivationTranslator {
         Point tile = droplet.route.getPosition(time);
         
         if (tile.x != prevTile.y || tile.y != prevTile.y) {
-          ElectrodeActivationSection section = sections[time];
+          ElectrodeActivations section = sections[time];
 
-          ElectrodeActivation onActivation = new ElectrodeActivation();
+          ElectrodeActuation onActivation = new ElectrodeActuation();
           onActivation.tile = tile.copy();
           onActivation.state = ElectrodeState.On;
           section.activations.add(onActivation);
           
-          ElectrodeActivation offActivation = new ElectrodeActivation();
+          ElectrodeActuation offActivation = new ElectrodeActuation();
           offActivation.tile = prevTile.copy();
           offActivation.state = ElectrodeState.Off;
           section.activations.add(offActivation);

@@ -3,6 +3,12 @@ package pack.algorithms;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Modules are the "implementation" which execute non-configurable operations. 
+ * Multiple modules may be able to execute the same non-configurable operation.
+ * A module is defined by the non-configuration operation it executes, its size and execution-time and possibly module-specific attributes.
+ */
+
 public class Module {
   public String name;
   
