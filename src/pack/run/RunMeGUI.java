@@ -3,6 +3,7 @@ package pack.run;
 import engine.Application;
 import engine.ApplicationConfiguration;
 import pack.gui.App;
+import pack.gui.DropletReshapeApp;
 
 public class RunMeGUI {
 
@@ -14,6 +15,8 @@ public class RunMeGUI {
 		cfg.title = "biochip";
 		cfg.fps = 60;
 		
-		new Application(new App(), cfg);
+		//new Application(new App(), cfg);
+		new Application(new DropletReshapeApp(), cfg);
+    
 	}
 }
