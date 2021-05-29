@@ -15,9 +15,9 @@ import pack.helpers.IOUtils;
 
 public class PlatformInterface {
   
-  private Map<Integer, Mapping> idToMapping;
+  private Map<Integer, ElectrodeMapping> idToMapping;
   private SerialTransmitter transmitter;
-  
+  private PlatformMessenger messenger;
   private Platform platform;
   
   public PlatformInterface() {
@@ -26,100 +26,136 @@ public class PlatformInterface {
     platform.columns = 32;
     
     transmitter = new SerialTransmitter();
+    messenger = new PlatformMessenger();
     
+    List<ElectrodePlatformDefinition> electrodes = loadDefinitions();
+    setupElectrodeMapping(electrodes);
+  }
+
+  private void setupElectrodeMapping(List<ElectrodePlatformDefinition> electrodes) {
     idToMapping = new HashMap<>();
     
-    List<ElectrodePlatformMapping> electrodes = loadMapping();
-    
-    for (ElectrodePlatformMapping e : electrodes) {
-      int id = e.id;
+    for (ElectrodePlatformDefinition definition : electrodes) {
+      int id = definition.id;
 
-      Mapping mapping = new Mapping();
-      mapping.electrodeId = e.electrodeId;
-      mapping.driverId = e.driverId;
+      ElectrodeMapping mapping = new ElectrodeMapping();
+      mapping.electrodeId = definition.electrodeId;
+      mapping.driverId = definition.driverId;
       
       idToMapping.put(id, mapping);
-      
-      //System.out.printf("%d %d %d\n", e.id, e.electrodeId, e.driverId);
     }
+  }
+  
+  public void turnHighVoltageOnForElectrodes() {
+    String message = messenger.turnHighVoltageOnForElectrodesMessage();
+    transmitter.send(message);
+  }
+  
+  public void turnHighVoltageOffForElectrodes() {
+    String message = messenger.turnHighVoltageOffForElectrodesMessage();
+    transmitter.send(message);
+  }
+  
+  public void clearAllElectrodes() {
+    String message1 = messenger.clearAllElectrodesMessage(0);
+    String message2 = messenger.clearAllElectrodesMessage(1);
     
-    
-    Mapping m = getElectrodeMappingByRowAndColumn(0, 0);
-    setElectrode(m.driverId, m.electrodeId);
+    transmitter.send(message1);
+    transmitter.send(message2);
   }
   
-  public void clearAllElectrodes(int driverId) {
-    String message = String.format("clra %d \r", driverId);
+  public void setElectrode(int x, int y) {
+    ElectrodeMapping mapping = getElectrodeMappingByXY(x, y);
+    String message = messenger.setElectrodeMessage(mapping.driverId, mapping.electrodeId);
     transmitter.send(message);
   }
   
-  public void setElectrode(int driverId, int electrodeId) {
-    String message = String.format("setel %d %d \r", driverId, electrodeId);
+  public void clearElectrode(int x, int y) {
+    ElectrodeMapping mapping = getElectrodeMappingByXY(x, y);
+    String message = messenger.clearElectrodeMessage(mapping.driverId, mapping.electrodeId);
     transmitter.send(message);
   }
   
-  public void clearElectrode(int driverId, int electrodeId) {
-    String message = String.format("clrel %d %d \r", driverId, electrodeId);
-    transmitter.send(message);
-  }
-  
-  public int getElectrodeId(int row, int column) {
+  private int getElectrodeIdByRowAndColumn(int row, int column) {
     Assert.that(row >= 0 && row <= platform.rows - 1);
     Assert.that(column >= 0 && column <= platform.columns - 1);
     return row * platform.columns + column + 1;
   }
   
-  public Mapping getElectrodeMappingByRowAndColumn(int row, int column) {
-    int id = getElectrodeId(row, column);
+  /*
+  private ElectrodeMapping getElectrodeMappingByRowAndColumn(int row, int column) {
+    int id = getElectrodeIdByRowAndColumn(row, column);
     return idToMapping.get(id);
   }
+  */
   
-  public Mapping getElectrodeMappingByXY(int x, int y) {
-    int id = getElectrodeId(platform.rows - 1 - y, x);
+  private ElectrodeMapping getElectrodeMappingByXY(int x, int y) {
+    int id = getElectrodeIdByRowAndColumn(platform.rows - 1 - y, x);
     return idToMapping.get(id);
   }
 
-  private List<ElectrodePlatformMapping> loadMapping() {
+  private List<ElectrodePlatformDefinition> loadDefinitions() {
     String platformDefinitionPath = "/platformMapping.json";
     String definitions = new String(IOUtils.readFileAsBytes(platformDefinitionPath));
     
-    Type listType = new TypeToken<ArrayList<ElectrodePlatformMapping>>(){}.getType();
-    List<ElectrodePlatformMapping> electrodes = new Gson().fromJson(definitions, listType);
+    Type listType = new TypeToken<ArrayList<ElectrodePlatformDefinition>>(){}.getType();
+    List<ElectrodePlatformDefinition> electrodes = new Gson().fromJson(definitions, listType);
 
     return electrodes;
   }
-  
-  class SerialTransmitter {
-    
-    public void send(String message) {
-      System.out.println(message);
-    }
-  }
-  
-  class ElectrodePlatformMapping {
-    @SerializedName(value = "id", alternate = {"ID"})
-    public int id;
-    
-    @SerializedName(value = "electrodeId", alternate = {"electrodeID"})
-    public int electrodeId;
-    
-    @SerializedName(value = "driverId", alternate = {"driverID"})
-    public int driverId;
-  }
-  
-  class Mapping {
-    public int electrodeId;
-    public int driverId;
-  }
-  
-  class Platform {
-    public int rows;
-    public int columns;
-  }
-  
   
   public static void main(String[] args) {
     new PlatformInterface();
   }
 }
 
+class SerialTransmitter {
+  
+  public void send(String message) {
+    System.out.println(message);
+  }
+}
+
+class ElectrodePlatformDefinition {
+  @SerializedName(value = "id", alternate = {"ID"})
+  public int id;
+  
+  @SerializedName(value = "electrodeId", alternate = {"electrodeID"})
+  public int electrodeId;
+  
+  @SerializedName(value = "driverId", alternate = {"driverID"})
+  public int driverId;
+}
+
+class ElectrodeMapping {
+  public int electrodeId;
+  public int driverId;
+}
+
+class Platform {
+  public int rows;
+  public int columns;
+}
+
+class PlatformMessenger {
+  
+  public String turnHighVoltageOnForElectrodesMessage() {
+    return String.format("hvpoe 1 1 \r");
+  }
+  
+  public String turnHighVoltageOffForElectrodesMessage() {
+    return String.format("hvpoe 1 0 \r");
+  }
+  
+  public String clearAllElectrodesMessage(int driverId) {
+    return String.format("clra %d \r", driverId);
+  }
+  
+  public String setElectrodeMessage(int driverId, int electrodeId) {
+    return String.format("setel %d %d \r", driverId, electrodeId);
+  }
+  
+  public String clearElectrodeMessage(int driverId, int electrodeId) {
+    return String.format("clrel %d %d \r", driverId, electrodeId);
+  }
+}
