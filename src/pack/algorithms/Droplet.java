@@ -1,15 +1,28 @@
 package pack.algorithms;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import pack.helpers.Assert;
+
 public class Droplet {
   public int id;
-  
   public float area;
-
-  public Route route = new Route();
+  public List<DropletUnit> units = new ArrayList<>();
   public Operation operation;
   
+  // we assume that all DropletUnits start and end at the same time for now.
+  // So just get the timestamps of the first dropletunit.
+  public int getStartTimestamp() {
+    DropletUnit unit = units.get(0);
+    return unit.route.start;
+  }
+  
+  public int getEndTimestamp() {
+    DropletUnit unit = units.get(0);
+    return unit.route.start + unit.route.path.size();
+  }
 }
-
 
 /*
 class Graph<T> {

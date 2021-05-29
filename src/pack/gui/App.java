@@ -16,6 +16,7 @@ import engine.math.Vector2;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.Droplet;
+import pack.algorithms.DropletUnit;
 import pack.algorithms.GreedyRouter;
 import pack.algorithms.Module;
 import pack.algorithms.Operation;
@@ -26,8 +27,6 @@ import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
-import pack.tests.CrowdedModuleBioArray;
-import pack.tests.CrowdedModuleBioAssay;
 import pack.tests.PCRMixingTreeArray;
 import pack.tests.PCRMixingTreeAssay;
 import pack.tests.Test1BioArray;
@@ -271,25 +270,25 @@ public class App extends ApplicationAdapter {
       int start, end;
       if (operation.name.equals(OperationType.mix)) {
         Droplet droplet = operation.manipulating[0];
-        start = droplet.route.start;
-        end = start + droplet.route.path.size();
+        
+        start = droplet.getStartTimestamp();
+        end = droplet.getEndTimestamp();
       } else if (operation.name.equals(OperationType.merge)) {
         Droplet droplet0 = operation.manipulating[0];
         Droplet droplet1 = operation.manipulating[1];
         
-        int length = Math.min(droplet0.route.path.size(), droplet1.route.path.size());
-        start = Math.max(droplet0.route.start, droplet1.route.start);
-        end = start + length;
+        start = Math.max(droplet0.getStartTimestamp(), droplet1.getStartTimestamp());
+        end = Math.min(droplet0.getEndTimestamp(), droplet1.getEndTimestamp());
       } else if (operation.name.equals(OperationType.split)) {
         Droplet droplet = operation.manipulating[0];
-        start = droplet.route.start;
-        end = start + droplet.route.path.size();
+        start = droplet.getStartTimestamp();
+        end = droplet.getEndTimestamp();
       } else if (operation.name.equals(OperationType.dispense)){
         continue;
       } else if (operation.name.equals(OperationType.heating)) {
         Droplet droplet = operation.manipulating[0];
-        start = droplet.route.start;
-        end = start + droplet.route.path.size();
+        start = droplet.getStartTimestamp();
+        end = droplet.getEndTimestamp();
       } else {
         throw new IllegalStateException("broken! " + operation.name);
       }
@@ -406,42 +405,44 @@ public class App extends ApplicationAdapter {
     { // droplets
       
       List<Droplet> droplets = result.droplets;
-      for (int i = 0; i < droplets.size(); i++) {
-        Droplet droplet = droplets.get(i);
-        
-        Point at = droplet.route.getPosition(timestamp);
-        if (at == null) continue;
-
-        Point target = droplet.route.getPosition(timestamp + 1);
-        Point move = new Point();
-        
-        if (target != null) move.set(target).sub(at);
-        
-        if (moving) {
-          if (target == null) {
-            if (droplet.operation == null) {
-              drawDroplet(droplet, at, move.x, move.y);
-            } else {            
-              Droplet[] successors = droplet.operation.forwarding;
-              
-              for (Droplet successor : successors) {
-                target = successor.route.getPosition(timestamp + 1);
-                move.set(target).sub(at);
-                 
-                drawDroplet(droplet, at, move.x, move.y);
+      for (Droplet droplet : droplets) {
+        for (int i = 0; i < droplet.units.size(); i++) {
+          DropletUnit dropletUnit = droplet.units.get(i);
+          Point at = dropletUnit.route.getPosition(timestamp);
+          if (at == null) continue;
+  
+          Point target = dropletUnit.route.getPosition(timestamp + 1);
+          Point move = new Point();
+          
+          if (target != null) move.set(target).sub(at);
+          
+          if (moving) {
+            if (target == null) {
+              if (droplet.operation == null) {
+                drawDropletUnit(droplet, at, move.x, move.y);
+              } else {            
+                Droplet[] successors = droplet.operation.forwarding;
+                
+                for (Droplet successor : successors) {
+                  DropletUnit successorUnit = successor.units.get(i);
+                  target = successorUnit.route.getPosition(timestamp + 1);
+                  move.set(target).sub(at);
+                   
+                  drawDropletUnit(droplet, at, move.x, move.y);
+                }
               }
+            } else {
+              drawDropletUnit(droplet, at, move.x, move.y);
             }
           } else {
-            drawDroplet(droplet, at, move.x, move.y);
+            drawDropletUnit(droplet, at, 0, 0);
           }
-        } else {
-          drawDroplet(droplet, at, 0, 0);
         }
       }
     }
   }
 
-  private void drawDroplet(Droplet droplet, Point at, int dx, int dy) {
+  private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy) {
     float percentage = dt / (float) movementTime;
     
     float baseRadius = (float) Math.sqrt(1f / Math.PI);

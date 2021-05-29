@@ -11,9 +11,11 @@ import java.util.function.BiFunction;
 import engine.math.MathUtils;
 import pack.algorithms.BioArray;
 import pack.algorithms.Droplet;
+import pack.algorithms.DropletUnit;
 import pack.algorithms.Module;
 import pack.algorithms.Move;
 import pack.algorithms.Point;
+import pack.helpers.Assert;
 
 public class ModifiedAStarPathFinder {
 
@@ -58,7 +60,10 @@ public class ModifiedAStarPathFinder {
       return (int) (c1 - c2);
     });
 
-    Point sourcePosition = droplet.route.getPosition(timestamp);
+    Assert.that(droplet.units.size() == 1);
+    DropletUnit unit = droplet.units.get(0);
+    
+    Point sourcePosition = unit.route.getPosition(timestamp);
     PositionInTime source = new PositionInTime(sourcePosition, timestamp);
 
     Node<PositionInTime> sourceNode = Node.root(minimumCostFunction.apply(source.position, target));
@@ -84,7 +89,12 @@ public class ModifiedAStarPathFinder {
       if (steps >= maxSteps) break;
       
       List<PositionInTime> children = new ArrayList<>();
-      List<Move> moves = moveFinder.getValidMoves(droplet.id, current.position, null, module, current.timestep, droplets, modules, array, true);
+      
+      Assert.that(false, "not implemented yet.");
+      
+      // @TODO: updated getValidMoves, because we have to figure out what to do when another droplet does have a next position yet. Do we keep the previous or assume it is invisible?
+      //List<Move> moves = moveFinder.getValidMoves(unit, droplet, current.position, null, module, current.timestep, droplets, modules, array, true);
+      List<Move> moves = null; // @TODO
       for (Move move : moves) {
         Point position = new Point(current.position).add(move.x, move.y);
         PositionInTime positionInTime = new PositionInTime(position, current.timestep + 1);

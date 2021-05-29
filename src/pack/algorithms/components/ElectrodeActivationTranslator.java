@@ -3,8 +3,9 @@ package pack.algorithms.components;
 import java.util.List;
 
 import pack.algorithms.Droplet;
-import pack.algorithms.ElectrodeActuation;
+import pack.algorithms.DropletUnit;
 import pack.algorithms.ElectrodeActivations;
+import pack.algorithms.ElectrodeActuation;
 import pack.algorithms.ElectrodeState;
 import pack.algorithms.Point;
 
@@ -18,17 +19,18 @@ public class ElectrodeActivationTranslator {
     }
     
     for (Droplet droplet : droplets) {
-      for (int i = 0; i < droplet.route.path.size(); i++) {
-        int time = droplet.route.start + i;
-        Point tile = droplet.route.getPosition(time);
-        
-        ElectrodeActuation actuation = new ElectrodeActuation();
-        actuation.tile = tile.copy();
-        actuation.state = ElectrodeState.On;
-        
-        ElectrodeActivations section = sections[time];
-        section.activations.add(actuation);
-        
+      for (DropletUnit unit : droplet.units) {
+        for (int i = 0; i < unit.route.path.size(); i++) {
+          int time = unit.route.start + i;
+          Point tile = unit.route.getPosition(time);
+          
+          ElectrodeActuation actuation = new ElectrodeActuation();
+          actuation.tile = tile.copy();
+          actuation.state = ElectrodeState.On;
+          
+          ElectrodeActivations section = sections[time];
+          section.activations.add(actuation);
+        }
       }
     }
 
@@ -44,10 +46,10 @@ public class ElectrodeActivationTranslator {
     
     for (Droplet droplet : droplets) {
       
-      {
-        int time = droplet.route.start;
-        Point tile = droplet.route.getPosition(time);
-
+      for (DropletUnit unit : droplet.units) {
+        int time = unit.route.start;
+        Point tile = unit.route.getPosition(time);
+        
         ElectrodeActuation actuation = new ElectrodeActuation();
         actuation.tile = tile.copy();
         actuation.state = ElectrodeState.On;
@@ -56,25 +58,27 @@ public class ElectrodeActivationTranslator {
         section.activations.add(actuation);
       }
       
-      for (int i = 1; i < droplet.route.path.size(); i++) {
-        int prevTime = droplet.route.start + i - 1;
-        Point prevTile = droplet.route.getPosition(prevTime);
-        
-        int time = droplet.route.start + i;
-        Point tile = droplet.route.getPosition(time);
-        
-        if (tile.x != prevTile.y || tile.y != prevTile.y) {
-          ElectrodeActivations section = sections[time];
-
-          ElectrodeActuation onActivation = new ElectrodeActuation();
-          onActivation.tile = tile.copy();
-          onActivation.state = ElectrodeState.On;
-          section.activations.add(onActivation);
+      for (DropletUnit unit : droplet.units) {
+        for (int i = 1; i < unit.route.path.size(); i++) {
+          int prevTime = unit.route.start + i - 1;
+          Point prevTile = unit.route.getPosition(prevTime);
           
-          ElectrodeActuation offActivation = new ElectrodeActuation();
-          offActivation.tile = prevTile.copy();
-          offActivation.state = ElectrodeState.Off;
-          section.activations.add(offActivation);
+          int time = unit.route.start + i;
+          Point tile = unit.route.getPosition(time);
+          
+          if (tile.x != prevTile.y || tile.y != prevTile.y) {
+            ElectrodeActivations section = sections[time];
+            
+            ElectrodeActuation onActivation = new ElectrodeActuation();
+            onActivation.tile = tile.copy();
+            onActivation.state = ElectrodeState.On;
+            section.activations.add(onActivation);
+            
+            ElectrodeActuation offActivation = new ElectrodeActuation();
+            offActivation.tile = prevTile.copy();
+            offActivation.state = ElectrodeState.Off;
+            section.activations.add(offActivation);
+          }
         }
       }
     }

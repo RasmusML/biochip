@@ -22,41 +22,33 @@ public class PlatformInterface {
   
   public PlatformInterface() {
     platform = new Platform();
-    platform.rows = 20;
-    platform.columns = 32;
     
     transmitter = new SerialTransmitter();
     messenger = new PlatformMessenger();
     
     List<ElectrodePlatformDefinition> electrodes = loadDefinitions();
-    setupElectrodeMapping(electrodes);
+    setupElectrodeMappings(electrodes);
   }
 
-  private void setupElectrodeMapping(List<ElectrodePlatformDefinition> electrodes) {
-    idToMapping = new HashMap<>();
-    
-    for (ElectrodePlatformDefinition definition : electrodes) {
-      int id = definition.id;
-
-      ElectrodeMapping mapping = new ElectrodeMapping();
-      mapping.electrodeId = definition.electrodeId;
-      mapping.driverId = definition.driverId;
-      
-      idToMapping.put(id, mapping);
-    }
-  }
-  
   public void turnHighVoltageOnForElectrodes() {
+    Assert.that(!platform.highVoltageOn, "High voltage is already on!");
+    platform.highVoltageOn = true;
+    
     String message = messenger.turnHighVoltageOnForElectrodesMessage();
     transmitter.send(message);
   }
   
   public void turnHighVoltageOffForElectrodes() {
+    Assert.that(platform.highVoltageOn, "High voltage is not on, so you can't turn high voltage off!");
+    platform.highVoltageOn = false;
+    
     String message = messenger.turnHighVoltageOffForElectrodesMessage();
     transmitter.send(message);
   }
   
   public void clearAllElectrodes() {
+    platform.clearElectrodes();
+    
     String message1 = messenger.clearAllElectrodesMessage(0);
     String message2 = messenger.clearAllElectrodesMessage(1);
     
@@ -65,12 +57,18 @@ public class PlatformInterface {
   }
   
   public void setElectrode(int x, int y) {
+    Assert.that(!platform.isElectrodeOnByXY(x, y), String.format("electrode (x,y)=(%d,%d) is already on!", x, y));
+    platform.flipElectrodeStateByXY(x, y);
+    
     ElectrodeMapping mapping = getElectrodeMappingByXY(x, y);
     String message = messenger.setElectrodeMessage(mapping.driverId, mapping.electrodeId);
     transmitter.send(message);
   }
   
   public void clearElectrode(int x, int y) {
+    Assert.that(platform.isElectrodeOnByXY(x, y), String.format("electrode (x,y)=(%d,%d) is not on and cannot be cleared!", x, y));
+    platform.flipElectrodeStateByXY(x, y);
+    
     ElectrodeMapping mapping = getElectrodeMappingByXY(x, y);
     String message = messenger.clearElectrodeMessage(mapping.driverId, mapping.electrodeId);
     transmitter.send(message);
@@ -104,15 +102,40 @@ public class PlatformInterface {
     return electrodes;
   }
   
+  private void setupElectrodeMappings(List<ElectrodePlatformDefinition> definitions) {
+    idToMapping = new HashMap<>();
+    
+    for (ElectrodePlatformDefinition definition : definitions) {
+      int id = definition.id;
+
+      ElectrodeMapping mapping = new ElectrodeMapping();
+      mapping.electrodeId = definition.electrodeId;
+      mapping.driverId = definition.driverId;
+      
+      idToMapping.put(id, mapping);
+    }
+  }
+  
   public static void main(String[] args) {
-    new PlatformInterface();
+    PlatformInterface pi = new PlatformInterface();
+    
+    pi.turnHighVoltageOnForElectrodes();
+    
+    pi.setElectrode(3, 2);
+    pi.setElectrode(0, 19);
+    pi.clearElectrode(0, 19);
+    pi.setElectrode(0, 19);
+    
+    pi.clearAllElectrodes();
+    
+    pi.turnHighVoltageOffForElectrodes();
   }
 }
 
 class SerialTransmitter {
   
   public void send(String message) {
-    System.out.println(message);
+    System.out.print(message);
   }
 }
 
@@ -135,6 +158,39 @@ class ElectrodeMapping {
 class Platform {
   public int rows;
   public int columns;
+  
+  public boolean[][] array;
+
+  public boolean highVoltageOn;
+  
+  public Platform() {
+    rows = 20;
+    columns = 32;
+    array = new boolean[rows][columns];
+    highVoltageOn = false;
+  }
+  
+  public void clearElectrodes() {
+    for (int row = 0; row < rows; row++) {
+      for (int column = 0; column < columns; column++) {
+        array[row][column] = false;
+      }
+    }
+  }
+
+  public boolean isElectrodeOnByXY(int x, int y) {
+    int col = x;
+    int row = rows - 1 - y;
+    
+    return array[row][col];
+  }
+  
+  public void flipElectrodeStateByXY(int x, int y) {
+    int col = x;
+    int row = rows - 1 - y;
+    
+    array[row][col] = !array[row][col];
+  }
 }
 
 class PlatformMessenger {

@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pack.algorithms.Droplet;
+import pack.algorithms.DropletUnit;
 import pack.algorithms.Point;
 import pack.algorithms.Reservoir;
+import pack.helpers.Assert;
 
 public class ReservoirManager {
   
@@ -28,8 +30,12 @@ public class ReservoirManager {
       if (reservoir.substance.equals(substance)) {
         
         for (Droplet droplet : droplets) {
-          Point at = droplet.route.getPosition(timestamp - 1);
-          Point to = droplet.route.getPosition(timestamp);
+          Assert.that(droplet.units.size() == 1);
+          
+          DropletUnit unit = droplet.units.get(0);
+          
+          Point at = unit.route.getPosition(timestamp - 1);
+          Point to = unit.route.getPosition(timestamp);
 
           if (!checker.satifiesConstraints(reservoir.position, at, to)) continue outer;
         }
