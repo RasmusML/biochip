@@ -19,14 +19,18 @@ import pack.algorithms.Droplet;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.GreedyRouter;
 import pack.algorithms.Module;
+import pack.algorithms.NotDropletAwareGreedyRouter;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
 import pack.algorithms.Reservoir;
 import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
+import pack.algorithms.TrafficRouter;
 import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
+import pack.tests.CrowdedModuleBioArray;
+import pack.tests.CrowdedModuleBioAssay;
 import pack.tests.PCRMixingTreeArray;
 import pack.tests.PCRMixingTreeAssay;
 import pack.tests.Test1BioArray;
@@ -90,29 +94,29 @@ public class App extends ApplicationAdapter {
 		renderer = new Renderer(viewport);
 		renderer.setCanvas(canvas);
 		
-		assay = new Test1BioAssay();
-		array = new Test1BioArray();
-    
-		assay = new PCRMixingTreeAssay();
-    array = new PCRMixingTreeArray();
-		
-    //assay = new CrowdedModuleBioAssay();
-    //array = new CrowdedModuleBioArray();
-    
     assay = new MergeAssay2();
     array = new MergeArray2();
-    
-    assay = new Test1BioAssay();
-    array = new Test1BioArray();
     
     assay = new MixAssay2();
     array = new MixArray2();
     
+    assay = new Test1BioAssay();
+    array = new Test1BioArray();
+
+    assay = new CrowdedModuleBioAssay();
+    array = new CrowdedModuleBioArray();
+    
+    assay = new PCRMixingTreeAssay();
+    array = new PCRMixingTreeArray();
     
 		percentages = new DefaultMixingPercentages();
+
+		assay = new Test1BioAssay();
+		array = new Test1BioArray();
 		
-//		Router router = new TrafficRouter();
-		Router router = new GreedyRouter();
+		
+		Router router = new NotDropletAwareGreedyRouter();
+		//Router router = new NotDropletAwareGreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
 		/*
@@ -435,8 +439,9 @@ public class App extends ApplicationAdapter {
               if (droplet.operation == null) {
                 drawDropletUnit(droplet, at, move.x, move.y);
               } else {            
+                /*
                 Droplet[] successors = droplet.operation.forwarding;
-                
+
                 for (Droplet successor : successors) {
                   DropletUnit successorUnit = successor.units.get(i);
                   target = successorUnit.route.getPosition(timestamp + 1);
@@ -444,6 +449,9 @@ public class App extends ApplicationAdapter {
                    
                   drawDropletUnit(droplet, at, move.x, move.y);
                 }
+                */
+                
+                drawDropletUnit(droplet, at, 0, 0);
               }
             } else {
               drawDropletUnit(droplet, at, move.x, move.y);
@@ -467,6 +475,9 @@ public class App extends ApplicationAdapter {
     float unscaledDiameter = 2f * unscaledRadius;
     
     float diameter = diameterScaler * unscaledDiameter;
+    
+    diameter = 1; // @TODO: remove
+    
     float size = tilesize * diameter;
     
     float offset = (tilesize - size) / 2f;

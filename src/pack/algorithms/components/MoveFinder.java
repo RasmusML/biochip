@@ -73,7 +73,6 @@ public class MoveFinder {
             if (!checker.satifiesConstraints(at, to, otherAt, otherTo)) continue outer;
           }
         }
-        
       }
 
       // a move is only added, if the move is valid for all droplet units.
@@ -81,6 +80,18 @@ public class MoveFinder {
     }
     
     return validMoves;
+  }
+  
+  public List<Move> getValidMovesSingleUnitDroplets(Droplet droplet, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
+    return getValidMovesSingleUnitDroplets(droplet, null, null, timestamp, droplets, modules, array);
+  }
+  
+  public List<Move> getValidMovesSingleUnitDroplets(Droplet droplet, Droplet mergeSibling, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
+    return getValidMovesSingleUnitDroplets(droplet, mergeSibling, null, timestamp, droplets, modules, array);
+  }
+  
+  public List<Move> getValidMovesSingleUnitDroplets(Droplet droplet, Module module, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
+    return getValidMovesSingleUnitDroplets(droplet, null, module, timestamp, droplets, modules, array);
   }
   
   public List<Move> getValidMovesSingleUnitDroplets(Droplet droplet, Droplet mergeSibling, Module module, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
@@ -124,7 +135,6 @@ public class MoveFinder {
             if (!checker.satifiesConstraints(at, to, otherAt, otherTo)) continue outer;
           }
         }
-        
       }
 
       // a move is only added, if the move is valid for all droplet units.

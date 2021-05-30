@@ -6,6 +6,7 @@ import java.util.List;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.NotDropletAwareGreedyRouter;
+import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
@@ -19,7 +20,7 @@ public class TestSuite {
   
   private MixingPercentages percentages;
   
-  private NotDropletAwareGreedyRouter router;
+  private Router router;
   
   private List<TestResult> testResults;
   
@@ -121,11 +122,12 @@ public class TestSuite {
     arrays.add(array);
     assays.add(assay);
   }
+
+  static private class TestResult {
+    public int id;
+    public boolean completed;
+    public int executionTime;
+    public float runningTime;
+  }
 }
 
-class TestResult {
-  public int id;
-  public boolean completed;
-  public int executionTime;
-  public float runningTime;
-}

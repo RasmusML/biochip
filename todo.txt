@@ -1,9 +1,14 @@
+Droplet-aware:
+split operation
+module operation
+
+General:
 waste operation
 greedy router change probabilities on deadlock
 probabilities for all moves (greedy router)
 create tests with the real platform dimensions (rows=20, cols=32)
 
-
+use the reshape algorithm
 
 // @TODO: build verboseBioAssay from bioAssay (with merge, move etc...)
 
