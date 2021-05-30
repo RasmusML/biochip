@@ -19,22 +19,24 @@ import pack.algorithms.Droplet;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.GreedyRouter;
 import pack.algorithms.Module;
-import pack.algorithms.NotDropletAwareGreedyRouter;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
 import pack.algorithms.Reservoir;
 import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
-import pack.algorithms.TrafficRouter;
 import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
 import pack.tests.CrowdedModuleBioArray;
 import pack.tests.CrowdedModuleBioAssay;
+import pack.tests.ModuleBioArray4;
+import pack.tests.ModuleBioAssay4;
 import pack.tests.PCRMixingTreeArray;
 import pack.tests.PCRMixingTreeAssay;
 import pack.tests.Test1BioArray;
 import pack.tests.Test1BioAssay;
+import pack.tests.Test2BioArray;
+import pack.tests.Test2BioAssay;
 import pack.tests.functionality.MergeArray2;
 import pack.tests.functionality.MergeAssay2;
 import pack.tests.functionality.MixArray2;
@@ -103,17 +105,20 @@ public class App extends ApplicationAdapter {
     assay = new Test1BioAssay();
     array = new Test1BioArray();
 
-    assay = new CrowdedModuleBioAssay();
-    array = new CrowdedModuleBioArray();
-    
     assay = new PCRMixingTreeAssay();
     array = new PCRMixingTreeArray();
     
 		percentages = new DefaultMixingPercentages();
 
-		assay = new Test1BioAssay();
-		array = new Test1BioArray();
+		assay = new ModuleBioAssay4();
+    array = new ModuleBioArray4();
 		
+    assay = new Test2BioAssay();
+    array = new Test2BioArray();
+
+    assay = new CrowdedModuleBioAssay();
+    array = new CrowdedModuleBioArray();
+    
 		Router router = new GreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();
 		result = router.compute(assay, array, percentages);

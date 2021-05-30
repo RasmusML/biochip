@@ -2,7 +2,6 @@ package pack.algorithms;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -295,18 +294,13 @@ public class GreedyRouter implements Router {
               List<DropletUnit> units = new ArrayList<>();
               units.addAll(droplet.units);
               
-              units.sort(new Comparator<DropletUnit>() {
-
-                @Override
-                public int compare(DropletUnit u1, DropletUnit u2) {
-                  Point at1 = u1.route.getPosition(timestamp - 1);
-                  Point at2 = u2.route.getPosition(timestamp - 1);
-                  return at1.y - at2.y;
-                }
+              units.sort((u1, u2) -> {
+                Point at1 = u1.route.getPosition(timestamp - 1);
+                Point at2 = u2.route.getPosition(timestamp - 1);
+                return at1.y - at2.y;
               });
               
               int aarea1 = droplet.units.size() / 2;
-              int aarea2 = droplet.units.size() - aarea1;
               
               // @TODO: fix
               float area1 = droplet.area / 2f;
@@ -335,18 +329,13 @@ public class GreedyRouter implements Router {
               List<DropletUnit> units = new ArrayList<>();
               units.addAll(droplet.units);
               
-              units.sort(new Comparator<DropletUnit>() {
-
-                @Override
-                public int compare(DropletUnit u1, DropletUnit u2) {
-                  Point at1 = u1.route.getPosition(timestamp - 1);
-                  Point at2 = u2.route.getPosition(timestamp - 1);
-                  return at1.x - at2.x;
-                }
+              units.sort((u1, u2) -> {
+                Point at1 = u1.route.getPosition(timestamp - 1);
+                Point at2 = u2.route.getPosition(timestamp - 1);
+                return at1.x - at2.x;
               });
               
               int aarea1 = droplet.units.size() / 2;
-              int aarea2 = droplet.units.size() - aarea1;
               
               // @TODO: fix
               float area1 = droplet.area / 2f;
@@ -439,19 +428,24 @@ public class GreedyRouter implements Router {
           // module operations
 
           // @TODO: incomplete
-          
           Droplet droplet = operation.manipulating[0];
           
           Module module = extra.module;
           
-          Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
-          Move move = getModuleMove(droplet, runningDroplets, module, array);
-          if (move == null) continue;
+          boolean dropletInside = true;
+          for (DropletUnit unit : droplet.units) {
+            Point at = unit.route.getPosition(timestamp - 1);
+            
+            if (!GeometryUtil.inside(at.x, at.y, module.position.x, module.position.y, module.width, module.height)) {
+              dropletInside = false;
+              break;
+            }  
+          }
           
-          Point to = at.copy().add(move.x, move.y);
+          Move move = getModuleMove(droplet, runningDroplets, module, array);
           
           // @TODO: modules may take control, if they want to.
-          if (GeometryUtil.inside(to.x, to.y, module.position.x, module.position.y, module.width, module.height)) {
+          if (dropletInside) {
             extra.currentDurationInTimesteps += 1;
             
             if (extra.currentDurationInTimesteps >= module.duration) {
@@ -460,21 +454,29 @@ public class GreedyRouter implements Router {
               runningDroplets.remove(droplet);
               retiredDroplets.add(droplet);
               
-              Droplet forward = createDroplet(to, droplet.area);
+              Droplet forward = createModuleDroplet(move, droplet.units, droplet.area);
               operation.forwarding[0] = forward;
               runningDroplets.add(forward);
               
               moduleManager.free(module);
               
             } else {
-              droplet.units.get(0).route.path.add(to);
+              for (DropletUnit unit : droplet.units) {
+                Point at = unit.route.getPosition(timestamp - 1);
+                Point to = at.copy().add(move.x, move.y);
+                unit.route.path.add(to);
+              }
             }
             
           } else {
-            Point next = droplet.units.get(0).route.getPosition(timestamp);
-            if (next != null) continue;
+            // A detour can happen, if the droplet is within another active module.
+            if (move == null) continue;
             
-            droplet.units.get(0).route.path.add(to);
+            for (DropletUnit unit : droplet.units) {
+              Point at = unit.route.getPosition(timestamp - 1);
+              Point to = at.copy().add(move.x, move.y);
+              unit.route.path.add(to);
+            }
           }
         }
       }
@@ -544,7 +546,6 @@ public class GreedyRouter implements Router {
       // early terminate.
       if (iteration > maxIterationsPerOperation) {
         earlyTerminated = true;
-
         break;
       }
       
@@ -727,12 +728,31 @@ public class GreedyRouter implements Router {
   }
   
   
-  private Droplet createSplitDroplet(Move move, List<DropletUnit> downUnits, float area) {
+  private Droplet createSplitDroplet(Move move, List<DropletUnit> units, float area) {
     Droplet droplet = new Droplet();
     droplet.area = area;
     droplet.id = dropletIdGenerator.getId();
     
-    for (DropletUnit unit : downUnits) {
+    for (DropletUnit unit : units) {
+      Point at = new Point(unit.route.getPosition()).add(move.x, move.y);
+      
+      DropletUnit copy = new DropletUnit();
+      copy.route.start = timestamp;
+      copy.route.path.add(at);
+      
+      droplet.units.add(copy);
+    }
+    
+    return droplet;
+  }
+  
+
+  private Droplet createModuleDroplet(Move move, List<DropletUnit> units, float area) {
+    Droplet droplet = new Droplet();
+    droplet.area = area;
+    droplet.id = dropletIdGenerator.getId();
+    
+    for (DropletUnit unit : units) {
       Point at = new Point(unit.route.getPosition()).add(move.x, move.y);
       
       DropletUnit copy = new DropletUnit();
@@ -845,6 +865,9 @@ public class GreedyRouter implements Router {
     float bestMoveDistance = Float.MAX_VALUE;
     
     List<Move> validMoves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
+    
+    // @TODO: get the center, make sure the shape fits into the module. 
+    // @TODO: look into splitting a droplet into smaller, maybe extra operation option ("optimization")
     Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
     
     Point to = new Point();

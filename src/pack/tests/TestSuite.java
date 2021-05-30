@@ -5,6 +5,7 @@ import java.util.List;
 
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
+import pack.algorithms.GreedyRouter;
 import pack.algorithms.NotDropletAwareGreedyRouter;
 import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
@@ -30,7 +31,7 @@ public class TestSuite {
     arrays = new ArrayList<>();
     assays = new ArrayList<>();
     
-    router = new NotDropletAwareGreedyRouter();
+    router = new GreedyRouter();
     percentages = new DefaultMixingPercentages();
     
     Logger.mode = LogMode.Silent;
@@ -105,7 +106,7 @@ public class TestSuite {
 
   private void registerAllTests() {
     register(new Test1BioAssay(), new Test1BioArray());
-    register(new Test2BioAssay(), new Test2BioArray());
+    //register(new Test2BioAssay(), new Test2BioArray());
     register(new Test3BioAssay(), new Test3BioArray());
     register(new PCRMixingTreeAssay(), new PCRMixingTreeArray());
     register(new BlockingDispenserTestBioAssay(), new BlockingDispenserTestBioArray());

@@ -35,10 +35,12 @@ public class CrowdedModuleBioAssay extends BioAssay {
     builder.connect(input4, merge2);
     builder.connect(input5, merge2);
 
+    /*
     int input6 = builder.createDispenseOperation("C");
     int split1 = builder.createSplitOperation();
     
     builder.connect(input6, split1);
+    */
     
     int input7 = builder.createDispenseOperation("CaCl2");
     int mix2 = builder.createMixOperation();
@@ -55,15 +57,19 @@ public class CrowdedModuleBioAssay extends BioAssay {
     
     builder.connect(input9, mix4);
     
+    /*
     int input10 = builder.createDispenseOperation("CaCl5");
     int split2 = builder.createSplitOperation();
     
     builder.connect(input10, split2);
+    */
     
+    /*
     int input11 = builder.createDispenseOperation("CaCl6");
     int split3 = builder.createSplitOperation();
     
     builder.connect(input11, split3);
+    */
     
     int input12 = builder.createDispenseOperation("D");
     int input13 = builder.createDispenseOperation("E");

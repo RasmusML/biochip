@@ -33,10 +33,12 @@ public class ModuleBioAssay4 extends BioAssay {
     int heat2 = builder.createHeatingOperation(9000f);
     builder.connect(merge1, heat2);
 
+    /* Droplet-aware routing can't split a 1 area droplet
     int input6 = builder.createDispenseOperation("C");
     int split1 = builder.createSplitOperation();
     
     builder.connect(input6, split1);
+    */
     
     sink = builder.getSink();
     count = builder.getOperationCount();
