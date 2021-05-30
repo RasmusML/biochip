@@ -33,6 +33,8 @@ import pack.tests.Test1BioArray;
 import pack.tests.Test1BioAssay;
 import pack.tests.functionality.MergeArray2;
 import pack.tests.functionality.MergeAssay2;
+import pack.tests.functionality.MixArray2;
+import pack.tests.functionality.MixAssay2;
 
 public class App extends ApplicationAdapter {
 
@@ -102,6 +104,10 @@ public class App extends ApplicationAdapter {
     
     assay = new Test1BioAssay();
     array = new Test1BioArray();
+    
+    assay = new MixAssay2();
+    array = new MixArray2();
+    
     
 		percentages = new DefaultMixingPercentages();
 		

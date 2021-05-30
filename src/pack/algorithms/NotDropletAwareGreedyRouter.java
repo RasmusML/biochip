@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import engine.math.MathUtils;
-import pack.algorithms.components.BioConstraintsChecker;
+import pack.algorithms.components.ConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
 import pack.algorithms.components.ModifiedAStarPathFinder;
 import pack.algorithms.components.ModuleManager;
@@ -24,7 +24,7 @@ import pack.helpers.Logger;
 
 public class NotDropletAwareGreedyRouter implements Router {
 
-  private BioConstraintsChecker checker;
+  private ConstraintsChecker checker;
   private RandomIndexSelector indexSelector;
   private MoveFinder moveFinder;
   //private ModifiedAStarPathFinder pathFinder;
@@ -63,7 +63,7 @@ public class NotDropletAwareGreedyRouter implements Router {
 
   @Override
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
-    checker = new BioConstraintsChecker();
+    checker = new ConstraintsChecker();
     indexSelector = new RandomIndexSelector();
     moveFinder = new MoveFinder(checker);
 
@@ -633,13 +633,13 @@ public class NotDropletAwareGreedyRouter implements Router {
   }
 
   private Move getMixMove(Droplet droplet, MixingPercentages percentages, BioArray array) {
-    List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
+    List<Move> moves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
     Move prevMove = droplet.units.get(0).route.getMove(timestamp - 2);
 
     float bestPercentage = Float.NEGATIVE_INFINITY;
     Move bestMove = null;
 
-    for (Move move : validMoves) {
+    for (Move move : moves) {
       float percentage = percentages.getMixingPercentage(move, prevMove);
 
       if (percentage > bestPercentage) {

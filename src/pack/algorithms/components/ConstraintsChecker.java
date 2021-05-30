@@ -2,7 +2,7 @@ package pack.algorithms.components;
 
 import pack.algorithms.Point;
 
-public class BioConstraintsChecker {
+public class ConstraintsChecker {
   
   public boolean satifiesConstraints(Point to0, Point at1, Point to1) {
     // dynamic constraint

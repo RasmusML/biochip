@@ -13,9 +13,9 @@ import pack.helpers.GeometryUtil;
 
 public class MoveFinder {
   
-  private BioConstraintsChecker checker;
+  private ConstraintsChecker checker;
   
-  public MoveFinder(BioConstraintsChecker checker) {
+  public MoveFinder(ConstraintsChecker checker) {
     this.checker = checker;
   }
   
@@ -41,7 +41,7 @@ public class MoveFinder {
         Point at = dropletUnit.route.getPosition(timestamp - 1);
         to.set(at).add(move.x, move.y);
         
-        if (!GeometryUtil.inside(to.x, to.y, array.width, array.height)) continue;
+        if (!GeometryUtil.inside(to.x, to.y, array.width, array.height)) continue outer;
   
         // skip moves which overlap modules, unless the module is the target module.
         for (Module other : modules) {
@@ -93,7 +93,7 @@ public class MoveFinder {
         Point at = dropletUnit.route.getPosition(timestamp - 1);
         to.set(at).add(move.x, move.y);
         
-        if (!GeometryUtil.inside(to.x, to.y, array.width, array.height)) continue;
+        if (!GeometryUtil.inside(to.x, to.y, array.width, array.height)) continue outer;
   
         // skip moves which overlap modules, unless the module is the target module.
         for (Module other : modules) {
@@ -108,7 +108,7 @@ public class MoveFinder {
             Point siblingAt = unit.route.getPosition(timestamp - 1);
             Point siblingTo = unit.route.getPosition(timestamp);
   
-            if (!checker.satisfiesCompanionConstraints(at, to, siblingAt, siblingTo)) continue;
+            if (!checker.satisfiesCompanionConstraints(at, to, siblingAt, siblingTo)) continue outer;
           }
         }
         

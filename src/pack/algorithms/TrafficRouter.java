@@ -3,7 +3,7 @@ package pack.algorithms;
 import java.util.ArrayList;
 import java.util.List;
 
-import pack.algorithms.components.BioConstraintsChecker;
+import pack.algorithms.components.ConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
 import pack.algorithms.components.MoveFinder;
 import pack.algorithms.components.ReservoirManager;
@@ -11,7 +11,7 @@ import pack.algorithms.components.SubstanceToReservoirAssigner;
 
 public class TrafficRouter implements Router {
 
-  private BioConstraintsChecker checker;
+  private ConstraintsChecker checker;
   private MoveFinder moveFinder;
 
   private ReservoirManager reservoirManager;
@@ -24,7 +24,7 @@ public class TrafficRouter implements Router {
 
   @Override
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
-    checker = new BioConstraintsChecker();
+    checker = new ConstraintsChecker();
     moveFinder = new MoveFinder(checker);
 
     SubstanceToReservoirAssigner s2rAssigner = new SubstanceToReservoirAssigner();

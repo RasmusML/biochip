@@ -7,16 +7,15 @@ import pack.algorithms.Droplet;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.Point;
 import pack.algorithms.Reservoir;
-import pack.helpers.Assert;
 
 public class ReservoirManager {
   
   private List<Reservoir> reservoirs;
   private List<Reservoir> reserved;
 
-  private BioConstraintsChecker checker;
+  private ConstraintsChecker checker;
   
-  public ReservoirManager(List<Reservoir> reservoirs, BioConstraintsChecker checker) {
+  public ReservoirManager(List<Reservoir> reservoirs, ConstraintsChecker checker) {
     this.reservoirs = reservoirs;
     this.checker = checker;
     

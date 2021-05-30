@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import engine.math.MathUtils;
-import pack.algorithms.components.BioConstraintsChecker;
+import pack.algorithms.components.ConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
 import pack.algorithms.components.ModifiedAStarPathFinder;
 import pack.algorithms.components.ModuleManager;
@@ -24,7 +24,7 @@ import pack.helpers.Logger;
 
 public class GreedyRouter implements Router {
 
-  private BioConstraintsChecker checker;
+  private ConstraintsChecker checker;
   private RandomIndexSelector indexSelector;
   private MoveFinder moveFinder;
   //private ModifiedAStarPathFinder pathFinder;
@@ -63,7 +63,7 @@ public class GreedyRouter implements Router {
 
   @Override
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
-    checker = new BioConstraintsChecker();
+    checker = new ConstraintsChecker();
     indexSelector = new RandomIndexSelector();
     moveFinder = new MoveFinder(checker);
 
@@ -282,6 +282,7 @@ public class GreedyRouter implements Router {
             }
 
           } else if (operation.name.equals(OperationType.split)) {
+            // @TODO: incomplete
             Droplet droplet = operation.manipulating[0];
 
             if (canSplit(droplet, Orientation.Vertical, runningDroplets, array)) {
@@ -342,22 +343,18 @@ public class GreedyRouter implements Router {
           } else if (operation.name.equals(OperationType.mix)) {
             Droplet droplet = operation.manipulating[0];
 
-            Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
             Move move = getMixMove(droplet, percentages, array);
             if (move == null) continue;
             
-            Move previousMove = droplet.units.get(0).route.getMove(timestamp - 2);
+            Move previousMove = droplet.units.get(0).route.getMove(timestamp - 2);  // @Cleanup
             float mixing = percentages.getMixingPercentage(move, previousMove);
 
-            Point to = at.copy().add(move.x, move.y);
-            
             extra.mixingPercentage += mixing;
             if (extra.mixingPercentage >= 100f) {
               extra.mixingPercentage = 100;
               extra.done = true;
 
-              Droplet forward = createDroplet(to, droplet.area);
-
+              Droplet forward = createMixDroplet(move, droplet);
               operation.forwarding[0] = forward;
 
               runningDroplets.remove(droplet);
@@ -366,7 +363,11 @@ public class GreedyRouter implements Router {
               runningDroplets.add(forward);
               
             } else {
-              droplet.units.get(0).route.path.add(to);
+              for (DropletUnit unit : droplet.units) {
+                Point at = unit.route.getPosition(timestamp - 1);
+                Point to = at.copy().add(move.x, move.y);
+                unit.route.path.add(to);
+              }
             }
           } else if(operation.name.equals(OperationType.dispose)) { 
             /*
@@ -398,6 +399,8 @@ public class GreedyRouter implements Router {
           
         } else {
           // module operations
+
+          // @TODO: incomplete
           
           Droplet droplet = operation.manipulating[0];
           
@@ -438,19 +441,6 @@ public class GreedyRouter implements Router {
         }
       }
        
-      /*
-      for (Droplet droplet : detouringDroplets) {
-        Point at = droplet.route.getPosition(timestamp - 1);
-        
-        Move move = getDetourMove(droplet, runningDroplets, array);
-        Point to = at.copy().add(move.x, move.y);
-
-        droplet.route.path.add(to);
-      }
-      
-      detouringDroplets.clear();
-      */
-
       // select a move to droplets which did not get a move during the operation-phase.
       // This can happen, if a droplet is done with its operation or if a droplet should detour.
       for (Droplet droplet : runningDroplets) {
@@ -667,6 +657,24 @@ public class GreedyRouter implements Router {
     
     for (DropletUnit unit : droplet1.units) {
       Point at = unit.route.getPosition();
+      
+      DropletUnit copy = new DropletUnit();
+      copy.route.start = timestamp;
+      copy.route.path.add(at);
+      
+      droplet.units.add(copy);
+    }
+    
+    return droplet;
+  }
+  
+  private Droplet createMixDroplet(Move move, Droplet d) {
+    Droplet droplet = new Droplet();
+    droplet.area = d.area;
+    droplet.id = dropletIdGenerator.getId();
+    
+    for (DropletUnit unit : d.units) {
+      Point at = new Point(unit.route.getPosition()).add(move.x, move.y);
       
       DropletUnit copy = new DropletUnit();
       copy.route.start = timestamp;
