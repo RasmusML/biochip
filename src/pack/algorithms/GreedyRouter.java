@@ -317,7 +317,7 @@ public class GreedyRouter implements Router {
               Droplet d1 = createSplitDroplet(Move.Down, downUnits, area1);
               
               // select the top droplet-units to go up
-              List<DropletUnit> upUnits = units.subList(aarea1 + 1, aarea2);
+              List<DropletUnit> upUnits = units.subList(aarea1, droplet.units.size());
               Droplet d2 = createSplitDroplet(Move.Up, upUnits, area2);
               
               runningDroplets.add(d1);
@@ -357,7 +357,7 @@ public class GreedyRouter implements Router {
               Droplet d1 = createSplitDroplet(Move.Left, leftUnits, area1);
               
               // select the right droplet-units to go right
-              List<DropletUnit> rightUnits = units.subList(aarea1 + 1, aarea2);
+              List<DropletUnit> rightUnits = units.subList(aarea1, droplet.units.size());
               Droplet d2 = createSplitDroplet(Move.Right, rightUnits, area2);
               
               runningDroplets.add(d1);
@@ -370,10 +370,12 @@ public class GreedyRouter implements Router {
               // move somewhere, where it can split.
               Move move = getSplitMove(droplet, runningDroplets, array);
               if (move == null) continue;
-
-              Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
-              Point to = at.copy().add(move.x, move.y);
-              droplet.units.get(0).route.path.add(to);
+              
+              for (DropletUnit unit : droplet.units) {
+                Point at = unit.route.getPosition(timestamp - 1);
+                Point to = at.copy().add(move.x, move.y);
+                unit.route.path.add(to);
+              }
             }
             
           } else if (operation.name.equals(OperationType.mix)) {

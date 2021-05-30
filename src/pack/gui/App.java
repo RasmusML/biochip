@@ -114,8 +114,7 @@ public class App extends ApplicationAdapter {
 		assay = new Test1BioAssay();
 		array = new Test1BioArray();
 		
-		
-		Router router = new NotDropletAwareGreedyRouter();
+		Router router = new GreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
