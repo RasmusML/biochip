@@ -3,14 +3,23 @@ package pack.algorithms;
 import java.util.ArrayList;
 import java.util.List;
 
-import pack.helpers.Assert;
-
 public class Droplet {
+  
   public int id;
   public float area;
-  public List<DropletUnit> units = new ArrayList<>();
+  
+  public List<DropletUnit> units;
   public Operation operation;
   
+  public Droplet() {
+    units = new ArrayList<>();
+  }
+  
+  public boolean hasPosition(int timestamp) {
+    DropletUnit unit = units.get(0);
+    Point position = unit.route.getPosition(timestamp);
+    return position != null;
+  }
   // we assume that all DropletUnits start and end at the same time for now.
   // So just get the timestamps of the first dropletunit.
   public int getStartTimestamp() {

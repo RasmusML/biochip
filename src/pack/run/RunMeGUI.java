@@ -16,6 +16,5 @@ public class RunMeGUI {
 		
 		new Application(new App(), cfg);
 		//new Application(new DropletReshapeApp(), cfg);
-    
 	}
 }

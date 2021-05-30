@@ -31,6 +31,8 @@ import pack.tests.PCRMixingTreeArray;
 import pack.tests.PCRMixingTreeAssay;
 import pack.tests.Test1BioArray;
 import pack.tests.Test1BioAssay;
+import pack.tests.functionality.MergeArray2;
+import pack.tests.functionality.MergeAssay2;
 
 public class App extends ApplicationAdapter {
 
@@ -94,6 +96,9 @@ public class App extends ApplicationAdapter {
 		
     //assay = new CrowdedModuleBioAssay();
     //array = new CrowdedModuleBioArray();
+    
+    assay = new MergeAssay2();
+    array = new MergeArray2();
     
 		percentages = new DefaultMixingPercentages();
 		

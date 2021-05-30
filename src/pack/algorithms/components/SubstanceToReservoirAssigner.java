@@ -11,6 +11,7 @@ import pack.algorithms.OperationType;
 import pack.algorithms.Point;
 import pack.algorithms.Reservoir;
 import pack.algorithms.Tags;
+import pack.helpers.Assert;
 
 public class SubstanceToReservoirAssigner {
   
@@ -35,8 +36,12 @@ public class SubstanceToReservoirAssigner {
 
       String substance = (String) dispenseOperation.attributes.get(Tags.substance);
       if (assigned.contains(substance)) {
+        // if a reservoir containing the substance already exists, then only only assign
+        // leftover reservoirs to the substance.  
         pending.add(substance);
       } else {
+        Assert.that(reservoirIndex < reservoirTiles.size(), "no reservoirs left to assign substance to! Add more reservoirs in the array");
+        
         assigned.add(substance);
 
         Point reservoirTile = reservoirTiles.get(reservoirIndex);
@@ -53,6 +58,7 @@ public class SubstanceToReservoirAssigner {
       }
     }
 
+    // assign leftover reservoirs to substances which occur multiple times.
     while (reservoirIndex < reservoirTiles.size() && pending.size() > 0) {
       String substance = pending.remove(0);
 
@@ -65,13 +71,6 @@ public class SubstanceToReservoirAssigner {
       reservoirs.add(reservoir);
     }
 
-    /*
-    for (Reservoir reservoir : reservoirs) {
-      System.out.printf("reservoir %s: %s\n", reservoir.position, reservoir.substance);
-    }
-    */
-
     return reservoirs;
   }
-
 }
