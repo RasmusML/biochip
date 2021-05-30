@@ -100,6 +100,9 @@ public class App extends ApplicationAdapter {
     assay = new MergeAssay2();
     array = new MergeArray2();
     
+    assay = new Test1BioAssay();
+    array = new Test1BioArray();
+    
 		percentages = new DefaultMixingPercentages();
 		
 //		Router router = new TrafficRouter();

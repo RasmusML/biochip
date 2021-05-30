@@ -30,14 +30,13 @@ public class ReservoirManager {
       if (reservoir.substance.equals(substance)) {
         
         for (Droplet droplet : droplets) {
-          Assert.that(droplet.units.size() == 1);
           
-          DropletUnit unit = droplet.units.get(0);
-          
-          Point at = unit.route.getPosition(timestamp - 1);
-          Point to = unit.route.getPosition(timestamp);
-
-          if (!checker.satifiesConstraints(reservoir.position, at, to)) continue outer;
+          for (DropletUnit unit : droplet.units) {
+            Point at = unit.route.getPosition(timestamp - 1);
+            Point to = unit.route.getPosition(timestamp);
+  
+            if (!checker.satifiesConstraints(reservoir.position, at, to)) continue outer;
+          }
         }
         
         reserved.add(reservoir);
