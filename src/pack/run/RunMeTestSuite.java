@@ -6,7 +6,6 @@ public class RunMeTestSuite {
   
   public static void main(String[] args) {
     TestSuite testSuite = new TestSuite();
-    testSuite.runTests();
-    testSuite.printSummary();
+    testSuite.run();
   }
 }

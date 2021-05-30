@@ -46,6 +46,13 @@ public class PlatformInterface {
     transmitter.send(message);
   }
   
+  public void setHighVoltageValue(int value) {
+    Assert.that(value >= 0, "value should be non-negative.");
+    
+    String message = messenger.setHighVoltageValueMessage(value);
+    transmitter.send(message);
+  }
+  
   public void clearAllElectrodes() {
     platform.clearElectrodes();
     
@@ -201,6 +208,10 @@ class PlatformMessenger {
   
   public String turnHighVoltageOffForElectrodesMessage() {
     return String.format("hvpoe 1 0 \r");
+  }
+  
+  public String setHighVoltageValueMessage(int value) {
+    return String.format("shv 1 %d \r");
   }
   
   public String clearAllElectrodesMessage(int driverId) {

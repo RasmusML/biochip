@@ -9,15 +9,14 @@ import pack.tests.CrowdedModuleBioAssay;
 public class RunMeGraphCreator {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-		BioAssay assay = new CrowdedModuleBioAssay();
+	  String graphvizPath = "C:\\Program Files (x86)\\Graphviz";
+
+	  BioAssay assay = new CrowdedModuleBioAssay();
 		
 		String graph = assay.asGraphvizGraph();
-		System.out.println(graph);
+		
 		String name = assay.name.replace(" ", "");
-		
 		String pngPath = String.format("./assays/%s.png", name);
-		
-		String graphvizPath = "C:\\Program Files (x86)\\Graphviz";
 		
 		GraphvizUtil.createPngFromString(graph, pngPath, graphvizPath);
 	}

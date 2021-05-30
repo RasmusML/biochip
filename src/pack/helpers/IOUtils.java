@@ -23,7 +23,7 @@ public class IOUtils {
       image = ImageIO.read(stream);
 
     } catch (IOException e) {
-      System.out.printf("%s not valid\n", path);
+      System.out.printf("\"%s\" could not be found!\n", path);
     }
 
     return image;

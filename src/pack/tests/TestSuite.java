@@ -21,8 +21,7 @@ public class TestSuite {
   
   private MixingPercentages percentages;
   
-  private Router router;
-  
+  private List<Router> routers;
   private List<TestResult> testResults;
   
   public TestSuite() {
@@ -30,16 +29,36 @@ public class TestSuite {
     
     arrays = new ArrayList<>();
     assays = new ArrayList<>();
+
+    routers = new ArrayList<>();
     
-    router = new GreedyRouter();
     percentages = new DefaultMixingPercentages();
     
     Logger.mode = LogMode.Silent;
 
+    register(new NotDropletAwareGreedyRouter());
+    register(new GreedyRouter());
+    
     registerAllTests();
   }
 
-  public void runTests() {
+  public void run() {
+    for (Router router : routers) {
+      printHeader(router);
+      runTests(router);
+      printSummary();
+
+      testResults.clear();
+    }
+  }
+
+  private void printHeader(Router router) {
+    String routerName = router.getClass().getSimpleName();
+    System.out.printf("=== %s ===\n", routerName);
+  }
+  
+  private void runTests(Router router) {
+
     for (int i = 0; i < arrays.size(); i++) {
       BioArray array = arrays.get(i);
       BioAssay assay = assays.get(i);
@@ -101,7 +120,7 @@ public class TestSuite {
     
     System.out.printf("\n%d/%d routes succeeded!\n", completedCount, testResults.size());
     System.out.printf("avg. steps: %d\n", avgStepSize / completedCount);
-    
+    System.out.printf("\n");
   }
 
   private void registerAllTests() {
@@ -122,6 +141,10 @@ public class TestSuite {
   private void register(BioAssay assay, BioArray array) {
     arrays.add(array);
     assays.add(assay);
+  }
+  
+  private void register(Router router) {
+    routers.add(router);
   }
 
   static private class TestResult {
