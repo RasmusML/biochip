@@ -27,6 +27,10 @@ import pack.testbench.tests.ModuleBioAssay3;
 import pack.testbench.tests.ModuleBioAssay4;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
+import pack.testbench.tests.PlatformArray1;
+import pack.testbench.tests.PlatformArray2;
+import pack.testbench.tests.PlatformAssay1;
+import pack.testbench.tests.PlatformAssay2;
 import pack.testbench.tests.Test1BioArray;
 import pack.testbench.tests.Test1BioAssay;
 import pack.testbench.tests.Test2BioArray;
@@ -35,6 +39,8 @@ import pack.testbench.tests.Test3BioArray;
 import pack.testbench.tests.Test3BioAssay;
 import pack.testbench.tests.Test4BioArray;
 import pack.testbench.tests.Test4BioAssay;
+import pack.testbench.tests.functionality.DisposeArray1;
+import pack.testbench.tests.functionality.DisposeAssay1;
 import pack.testbench.tests.functionality.MixArray1;
 import pack.testbench.tests.functionality.MixAssay1;
 
@@ -152,6 +158,11 @@ public class TestSuite {
   }
 
   private void registerAllTests() {
+    // functional tests
+    register(new DisposeAssay1(), new DisposeArray1());
+    register(new MixAssay1(), new MixArray1());
+    
+    // tests
     register(new Test1BioAssay(), new Test1BioArray());
     register(new Test2BioAssay(), new Test2BioArray());
     register(new Test3BioAssay(), new Test3BioArray());
@@ -163,8 +174,8 @@ public class TestSuite {
     register(new ModuleBioAssay3(), new ModuleBioArray3());
     register(new ModuleBioAssay4(), new ModuleBioArray4());
     register(new CrowdedModuleBioAssay(), new CrowdedModuleBioArray());
-    register(new MixAssay1(), new MixArray1());
-    //register(new DisposeBioAssay(), new DisposeBioArray());
+    register(new PlatformAssay1(), new PlatformArray1());
+    register(new PlatformAssay2(), new PlatformArray2());
   }
   
   private void register(BioAssay assay, BioArray array) {

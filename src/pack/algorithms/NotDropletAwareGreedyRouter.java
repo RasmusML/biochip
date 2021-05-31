@@ -131,7 +131,7 @@ public class NotDropletAwareGreedyRouter implements Router {
           
           if (reserved != null) {
             
-            if (successor.name.equals(OperationType.merge)) {
+            if (successor != null && successor.name.equals(OperationType.merge)) {
               Operation predecessor0 = successor.inputs[0];
               Operation predecessor1 = successor.inputs[1];
 
@@ -359,28 +359,29 @@ public class NotDropletAwareGreedyRouter implements Router {
               droplet.units.get(0).route.path.add(to);
             }
           } else if(operation.name.equals(OperationType.dispose)) { 
-            /*
             Droplet droplet = operation.manipulating[0];
             
-            Point at = droplet.route.getPosition(timestamp - 1);
+            // for now, we only dispose droplets with 1 unit size. If the droplet is larger, then split operations should occur in the assay.
+            Assert.that(droplet.units.size() == 1);
             
-            Point waste = null; // @TODO
+            DropletUnit unit = droplet.units.get(0);
+            Point at = unit.route.getPosition(timestamp - 1);
             
-            boolean arrived = (at.x == extra.waste.x && at.y == extra.waste.y);
+            Point waste = getClosestWasteReservoir(droplet, array);
+            
+            boolean arrived = (at.x == waste.x && at.y == waste.y);
             if (arrived) {
               extra.done = true;
+              // retire(droplet)
               runningDroplets.remove(droplet);
+              retiredDroplets.add(droplet);
             } else {
-              Move move = getDisposeMove(droplet, extra.waste, runningDroplets, array);
+              Move move = getDisposeMove(droplet, waste, runningDroplets, array);
               if (move == null) continue;
               
               Point to = at.copy().add(move.x, move.y);
-              droplet.route.path.add(to);
+              unit.route.path.add(to);
             }
-            
-            */
-            throw new IllegalStateException("unsupported operation!");
-            
           } else {
             throw new IllegalStateException("unsupported operation!");
           }
@@ -511,6 +512,29 @@ public class NotDropletAwareGreedyRouter implements Router {
     return result;
   }
   
+  private Point getClosestWasteReservoir(Droplet droplet, BioArray array) {
+    Assert.that(droplet.units.size() == 1);
+    
+    DropletUnit unit = droplet.units.get(0);
+    Point at = unit.route.getPosition(timestamp - 1);
+    
+    Point selected = null;
+    int minDistance = Integer.MAX_VALUE;
+    
+    Assert.that(array.wasteTiles.size() > 0);
+
+    for (Point waste : array.wasteTiles) {
+      int distance = (int) MathUtils.getManhattanDistance(at.x, at.y, waste.x, waste.y);
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        selected = waste;
+      }
+    }
+    
+    return selected;
+  }
+  
   private Move getDisposeMove(Droplet droplet, Point wasteTile, List<Droplet> droplets, BioArray array) {
     List<Move> validMoves = moveFinder.getValidMovesSingleUnitDroplets(droplet, timestamp, droplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
@@ -521,7 +545,8 @@ public class NotDropletAwareGreedyRouter implements Router {
                                      // select the 3 best moves, so if we don't shuffle, then the last one will
                                      // always be ignored (due to we always insert the moves in the same order).
     
-    Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
+    DropletUnit unit = droplet.units.get(0);
+    Point at = unit.route.getPosition(timestamp - 1);
 
     Point target = wasteTile;
     Point next = new Point();
@@ -656,9 +681,9 @@ public class NotDropletAwareGreedyRouter implements Router {
     
     Collections.shuffle(validMoves, RandomUtil.get());
     // if we use the manhattan distance, then reverse, turn directions yield the
-                                     // same manhattan distance, meaning all moves are just as good. However, we only
-                                     // select the 3 best moves, so if we don't shuffle, then the last one will
-                                     // always be ignored (due to we always insert the moves in the same order).
+    // same manhattan distance, meaning all moves are just as good. However, we only
+    // select the 3 best moves, so if we don't shuffle, then the last one will
+    // always be ignored (due to we always insert the moves in the same order).
     
     Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
 

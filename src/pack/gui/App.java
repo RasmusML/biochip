@@ -33,14 +33,12 @@ import pack.testbench.tests.ModuleBioArray4;
 import pack.testbench.tests.ModuleBioAssay4;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
-import pack.testbench.tests.Test1BioArray;
-import pack.testbench.tests.Test1BioAssay;
+import pack.testbench.tests.PlatformArray2;
+import pack.testbench.tests.PlatformAssay2;
 import pack.testbench.tests.Test4BioArray;
 import pack.testbench.tests.Test4BioAssay;
-import pack.testbench.tests.functionality.MergeArray2;
-import pack.testbench.tests.functionality.MergeAssay2;
-import pack.testbench.tests.functionality.MixArray2;
-import pack.testbench.tests.functionality.MixAssay2;
+import pack.testbench.tests.functionality.DisposeArray1;
+import pack.testbench.tests.functionality.DisposeAssay1;
 
 public class App extends ApplicationAdapter {
 
@@ -96,15 +94,6 @@ public class App extends ApplicationAdapter {
 		renderer = new Renderer(viewport);
 		renderer.setCanvas(canvas);
 		
-    assay = new MergeAssay2();
-    array = new MergeArray2();
-    
-    assay = new MixAssay2();
-    array = new MixArray2();
-    
-    assay = new Test1BioAssay();
-    array = new Test1BioArray();
-
 		percentages = new DefaultMixingPercentages();
 
 		assay = new ModuleBioAssay4();
@@ -118,6 +107,12 @@ public class App extends ApplicationAdapter {
 
     assay = new Test4BioAssay();
     array = new Test4BioArray();
+    
+    assay = new DisposeAssay1();
+    array = new DisposeArray1();
+    
+    assay = new PlatformAssay2();
+    array = new PlatformArray2();
     
 		Router router = new GreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();
@@ -308,6 +303,10 @@ public class App extends ApplicationAdapter {
       } else if (operation.name.equals(OperationType.dispense)){
         continue;
       } else if (operation.name.equals(OperationType.heating)) {
+        Droplet droplet = operation.manipulating[0];
+        start = droplet.getStartTimestamp();
+        end = droplet.getEndTimestamp();
+      } else if (operation.name.equals(OperationType.dispose)) {
         Droplet droplet = operation.manipulating[0];
         start = droplet.getStartTimestamp();
         end = droplet.getEndTimestamp();
@@ -522,6 +521,8 @@ public class App extends ApplicationAdapter {
       return Color.blue;
     case OperationType.heating:
       return Color.red;
+    case OperationType.dispose:
+      return Color.pink;  // @TODO: purple
     default:
       throw new IllegalStateException("broken!");
     }

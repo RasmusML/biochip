@@ -20,13 +20,15 @@ public class Droplet {
     Point position = unit.route.getPosition(timestamp);
     return position != null;
   }
-  // we assume that all DropletUnits start and end at the same time for now.
-  // So just get the timestamps of the first dropletunit.
+  // we assume that all DropletUnits start at the same time for now.
+  // So just get the timestamp of the first dropletunit.
   public int getStartTimestamp() {
     DropletUnit unit = units.get(0);
     return unit.route.start;
   }
   
+  // we assume that all DropletUnits end at the same time for now.
+  // So just get the timestamp of the first dropletunit.
   public int getEndTimestamp() {
     DropletUnit unit = units.get(0);
     return unit.route.start + unit.route.path.size();

@@ -1,12 +1,12 @@
-package pack.testbench.tests;
+package pack.testbench.tests.functionality;
 
 import pack.algorithms.BioArray;
 import pack.algorithms.Point;
 import pack.testbench.catalogs.EmptyModuleCatalog;
 
-public class DisposeBioArray extends BioArray {
+public class DisposeArray1 extends BioArray {
 
-  public DisposeBioArray() {
+  public DisposeArray1() {
     width = 7;
     height = 7;
 

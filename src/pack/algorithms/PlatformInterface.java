@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fazecast.jSerialComm.SerialPort;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -28,6 +29,15 @@ public class PlatformInterface {
     
     List<ElectrodePlatformDefinition> electrodes = loadDefinitions();
     setupElectrodeMappings(electrodes);
+  }
+  
+  public void connect() {
+    String port = null;
+    transmitter.open(port);
+  }
+  
+  public void disconnect() {
+    transmitter.close();
   }
 
   public void turnHighVoltageOnForElectrodes() {
@@ -141,8 +151,27 @@ public class PlatformInterface {
 
 class SerialTransmitter {
   
+  private SerialPort serialPort;
+  
+  public void open(String port) {
+    serialPort = SerialPort.getCommPort(port);
+    
+    serialPort.setBaudRate(115200); // ? 
+    serialPort.setNumDataBits(8); // ? 
+    serialPort.setNumStopBits(SerialPort.ONE_STOP_BIT); // ?
+    serialPort.setParity(SerialPort.NO_PARITY); // ?
+    // serialPort.setFlowControl(SerialPort.FLOW_CONTROL_DISABLED);  // ? 
+
+    serialPort.openPort();
+  }
+  
   public void send(String message) {
-    System.out.print(message);
+    byte[] buffer = message.getBytes();
+    serialPort.writeBytes(buffer, buffer.length);
+  }
+  
+  public void close() {
+    serialPort.closePort();
   }
 }
 

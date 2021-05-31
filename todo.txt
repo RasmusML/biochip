@@ -1,10 +1,14 @@
-General:
-waste operation
 greedy router change probabilities on deadlock
 probabilities for all moves (greedy router) (also move to module operation)
 create tests with the real platform dimensions (rows=20, cols=32)
 
-use the reshape algorithm
+module allocation (work on selecting module)
+
+fix: when a droplet spawn and has no succeding operation, then the color of the droplet is blue (dispense), but it should be gray
+fix: timeline arrows not correct length, when droplets only do a dispense and nothing else
+
+waste operation (variable droplet size)
+use the reshape algorithm (greedy router)
 
 // @TODO: build verboseBioAssay from bioAssay (with merge, move etc...)
 
