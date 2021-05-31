@@ -31,60 +31,23 @@ public class Droplet {
     DropletUnit unit = units.get(0);
     return unit.route.start + unit.route.path.size();
   }
-}
 
-/*
-class Graph<T> {
-  
-  public List<Node<T>> sink;
-  public List<Node<T>> source;
-  
-  public List<Node<T>> nodes;
-  
-  public int size;
-  
-  public Graph() {
-    sink = new ArrayList<>();
-    source = new ArrayList<>();
+  public Point getCenterPosition() {
+    int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+    int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
     
-    nodes = new ArrayList<>();
-  }
-  
-  public void traverse(Consumer<Node<T>> fn, Node<T>... sink) {
-    boolean[] visited = new boolean[size];
-    
-    List<Node<T>> pending = new ArrayList<>();
-    for (Node<T> node : sink) {
-      pending.add(node);
+    for (DropletUnit unit : units) {
+      Point at = unit.route.getPosition();
+      
+      if (at.x < minX) minX = at.x;
+      if (at.y < minY) minY = at.y;
+      if (at.x > maxX) maxX = at.x;
+      if (at.y > maxY) maxY = at.y;
     }
 
-    while (pending.size() > 0) {
-      Node<T> current = pending.remove(0);
-
-      int index = current.id;
-      if (visited[index]) continue;
-      visited[index] = true;
-
-      fn.accept(current);
-
-      for (Node<T> input : current.predecessors) {
-        pending.add(input);
-      }
-    }
+    int cx = (maxX-minX) / 2;
+    int cy = (maxY-minY) / 2;
+    
+    return new Point(minX + cx, minY + cy);
   }
 }
-
-class Node<T> {
-  public Node<T>[] predecessors;
-  public Node<T>[] successors;
-  
-  public T value;
-}
-
-class DropletGraph extends Graph<Droplet> {
-  
-  public DropletGraph() {
-  }  
-}
- */
-

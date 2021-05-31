@@ -63,8 +63,10 @@ public class TestSuite {
       BioArray array = arrays.get(i);
       BioAssay assay = assays.get(i);
       
-      int id = i + 1;
-      System.out.printf("running test %d", id);
+      String assayName = assay.getClass().getSimpleName();
+      String testName = assayName.replaceAll("(BioAssay)|(Assay)", "");
+      
+      System.out.printf("running %s", testName);
       
       long start = System.currentTimeMillis();
       RoutingResult result = router.compute(assay, array, percentages);
@@ -79,6 +81,8 @@ public class TestSuite {
       }
       
       System.out.printf("\n");
+
+      int id = i + 1;
       
       TestResult testResult = new TestResult();
       testResult.completed = result.completed;
