@@ -1,6 +1,6 @@
 package pack.run;
 
-import pack.tests.TestSuite;
+import pack.testbench.TestSuite;
 
 public class RunMeTestSuite {
   

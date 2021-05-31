@@ -17,7 +17,7 @@ import pack.algorithms.BioArray;
 import pack.algorithms.Point;
 import pack.algorithms.ShapedDroplet;
 import pack.algorithms.simulation.DropletReshapeSimulator;
-import pack.tests.Test1BioArray;
+import pack.testbench.tests.Test1BioArray;
 
 public class DropletReshapeApp extends ApplicationAdapter {
 

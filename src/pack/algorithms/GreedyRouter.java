@@ -420,7 +420,6 @@ public class GreedyRouter implements Router {
             throw new IllegalStateException("unsupported operation!");
           }
           
-          
         } else {
           // module operations
 
@@ -450,7 +449,7 @@ public class GreedyRouter implements Router {
               runningDroplets.remove(droplet);
               retiredDroplets.add(droplet);
               
-              Droplet forward = createModuleDroplet(move, droplet.units, droplet.area);
+              Droplet forward = createForwardedDroplet(move, droplet.units, droplet.area);
               operation.forwarding[0] = forward;
               runningDroplets.add(forward);
               
@@ -713,24 +712,6 @@ public class GreedyRouter implements Router {
     
     for (DropletUnit unit : droplet1.units) {
       Point at = unit.route.getPosition();
-      
-      DropletUnit copy = new DropletUnit();
-      copy.route.start = timestamp;
-      copy.route.path.add(at);
-      
-      droplet.units.add(copy);
-    }
-    
-    return droplet;
-  }
-
-  private Droplet createModuleDroplet(Move move, List<DropletUnit> units, float area) {
-    Droplet droplet = new Droplet();
-    droplet.area = area;
-    droplet.id = dropletIdGenerator.getId();
-    
-    for (DropletUnit unit : units) {
-      Point at = new Point(unit.route.getPosition()).add(move.x, move.y);
       
       DropletUnit copy = new DropletUnit();
       copy.route.start = timestamp;

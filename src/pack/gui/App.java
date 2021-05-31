@@ -27,20 +27,20 @@ import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
-import pack.tests.CrowdedModuleBioArray;
-import pack.tests.CrowdedModuleBioAssay;
-import pack.tests.ModuleBioArray4;
-import pack.tests.ModuleBioAssay4;
-import pack.tests.PCRMixingTreeArray;
-import pack.tests.PCRMixingTreeAssay;
-import pack.tests.Test1BioArray;
-import pack.tests.Test1BioAssay;
-import pack.tests.Test2BioArray;
-import pack.tests.Test2BioAssay;
-import pack.tests.functionality.MergeArray2;
-import pack.tests.functionality.MergeAssay2;
-import pack.tests.functionality.MixArray2;
-import pack.tests.functionality.MixAssay2;
+import pack.testbench.tests.CrowdedModuleBioArray;
+import pack.testbench.tests.CrowdedModuleBioAssay;
+import pack.testbench.tests.ModuleBioArray4;
+import pack.testbench.tests.ModuleBioAssay4;
+import pack.testbench.tests.PCRMixingTreeArray;
+import pack.testbench.tests.PCRMixingTreeAssay;
+import pack.testbench.tests.Test1BioArray;
+import pack.testbench.tests.Test1BioAssay;
+import pack.testbench.tests.Test4BioArray;
+import pack.testbench.tests.Test4BioAssay;
+import pack.testbench.tests.functionality.MergeArray2;
+import pack.testbench.tests.functionality.MergeAssay2;
+import pack.testbench.tests.functionality.MixArray2;
+import pack.testbench.tests.functionality.MixAssay2;
 
 public class App extends ApplicationAdapter {
 
@@ -110,14 +110,14 @@ public class App extends ApplicationAdapter {
 		assay = new ModuleBioAssay4();
     array = new ModuleBioArray4();
 		
-    assay = new Test2BioAssay();
-    array = new Test2BioArray();
-
     assay = new CrowdedModuleBioAssay();
     array = new CrowdedModuleBioArray();
 
     assay = new PCRMixingTreeAssay();
     array = new PCRMixingTreeArray();
+
+    assay = new Test4BioAssay();
+    array = new Test4BioArray();
     
 		Router router = new GreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();
