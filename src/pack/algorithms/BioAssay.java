@@ -114,7 +114,6 @@ public class BioAssay {
     return operations;
   }
 
-  // https://stackoverflow.com/questions/19280229/graphviz-putting-a-caption-on-a-operation-in-addition-to-a-label
   public String asGraphvizGraph() {
     StringBuilder graphBuilder = new StringBuilder();
 
@@ -125,18 +124,18 @@ public class BioAssay {
       String operationAttributes;
       if (operation.name.equals(OperationType.dispense)) {
         String substance = (String) operation.attributes.get("substance");
-        operationAttributes = String.format("\t%d [label = \"%d - %s\"];\n", operation.id, operation.id, substance);
+        operationAttributes = String.format("\t%d [label = \"%s\"];\n", operation.id, substance);
       } else if (operation.name.equals(OperationType.merge)) {
-        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = red, style = filled];\n", operation.id, operation.id);
+        operationAttributes = String.format("\t%d [label = \"merge\", fillcolor = red, style = filled];\n", operation.id);
       } else if (operation.name.equals(OperationType.split)) {
-        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = blue, style = filled];\n", operation.id, operation.id);
+        operationAttributes = String.format("\t%d [label = \"split\", fillcolor = blue, style = filled];\n", operation.id);
       } else if (operation.name.equals(OperationType.mix)) {
-        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = green, style = filled];\n", operation.id, operation.id);
+        operationAttributes = String.format("\t%d [label = \"mix\", fillcolor = green, style = filled];\n", operation.id);
       } else if (operation.name.equals(OperationType.heating)) {
         float temperature = (float) operation.attributes.get("temperature");
-        operationAttributes = String.format("\t%d [label = \"%d - %f°C\", fillcolor = \"#FFA591\", style = filled];\n", operation.id, operation.id, temperature);
+        operationAttributes = String.format("\t%d [label = \" %.2f°C\", fillcolor = \"#FFA591\", style = filled];\n", operation.id, temperature);
       } else if (operation.name.equals(OperationType.dispose)) {
-        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = purple, style = filled];\n", operation.id, operation.id);
+        operationAttributes = String.format("\t%d [label = \"dispose\", fillcolor = purple, style = filled];\n", operation.id);
       } else {
         throw new IllegalStateException("unsupported type: " + operation.name);
       }
@@ -147,11 +146,11 @@ public class BioAssay {
         String edge = String.format("\t%d -> %d;\n", input.id, operation.id);
         graphBuilder.append(edge);
       }
-
+      
     });
 
     graphBuilder.append("}");
-
+    
     return graphBuilder.toString();
   }
 }

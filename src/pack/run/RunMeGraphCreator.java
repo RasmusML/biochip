@@ -15,7 +15,7 @@ public class RunMeGraphCreator {
   public static String dir = "./src";
   public static String pack = "pack/testbench/tests";
   
-  public static boolean recreateAllGraphs = false;
+  public static boolean recreateAllGraphs = true;
 
 	public static void main(String[] args) {
 	  List<BioAssay> assays = new ArrayList<>();

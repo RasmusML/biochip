@@ -33,8 +33,8 @@ import pack.testbench.tests.ModuleBioArray4;
 import pack.testbench.tests.ModuleBioAssay4;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
-import pack.testbench.tests.PlatformArray2;
-import pack.testbench.tests.PlatformAssay2;
+import pack.testbench.tests.PlatformArray3;
+import pack.testbench.tests.PlatformAssay3;
 import pack.testbench.tests.Test4BioArray;
 import pack.testbench.tests.Test4BioAssay;
 import pack.testbench.tests.functionality.DisposeArray1;
@@ -111,8 +111,8 @@ public class App extends ApplicationAdapter {
     assay = new DisposeAssay1();
     array = new DisposeArray1();
     
-    assay = new PlatformAssay2();
-    array = new PlatformArray2();
+    assay = new PlatformAssay3();
+    array = new PlatformArray3();
     
 		Router router = new GreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();

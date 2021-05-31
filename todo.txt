@@ -10,9 +10,9 @@ fix: timeline arrows not correct length, when droplets only do a dispense and no
 waste operation (variable droplet size)
 use the reshape algorithm (greedy router)
 
-// @TODO: build verboseBioAssay from bioAssay (with merge, move etc...)
+add droplet sizes on edges (graphviz)
 
 // @TODO: look into splitting a droplet into smaller, maybe extra operation option ("optimization")
-    
 
+// @TODO: build verboseBioAssay from bioAssay (with merge, move etc...)
 - Create an update Graphviz, when the routing is (how long does each operation take, or start and stop time for operation)
