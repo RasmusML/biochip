@@ -17,6 +17,7 @@ import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.Droplet;
 import pack.algorithms.DropletUnit;
+import pack.algorithms.ElectrodeActivations;
 import pack.algorithms.GreedyRouter;
 import pack.algorithms.Module;
 import pack.algorithms.Operation;
@@ -26,6 +27,7 @@ import pack.algorithms.Reservoir;
 import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
+import pack.algorithms.components.ElectrodeActivationTranslator;
 import pack.algorithms.components.MixingPercentages;
 import pack.testbench.tests.CrowdedModuleBioArray;
 import pack.testbench.tests.CrowdedModuleBioAssay;
@@ -33,8 +35,8 @@ import pack.testbench.tests.ModuleBioArray4;
 import pack.testbench.tests.ModuleBioAssay4;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
-import pack.testbench.tests.PlatformArray3;
-import pack.testbench.tests.PlatformAssay3;
+import pack.testbench.tests.PlatformArray4;
+import pack.testbench.tests.PlatformAssay4;
 import pack.testbench.tests.Test4BioArray;
 import pack.testbench.tests.Test4BioAssay;
 import pack.testbench.tests.functionality.DisposeArray1;
@@ -111,16 +113,17 @@ public class App extends ApplicationAdapter {
     assay = new DisposeAssay1();
     array = new DisposeArray1();
     
-    assay = new PlatformAssay3();
-    array = new PlatformArray3();
+    assay = new PlatformAssay4();
+    array = new PlatformArray4();
     
 		Router router = new GreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
-		/*
 		ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator();
-		ElectrodeActivationSection[] sections = translator.translateStateful(result.droplets, result.executionTime);
+		ElectrodeActivations[] sections = translator.translateStateful(result.droplets, result.executionTime);
+
+		/*
 
 		for (int i = 0; i < sections.length; i++) {
 		  ElectrodeActivationSection section = sections[i];

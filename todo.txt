@@ -1,6 +1,5 @@
 greedy router change probabilities on deadlock
 probabilities for all moves (greedy router) (also move to module operation)
-create tests with the real platform dimensions (rows=20, cols=32)
 
 module allocation (work on selecting module)
 
@@ -11,6 +10,8 @@ waste operation (variable droplet size)
 use the reshape algorithm (greedy router)
 
 add droplet sizes on edges (graphviz)
+
+flatten timeline by using the same y-value for continues "single" operation
 
 // @TODO: look into splitting a droplet into smaller, maybe extra operation option ("optimization")
 

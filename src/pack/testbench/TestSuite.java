@@ -30,9 +30,11 @@ import pack.testbench.tests.PCRMixingTreeAssay;
 import pack.testbench.tests.PlatformArray1;
 import pack.testbench.tests.PlatformArray2;
 import pack.testbench.tests.PlatformArray3;
+import pack.testbench.tests.PlatformArray4;
 import pack.testbench.tests.PlatformAssay1;
 import pack.testbench.tests.PlatformAssay2;
 import pack.testbench.tests.PlatformAssay3;
+import pack.testbench.tests.PlatformAssay4;
 import pack.testbench.tests.Test1BioArray;
 import pack.testbench.tests.Test1BioAssay;
 import pack.testbench.tests.Test2BioArray;
@@ -178,6 +180,7 @@ public class TestSuite {
     register(new PlatformAssay1(), new PlatformArray1());
     register(new PlatformAssay2(), new PlatformArray2());
     register(new PlatformAssay3(), new PlatformArray3());
+    register(new PlatformAssay4(), new PlatformArray4());
   }
   
   private void register(BioAssay assay, BioArray array) {

@@ -619,15 +619,18 @@ public class GreedyRouter implements Router {
   }
 
   private Move getDetourMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
-    Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
-    
     List<Module> inUseModules = moduleManager.getInUseOrAlwaysLockedModules();
     
     Module module = null;
     for (Module other : inUseModules) {
-      if (GeometryUtil.inside(at.x, at.y, other.position.x, other.position.y, other.width, other.height)) {
-        module = other;
-        break;
+      
+      for (DropletUnit unit : droplet.units) {
+        Point at = unit.route.getPosition(timestamp - 1);
+      
+        if (GeometryUtil.inside(at.x, at.y, other.position.x, other.position.y, other.width, other.height)) {
+          module = other;
+          break;
+        }
       }
     }
     
@@ -639,6 +642,8 @@ public class GreedyRouter implements Router {
     Point to = new Point();
     
     // @TODO: probabilistic moves, it possible for deadlocks @create test which does deadlock!
+    
+    Point at = droplet.getCenterPosition();
     
     List<Move> moves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, inUseModules, array);
     for (Move move : moves) {
