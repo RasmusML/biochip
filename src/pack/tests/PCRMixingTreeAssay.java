@@ -6,7 +6,6 @@ import pack.algorithms.BioAssayBuilder;
 public class PCRMixingTreeAssay extends BioAssay {
 
   public PCRMixingTreeAssay() {
-    name = "PCR Mixing Tree";
     build();
   }
 

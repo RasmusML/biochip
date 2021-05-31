@@ -6,7 +6,6 @@ import pack.algorithms.BioAssayBuilder;
 public class Test1BioAssay extends BioAssay {
 	
 	public Test1BioAssay() {
-	  name = "test_1";
 	  build();
 	}
 

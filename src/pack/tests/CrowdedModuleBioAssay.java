@@ -6,7 +6,6 @@ import pack.algorithms.BioAssayBuilder;
 public class CrowdedModuleBioAssay extends BioAssay {
 
   public CrowdedModuleBioAssay() {
-    name = "crowded_module";
     build();
   }
 

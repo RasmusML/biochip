@@ -13,6 +13,8 @@ import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
 import pack.helpers.LogMode;
 import pack.helpers.Logger;
+import pack.tests.functionality.MixArray1;
+import pack.tests.functionality.MixAssay1;
 
 public class TestSuite {
   
@@ -138,7 +140,7 @@ public class TestSuite {
     register(new ModuleBioAssay3(), new ModuleBioArray3());
     register(new ModuleBioAssay4(), new ModuleBioArray4());
     register(new CrowdedModuleBioAssay(), new CrowdedModuleBioArray());
-    register(new ParallelMixingAssay(), new ParallelMixingArray());
+    register(new MixAssay1(), new MixArray1());
     //register(new DisposeBioAssay(), new DisposeBioArray());
   }
   

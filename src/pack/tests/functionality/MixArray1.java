@@ -1,12 +1,12 @@
-package pack.tests;
+package pack.tests.functionality;
 
 import pack.algorithms.BioArray;
 import pack.algorithms.Point;
 import pack.tests.catalogs.EmptyModuleCatalog;
 
-public class ParallelMixingArray extends BioArray {
+public class MixArray1 extends BioArray {
   
-  public ParallelMixingArray() {
+  public MixArray1() {
     width = 14;
     height = 14;
     

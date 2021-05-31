@@ -6,7 +6,6 @@ import pack.algorithms.BioAssayBuilder;
 public class DisposeBioAssay extends BioAssay {
 	
 	public DisposeBioAssay() {
-	  name = "dispose_bio_assay";
 	  build();
 	}
 

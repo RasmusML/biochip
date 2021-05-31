@@ -10,7 +10,6 @@ import java.util.Map;
 import engine.math.MathUtils;
 import pack.algorithms.components.ConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
-import pack.algorithms.components.ModifiedAStarPathFinder;
 import pack.algorithms.components.ModuleManager;
 import pack.algorithms.components.MoveFinder;
 import pack.algorithms.components.RandomIndexSelector;
@@ -214,7 +213,6 @@ public class GreedyRouter implements Router {
         }
       }
 
-      // @TODO: remove this
       runningOperations.sort((o1, o2) -> {
         OperationExtra e1 = operationIdToExtra.get(o1.id);
         OperationExtra e2 = operationIdToExtra.get(o2.id);

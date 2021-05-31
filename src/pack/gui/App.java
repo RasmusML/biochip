@@ -105,9 +105,6 @@ public class App extends ApplicationAdapter {
     assay = new Test1BioAssay();
     array = new Test1BioArray();
 
-    assay = new PCRMixingTreeAssay();
-    array = new PCRMixingTreeArray();
-    
 		percentages = new DefaultMixingPercentages();
 
 		assay = new ModuleBioAssay4();
@@ -118,6 +115,9 @@ public class App extends ApplicationAdapter {
 
     assay = new CrowdedModuleBioAssay();
     array = new CrowdedModuleBioArray();
+
+    assay = new PCRMixingTreeAssay();
+    array = new PCRMixingTreeArray();
     
 		Router router = new GreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();

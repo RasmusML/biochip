@@ -1,12 +1,11 @@
-package pack.tests;
+package pack.tests.functionality;
 
 import pack.algorithms.BioAssay;
 import pack.algorithms.BioAssayBuilder;
 
-public class ParallelMixingAssay extends BioAssay {
+public class MixAssay1 extends BioAssay {
 
-  public ParallelMixingAssay() {
-    name = "parallel_mixing_1";
+  public MixAssay1() {
     build();
   }
 

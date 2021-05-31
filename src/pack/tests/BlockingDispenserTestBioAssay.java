@@ -6,7 +6,6 @@ import pack.algorithms.BioAssayBuilder;
 public class BlockingDispenserTestBioAssay extends BioAssay {
 
   public BlockingDispenserTestBioAssay() {
-    name = "blocking dispenser";
     build();
   }
 

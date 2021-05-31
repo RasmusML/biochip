@@ -1,6 +1,7 @@
 package pack.helpers;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -9,6 +10,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -59,5 +61,28 @@ public class IOUtils {
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+  
+  public static List<File> getFiles(String folderPath) {
+    File folder = new File(folderPath);
+    
+    List<File> files = new ArrayList<>();
+    for (File file : folder.listFiles()) {
+      // not sub-folders
+      if (file.isFile()) files.add(file);
+    }
+    
+    return files;
+  }
+  
+  public static List<String> getFileNames(String folderPath) {
+    List<File> files = getFiles(folderPath);
+    
+    List<String> filenames = new ArrayList<>();
+    for (File file : files) {
+      filenames.add(file.getName());
+    }
+    
+    return filenames;
   }
 }

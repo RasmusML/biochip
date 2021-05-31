@@ -211,7 +211,6 @@ public class NotDropletAwareGreedyRouter implements Router {
         }
       }
 
-      // @TODO: remove this
       runningOperations.sort((o1, o2) -> {
         OperationExtra e1 = operationIdToExtra.get(o1.id);
         OperationExtra e2 = operationIdToExtra.get(o2.id);

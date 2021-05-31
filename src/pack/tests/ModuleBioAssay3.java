@@ -6,7 +6,6 @@ import pack.algorithms.BioAssayBuilder;
 public class ModuleBioAssay3 extends BioAssay {
 
   public ModuleBioAssay3() {
-    name = "heating_3";
     build();
   }
 

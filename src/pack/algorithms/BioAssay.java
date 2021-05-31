@@ -8,7 +8,6 @@ import pack.helpers.Wrapper;
 
 public class BioAssay {
 
-  public String name;
   public int count;
 
   public Operation[] sink;
@@ -136,6 +135,8 @@ public class BioAssay {
       } else if (operation.name.equals(OperationType.heating)) {
         float temperature = (float) operation.attributes.get("temperature");
         operationAttributes = String.format("\t%d [label = \"%d - %f°C\", fillcolor = \"#FFA591\", style = filled];\n", operation.id, operation.id, temperature);
+      } else if (operation.name.equals(OperationType.dispose)) {
+        operationAttributes = String.format("\t%d [label = \"%d\", fillcolor = purple, style = filled];\n", operation.id, operation.id);
       } else {
         throw new IllegalStateException("unsupported type: " + operation.name);
       }
