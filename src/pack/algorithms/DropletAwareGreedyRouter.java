@@ -21,12 +21,14 @@ import pack.helpers.Assert;
 import pack.helpers.GeometryUtil;
 import pack.helpers.Logger;
 
-public class GreedyRouter implements Router {
+public class DropletAwareGreedyRouter implements Router {
 
   private ConstraintsChecker checker;
   private RandomIndexSelector indexSelector;
   private MoveFinder moveFinder;
   //private ModifiedAStarPathFinder pathFinder;
+  
+  private Prioritizer prioritizer;
   
   private ReservoirManager reservoirManager;
   private ModuleManager moduleManager;
@@ -36,7 +38,6 @@ public class GreedyRouter implements Router {
 
   private List<Droplet> runningDroplets;
   private List<Droplet> retiredDroplets;
-  private List<Droplet> detouringDroplets;
 
   private Map<Integer, OperationExtra> operationIdToExtra;
 
@@ -74,6 +75,8 @@ public class GreedyRouter implements Router {
     probabilitiesB = new float[] {50f, 33f, 17f};
     probabilitiesC = new float[] {34f, 33f, 33f};
     
+    prioritizer = new ChainPrioritizer();
+    
     //pathFinder = new ModifiedAStarPathFinder();
     
     moduleManager = new ModuleManager(array.catalog);
@@ -86,7 +89,6 @@ public class GreedyRouter implements Router {
     List<Operation> operations = assay.getOperations();
     for (Operation operation : operations) {
       OperationExtra extra = new OperationExtra();
-      extra.priority = operation.name.equals(OperationType.mix) ? 2 : 1;
       extra.done = false;
       extra.active = false;
 
@@ -100,7 +102,6 @@ public class GreedyRouter implements Router {
 
     runningDroplets = new ArrayList<>();
     retiredDroplets = new ArrayList<>();
-    detouringDroplets = new ArrayList<>();
 
     List<Operation> dispenseOperations = assay.getOperations(OperationType.dispense);
     readyOperations.addAll(dispenseOperations);
@@ -190,7 +191,8 @@ public class GreedyRouter implements Router {
 
             stalled.manipulating[i] = forwardedDroplet;
           }
-
+          
+          // @TOOD: move
           if (stalled.name.equals(OperationType.heating))  {
             float temperature = (float) stalled.attributes.get(Tags.temperature);
             String moduleIdentifier = String.format("heater%d", (int) temperature); // @TODO: hack
@@ -210,17 +212,48 @@ public class GreedyRouter implements Router {
             }
             */
           }
+          
         }
       }
 
+      /*
       runningOperations.sort((o1, o2) -> {
         OperationExtra e1 = operationIdToExtra.get(o1.id);
         OperationExtra e2 = operationIdToExtra.get(o2.id);
         return e1.priority - e2.priority;
       });
+      */
+      
+      runningOperations.sort((o1, o2) -> prioritizer.prioritize(o1, o2));
       
       for (Operation operation : runningOperations) {
         OperationExtra extra = operationIdToExtra.get(operation.id);
+
+        // dispense
+        // merge
+        // split
+        // mix
+
+        // dispose
+        // heating
+        
+        
+        // ==================
+        
+        // === Configurable ===
+        // merge
+        // split
+        // mix
+        // (transport)
+        // (storage)
+        // (detour)
+
+        // === Non-configurable === 
+        // dispense
+        // dispose
+
+        // heating
+        // detect
         
         if (extra.module == null) {
           // execute built-in operations
@@ -399,6 +432,7 @@ public class GreedyRouter implements Router {
           }
           
         } else {
+          
           // module operations
 
           Droplet droplet = operation.manipulating[0];
@@ -775,9 +809,9 @@ public class GreedyRouter implements Router {
     
     Collections.shuffle(validMoves, RandomUtil.get());
     // if we use the manhattan distance, then reverse, turn directions yield the
-                                     // same manhattan distance, meaning all moves are just as good. However, we only
-                                     // select the 3 best moves, so if we don't shuffle, then the last one will
-                                     // always be ignored (due to we always insert the moves in the same order).
+    // same manhattan distance, meaning all moves are just as good. However, we only
+    // select the 3 best moves, so if we don't shuffle, then the last one will
+    // always be ignored (due to we always insert the moves in the same order).
     
     DropletUnit sourceUnit = droplet.units.get(0);
     DropletUnit targetUnit = toMerge.units.get(0);
@@ -873,8 +907,6 @@ public class GreedyRouter implements Router {
   }
 // OperationAttachment/State/Temporary
   static private class OperationExtra {
-    public int priority;
-    
     public boolean active;
     public boolean running;
     public boolean done;

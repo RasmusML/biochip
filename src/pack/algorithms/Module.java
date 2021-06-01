@@ -11,8 +11,13 @@ import java.util.Map;
 
 public class Module {
   public String name;
+  //public String operation;
+  
+  //public Map<String, Object> attributes = new HashMap<>();
   
   public int duration; // in timesteps for now.
+  
+  //public float temperature; // only used for heating
   
   public ModulePolicy policy;
 

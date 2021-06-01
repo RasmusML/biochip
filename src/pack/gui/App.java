@@ -18,7 +18,7 @@ import pack.algorithms.BioAssay;
 import pack.algorithms.Droplet;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.ElectrodeActivations;
-import pack.algorithms.GreedyRouter;
+import pack.algorithms.DropletAwareGreedyRouter;
 import pack.algorithms.Module;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
@@ -116,7 +116,7 @@ public class App extends ApplicationAdapter {
     assay = new PlatformAssay4();
     array = new PlatformArray4();
     
-		Router router = new GreedyRouter();
+		Router router = new DropletAwareGreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();
 		result = router.compute(assay, array, percentages);
 		

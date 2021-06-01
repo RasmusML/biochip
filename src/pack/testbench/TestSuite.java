@@ -5,7 +5,7 @@ import java.util.List;
 
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
-import pack.algorithms.GreedyRouter;
+import pack.algorithms.DropletAwareGreedyRouter;
 import pack.algorithms.NotDropletAwareGreedyRouter;
 import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
@@ -71,7 +71,7 @@ public class TestSuite {
     Logger.mode = LogMode.Silent;
 
     register(new NotDropletAwareGreedyRouter());
-    register(new GreedyRouter());
+    register(new DropletAwareGreedyRouter());
     
     registerAllTests();
   }

@@ -1,17 +1,21 @@
+module allocation (work on selecting module)
+use the reshape algorithm (greedy router)
+
+fix constraintschecker on merge, it is outdated?
+
+// @TODO: make sure the shape fits into the module. (get width, height, otherwise) if this does not help, terminate.
+
+waste operation (variable droplet size)            
+
 greedy router change probabilities on deadlock
 probabilities for all moves (greedy router) (also move to module operation)
 
-module allocation (work on selecting module)
 
 fix: when a droplet spawn and has no succeding operation, then the color of the droplet is blue (dispense), but it should be gray
 fix: timeline arrows not correct length, when droplets only do a dispense and nothing else
-
-waste operation (variable droplet size)
-use the reshape algorithm (greedy router)
+flatten timeline by using the same y-value for continues "single" operation
 
 add droplet sizes on edges (graphviz)
-
-flatten timeline by using the same y-value for continues "single" operation
 
 // @TODO: look into splitting a droplet into smaller, maybe extra operation option ("optimization")
 
