@@ -216,14 +216,6 @@ public class DropletAwareGreedyRouter implements Router {
         }
       }
 
-      /*
-      runningOperations.sort((o1, o2) -> {
-        OperationExtra e1 = operationIdToExtra.get(o1.id);
-        OperationExtra e2 = operationIdToExtra.get(o2.id);
-        return e1.priority - e2.priority;
-      });
-      */
-      
       runningOperations.sort((o1, o2) -> prioritizer.prioritize(o1, o2));
       
       for (Operation operation : runningOperations) {
@@ -311,10 +303,7 @@ public class DropletAwareGreedyRouter implements Router {
 
               retire(droplet);
               
-              List<DropletUnit> units = new ArrayList<>();
-              units.addAll(droplet.units);
-              
-              units.sort((u1, u2) -> {
+              droplet.units.sort((u1, u2) -> {
                 Point at1 = u1.route.getPosition(timestamp - 1);
                 Point at2 = u2.route.getPosition(timestamp - 1);
                 return at1.y - at2.y;
@@ -324,6 +313,8 @@ public class DropletAwareGreedyRouter implements Router {
               
               float area1 = units1;
               float area2 = droplet.area - area1;
+              
+              List<DropletUnit> units = new ArrayList<>(droplet.units);
 
               // select the bottom droplet-units to go down
               List<DropletUnit> downUnits = units.subList(0, units1);
@@ -344,10 +335,7 @@ public class DropletAwareGreedyRouter implements Router {
 
               retire(droplet);
               
-              List<DropletUnit> units = new ArrayList<>();
-              units.addAll(droplet.units);
-              
-              units.sort((u1, u2) -> {
+              droplet.units.sort((u1, u2) -> {
                 Point at1 = u1.route.getPosition(timestamp - 1);
                 Point at2 = u2.route.getPosition(timestamp - 1);
                 return at1.x - at2.x;
@@ -357,6 +345,8 @@ public class DropletAwareGreedyRouter implements Router {
               
               float area1 = units1;
               float area2 = droplet.area - area1;
+              
+              List<DropletUnit> units = new ArrayList<>(droplet.units);
 
               // select the left droplet-units to go left
               List<DropletUnit> leftUnits = units.subList(0, units1);
@@ -614,11 +604,11 @@ public class DropletAwareGreedyRouter implements Router {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
     
-    Collections.shuffle(validMoves, RandomUtil.get());
     // if we use the manhattan distance, then reverse, turn directions yield the
     // same manhattan distance, meaning all moves are just as good. However, we only
     // select the 3 best moves, so if we don't shuffle, then the last one will
     // always be ignored (due to we always insert the moves in the same order).
+    Collections.shuffle(validMoves, RandomUtil.get());
     
     DropletUnit unit = droplet.units.get(0);
     Point at = unit.route.getPosition(timestamp - 1);
@@ -704,7 +694,7 @@ public class DropletAwareGreedyRouter implements Router {
     DropletUnit unit = new DropletUnit();
     unit.route.start = timestamp;
     unit.route.path.add(position);
-    
+
     droplet.units.add(unit);
     
     return droplet;
@@ -721,6 +711,8 @@ public class DropletAwareGreedyRouter implements Router {
       DropletUnit copy = new DropletUnit();
       copy.route.start = timestamp;
       copy.route.path.add(at);
+
+      unit.successor = copy;
       
       droplet.units.add(copy);
     }
@@ -740,6 +732,8 @@ public class DropletAwareGreedyRouter implements Router {
       copy.route.start = timestamp;
       copy.route.path.add(at);
       
+      unit.successor = copy;
+      
       droplet.units.add(copy);
     }
     
@@ -749,6 +743,8 @@ public class DropletAwareGreedyRouter implements Router {
       DropletUnit copy = new DropletUnit();
       copy.route.start = timestamp;
       copy.route.path.add(at);
+      
+      unit.successor = copy;
       
       droplet.units.add(copy);
     }
@@ -807,11 +803,11 @@ public class DropletAwareGreedyRouter implements Router {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, toMerge, timestamp, droplets, moduleManager.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
     
-    Collections.shuffle(validMoves, RandomUtil.get());
     // if we use the manhattan distance, then reverse, turn directions yield the
     // same manhattan distance, meaning all moves are just as good. However, we only
     // select the 3 best moves, so if we don't shuffle, then the last one will
     // always be ignored (due to we always insert the moves in the same order).
+    Collections.shuffle(validMoves, RandomUtil.get());
     
     DropletUnit sourceUnit = droplet.units.get(0);
     DropletUnit targetUnit = toMerge.units.get(0);

@@ -29,6 +29,7 @@ import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.ElectrodeActivationTranslator;
 import pack.algorithms.components.MixingPercentages;
+import pack.helpers.Assert;
 import pack.testbench.tests.CrowdedModuleBioArray;
 import pack.testbench.tests.CrowdedModuleBioAssay;
 import pack.testbench.tests.ModuleBioArray4;
@@ -83,8 +84,8 @@ public class App extends ApplicationAdapter {
 		app.setRoot(canvas);
 		app.attachInputListenersToComponent(canvas);
 		
-		movementTime = 0.12f;
-		stopTime = 0.45f;
+		movementTime = .12f;
+		stopTime = 0.05f; // 0.45f
 
 		canvas.createBufferStrategy(3);
 		canvas.setIgnoreRepaint(true);
@@ -150,7 +151,7 @@ public class App extends ApplicationAdapter {
 	public void update() {
 	  if (running) step = true;
 	  
-	  if (timestamp < result.executionTime) {
+	  if (timestamp <= result.executionTime - 2) {
       if (step) {
   	    float maxTime = moving ? movementTime : stopTime;
   
@@ -207,7 +208,7 @@ public class App extends ApplicationAdapter {
       viewport.setCamera(timelineCamera);
       Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
   		
-  		float suggestedTime = MathUtils.clamp(0, result.executionTime, mouse.x / (float) timeline.timescale);
+  		float suggestedTime = MathUtils.clamp(0, result.executionTime - 1, mouse.x / (float) timeline.timescale);
   		timeline.suggestedTime = Math.round(suggestedTime);
 		}
 		
@@ -430,39 +431,42 @@ public class App extends ApplicationAdapter {
       
       List<Droplet> droplets = result.droplets;
       for (Droplet droplet : droplets) {
-        for (int i = 0; i < droplet.units.size(); i++) {
-          DropletUnit dropletUnit = droplet.units.get(i);
-          Point at = dropletUnit.route.getPosition(timestamp);
-          if (at == null) continue;
-  
-          Point target = dropletUnit.route.getPosition(timestamp + 1);
-          Point move = new Point();
-          
-          if (target != null) move.set(target).sub(at);
-          
-          if (moving) {
+        if (moving) {
+          for (int i = 0; i < droplet.units.size(); i++) {
+            DropletUnit dropletUnit = droplet.units.get(i);
+            Point at = dropletUnit.route.getPosition(timestamp);
+            if (at == null) continue;
+    
+            Point target = dropletUnit.route.getPosition(timestamp + 1);
+            Point move = new Point();
+            
             if (target == null) {
-              if (droplet.operation == null) {
-                drawDropletUnit(droplet, at, move.x, move.y);
-              } else {            
-                /*
-                Droplet[] successors = droplet.operation.forwarding;
-
-                for (Droplet successor : successors) {
-                  DropletUnit successorUnit = successor.units.get(i);
-                  target = successorUnit.route.getPosition(timestamp + 1);
-                  move.set(target).sub(at);
-                   
-                  drawDropletUnit(droplet, at, move.x, move.y);
-                }
-                */
-                
-                drawDropletUnit(droplet, at, 0, 0);
-              }
+              Operation operation = droplet.operation;
+              Assert.that(operation != null);
+              
+              // dispose operation don't have successor droplet unit. So skip drawing those droplet units
+              DropletUnit successor = dropletUnit.successor;
+              if (successor == null) continue;
+              Assert.that(!operation.name.equals(OperationType.dispose));
+              
+              target = successor.route.getPosition(timestamp + 1);
+              move.set(target).sub(at);
+              
+              drawDropletUnit(droplet, at, move.x, move.y);
+              
             } else {
+              move.set(target).sub(at);
+              
               drawDropletUnit(droplet, at, move.x, move.y);
             }
-          } else {
+          }
+          
+        } else {
+          for (int i = 0; i < droplet.units.size(); i++) {
+            DropletUnit dropletUnit = droplet.units.get(i);
+            Point at = dropletUnit.route.getPosition(timestamp);
+            if (at == null) continue;
+
             drawDropletUnit(droplet, at, 0, 0);
           }
         }
