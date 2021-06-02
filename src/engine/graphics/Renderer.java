@@ -139,7 +139,7 @@ public class Renderer {
 
 	public void drawRect(float x, float y, float width, float height) {
 		ensureDrawing();
-
+		
 		Vector2 position = viewport.worldToScreen(x, y);
 		int wx = Math.round(position.x);
 		int wy = Math.round(position.y);

@@ -1,4 +1,4 @@
-package pack.gui;
+package pack.gui.timeline;
 
 public class Timeline {
   

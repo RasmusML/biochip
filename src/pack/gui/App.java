@@ -16,9 +16,9 @@ import engine.math.Vector2;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.Droplet;
+import pack.algorithms.DropletAwareGreedyRouter;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.ElectrodeActivations;
-import pack.algorithms.DropletAwareGreedyRouter;
 import pack.algorithms.Module;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
@@ -29,6 +29,11 @@ import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.ElectrodeActivationTranslator;
 import pack.algorithms.components.MixingPercentages;
+import pack.gui.timeline.CompactTimelineLayout;
+import pack.gui.timeline.SimpleTimelineLayout;
+import pack.gui.timeline.Timeline;
+import pack.gui.timeline.TimelineLayout;
+import pack.gui.timeline.TimelineUnit;
 import pack.helpers.Assert;
 import pack.testbench.tests.CrowdedModuleBioArray;
 import pack.testbench.tests.CrowdedModuleBioAssay;
@@ -51,6 +56,8 @@ public class App extends ApplicationAdapter {
 	Camera boardCamera;
 	Camera timelineCamera;
 	Canvas canvas;
+	
+	float maxZoom;
 
 	// mouse
 	float oldX, oldY;
@@ -77,6 +84,8 @@ public class App extends ApplicationAdapter {
 	float movementTime;
 	
 	Timeline timeline;
+	TimelineLayout timelineLayout;
+	List<TimelineUnit> timelineUnits;
 
 	@Override
 	public void init() {
@@ -85,7 +94,9 @@ public class App extends ApplicationAdapter {
 		app.attachInputListenersToComponent(canvas);
 		
 		movementTime = .12f;
-		stopTime = 0.05f; // 0.45f
+		stopTime = 0.15f; // 0.45f
+		
+		maxZoom = 4f;
 
 		canvas.createBufferStrategy(3);
 		canvas.setIgnoreRepaint(true);
@@ -139,12 +150,25 @@ public class App extends ApplicationAdapter {
 		}
 		*/
 		
-		float cx = array.width * tilesize / 2f;
-		float cy = array.height * tilesize / 2f;
+		float width = array.width * tilesize;
+		float height = array.height * tilesize;
+		
+		float cx = width / 2f;
+		float cy = height / 2f;
 		boardCamera.lookAtNow(cx, cy);
+
+		float zoomX = viewport.getVirtualWidth() / width;
+		float zoomY = viewport.getVirtualHeight() / height;
+
+		float zoom = Math.min(zoomX, zoomY);
+		if (zoom > maxZoom) zoom = maxZoom;
+		boardCamera.zoomNow(zoom);
+		
 		timelineCamera.lookAtNow(viewport.getVirtualWidth() / 2f - 100, viewport.getVirtualHeight() / 2f - 30);
 		
 		timeline = new Timeline();
+		timelineLayout = new CompactTimelineLayout();
+		timelineUnits = timelineLayout.pack(assay.getOperations());
 	}
 
 	@Override
@@ -175,7 +199,10 @@ public class App extends ApplicationAdapter {
 		app.setTitle(title);
 
 		if (input.isKeyPressed(Keys.X)) {
-			boardCamera.zoomNow(boardCamera.targetZoom * 1.02f);
+		  float zoom = boardCamera.targetZoom * 1.02f;
+		  if (zoom > maxZoom) zoom = maxZoom;
+		  
+			boardCamera.zoomNow(zoom);
 		}
 		
 		if (input.isKeyPressed(Keys.Z)) {
@@ -282,51 +309,15 @@ public class App extends ApplicationAdapter {
     timeline.operationGap = 0.8f;
     timeline.operationHeight = 7;
     
-    int nonDispenseOperation = 0;
-    
     List<Operation> operations = assay.getOperations();
-    for (int i = 0; i < operations.size(); i++) {
-      Operation operation = operations.get(i);
-      
-      int start, end;
-      if (operation.name.equals(OperationType.mix)) {
-        Droplet droplet = operation.manipulating[0];
-        
-        start = droplet.getStartTimestamp();
-        end = droplet.getEndTimestamp();
-      } else if (operation.name.equals(OperationType.merge)) {
-        Droplet droplet0 = operation.manipulating[0];
-        Droplet droplet1 = operation.manipulating[1];
-        
-        start = Math.max(droplet0.getStartTimestamp(), droplet1.getStartTimestamp());
-        end = Math.min(droplet0.getEndTimestamp(), droplet1.getEndTimestamp());
-      } else if (operation.name.equals(OperationType.split)) {
-        Droplet droplet = operation.manipulating[0];
-        start = droplet.getStartTimestamp();
-        end = droplet.getEndTimestamp();
-      } else if (operation.name.equals(OperationType.dispense)){
-        continue;
-      } else if (operation.name.equals(OperationType.heating)) {
-        Droplet droplet = operation.manipulating[0];
-        start = droplet.getStartTimestamp();
-        end = droplet.getEndTimestamp();
-      } else if (operation.name.equals(OperationType.dispose)) {
-        Droplet droplet = operation.manipulating[0];
-        start = droplet.getStartTimestamp();
-        end = droplet.getEndTimestamp();
-      } else {
-        throw new IllegalStateException("broken! " + operation.name);
-      }
-      
-      nonDispenseOperation += 1;
-      
-      float width = (end - start) * timeline.timescale;
+    for (TimelineUnit unit : timelineUnits) {
+      float width = unit.duration * timeline.timescale;
       float height = timeline.operationHeight;
 
-      float x = start * timeline.timescale;
-      float y = (height + gap) * i;
+      float x = unit.start * timeline.timescale;
+      float y = unit.y * (height + gap);
       
-      Color color = getOperationColor(operation);
+      Color color = getOperationColor(unit.operation);
       renderer.setColor(color);
 
       renderer.fillRect(x, y, width, height);
@@ -335,6 +326,9 @@ public class App extends ApplicationAdapter {
       renderer.setColor(colorOutline);
       renderer.drawRect(x, y, width, height);
     }
+    
+    // @TODO:
+    int nonDispenseOperation = operations.size();
     
     {
       float xx = timestamp * timeline.timescale;
@@ -372,45 +366,37 @@ public class App extends ApplicationAdapter {
 		}
 
 		{ // grid tiles
-			renderer.setColor(Color.WHITE);
+		  renderer.setColor(Color.WHITE);
 			for (int x = 0; x < array.width; x++) {
 				for (int y = 0; y < array.height; y++) {
-
-					float xx = x * tilesize + gap;
-					float yy = y * tilesize + gap;
-
-					float width = tilesize - gap * 2f;
-					float height = tilesize - gap * 2f;
-
-					renderer.fillRect(xx, yy, width, height);
+			    float xx = x * tilesize + gap;
+			    float yy = y * tilesize + gap;
+			    float width = tilesize - gap * 2f;
+			    float height = tilesize - gap * 2f;
+			    renderer.fillRect(xx, yy, width, height);
 				}
 			}
 		}
 		
 		{ // module
-      
       for (Module module : result.modules) {
-        float x = module.position.x * tilesize;
-        float y = module.position.y * tilesize;
-        float width = module.width * tilesize;
-        float height = module.height * tilesize;
-        
-        renderer.setColor(Color.black);
-        renderer.fillRect(x, y, width, height);
-      }
-      
-      for (Module module : result.modules) {
-        float x = module.position.x * tilesize + gap;
-        float y = module.position.y * tilesize + gap;
-        float width = module.width * tilesize - 2 * gap;
-        float height = module.height * tilesize - 2 * gap;
-        
-        renderer.setColor(Color.white);
-        renderer.fillRect(x, y, width, height);
-        
-        Color seeThroughRed = new Color(1f, 0f, 0f, 0.2f);
-        renderer.setColor(seeThroughRed);
-        renderer.fillRect(x, y, width, height);
+        for (int x = 0; x < module.width; x++) {
+          for (int y = 0; y < module.height; y++) {
+            
+            float xx = (module.position.x + x) * tilesize + gap;
+            float yy = (module.position.y + y) * tilesize + gap;
+            float width = tilesize - gap * 2f;
+            float height = tilesize - gap * 2f;
+
+            renderer.setColor(Color.white);
+            renderer.fillRect(xx, yy, width, height);
+            
+            Color seeThroughRed = new Color(1f, 0f, 0f, 0.2f);
+            renderer.setColor(seeThroughRed);
+            renderer.fillRect(xx, yy, width, height);
+
+          }
+        }
       }
     }
 		
@@ -502,6 +488,8 @@ public class App extends ApplicationAdapter {
     renderer.setColor(color);
     
     renderer.fillOval(x, y, width, height);    
+    //renderer.fillRect(x, y, width, height);    
+    
     
     String id = String.format("%d", droplet.id);
     
@@ -512,6 +500,8 @@ public class App extends ApplicationAdapter {
     renderer.drawText(id, tx, ty, Alignment.Center);
     
     renderer.drawOval(x, y, width, height);
+    //renderer.drawRect(x, y, width, height);
+    
   }
 
   private Color getOperationColor(Operation operation) {

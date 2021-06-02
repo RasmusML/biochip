@@ -303,7 +303,8 @@ public class DropletAwareGreedyRouter implements Router {
 
               retire(droplet);
               
-              droplet.units.sort((u1, u2) -> {
+              List<DropletUnit> units = new ArrayList<>(droplet.units);
+              units.sort((u1, u2) -> {
                 Point at1 = u1.route.getPosition(timestamp - 1);
                 Point at2 = u2.route.getPosition(timestamp - 1);
                 return at1.y - at2.y;
@@ -314,7 +315,6 @@ public class DropletAwareGreedyRouter implements Router {
               float area1 = units1;
               float area2 = droplet.area - area1;
               
-              List<DropletUnit> units = new ArrayList<>(droplet.units);
 
               // select the bottom droplet-units to go down
               List<DropletUnit> downUnits = units.subList(0, units1);
@@ -335,7 +335,8 @@ public class DropletAwareGreedyRouter implements Router {
 
               retire(droplet);
               
-              droplet.units.sort((u1, u2) -> {
+              List<DropletUnit> units = new ArrayList<>(droplet.units);
+              units.sort((u1, u2) -> {
                 Point at1 = u1.route.getPosition(timestamp - 1);
                 Point at2 = u2.route.getPosition(timestamp - 1);
                 return at1.x - at2.x;
@@ -345,8 +346,6 @@ public class DropletAwareGreedyRouter implements Router {
               
               float area1 = units1;
               float area2 = droplet.area - area1;
-              
-              List<DropletUnit> units = new ArrayList<>(droplet.units);
 
               // select the left droplet-units to go left
               List<DropletUnit> leftUnits = units.subList(0, units1);
