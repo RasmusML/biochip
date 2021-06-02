@@ -36,16 +36,14 @@ import pack.gui.timeline.TimelineUnit;
 import pack.helpers.Assert;
 import pack.testbench.tests.CrowdedModuleBioArray;
 import pack.testbench.tests.CrowdedModuleBioAssay;
+import pack.testbench.tests.ModuleBioArray1;
 import pack.testbench.tests.ModuleBioArray4;
+import pack.testbench.tests.ModuleBioAssay1;
 import pack.testbench.tests.ModuleBioAssay4;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
 import pack.testbench.tests.PlatformArray4;
 import pack.testbench.tests.PlatformAssay4;
-import pack.testbench.tests.Test4BioArray;
-import pack.testbench.tests.Test4BioAssay;
-import pack.testbench.tests.functionality.DispenseArray1;
-import pack.testbench.tests.functionality.DispenseAssay1;
 import pack.testbench.tests.functionality.DisposeArray1;
 import pack.testbench.tests.functionality.DisposeAssay1;
 
@@ -95,7 +93,7 @@ public class App extends ApplicationAdapter {
 		app.attachInputListenersToComponent(canvas);
 		
 		movementTime = .12f;
-		stopTime = 0.15f; // 0.45f
+		stopTime = .22f; // 0.45f
 		
 		maxZoom = 4f;
 
@@ -120,14 +118,14 @@ public class App extends ApplicationAdapter {
     assay = new PCRMixingTreeAssay();
     array = new PCRMixingTreeArray();
 
-    assay = new Test4BioAssay();
-    array = new Test4BioArray();
-    
     assay = new DisposeAssay1();
     array = new DisposeArray1();
     
     assay = new PlatformAssay4();
     array = new PlatformArray4();
+
+    assay = new ModuleBioAssay1();
+    array = new ModuleBioArray1();
     
 		Router router = new DropletAwareGreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();
@@ -168,6 +166,7 @@ public class App extends ApplicationAdapter {
 		timelineCamera.lookAtNow(viewport.getVirtualWidth() / 2f - 100, viewport.getVirtualHeight() / 2f - 30);
 		
 		timeline = new Timeline();
+		//timelineLayout = new SimpleTimelineLayout();
 		timelineLayout = new CompactTimelineLayout();
 		timelineUnits = timelineLayout.pack(assay.getOperations());
 	}
@@ -306,6 +305,7 @@ public class App extends ApplicationAdapter {
   private void drawTimeline() {
     viewport.setCamera(timelineCamera);
     
+    timeline.minCursorHeight = 4;
     timeline.timescale = 1f;
     timeline.operationGap = 0.8f;
     timeline.operationHeight = 7;
@@ -331,11 +331,13 @@ public class App extends ApplicationAdapter {
       renderer.drawRect(x, y, width, height);
     }
     
+    int cursorHeight = Math.max(maxY + 1, timeline.minCursorHeight);
+    
     {
       float xx = timestamp * timeline.timescale;
       float yy = 0;
       float width = 1;
-      float height = (maxY + 1) * (timeline.operationHeight + gap) - gap;
+      float height = cursorHeight * (timeline.operationHeight + gap) - gap;
       
       renderer.fillRect(xx, yy, width, height);
     }
@@ -346,7 +348,7 @@ public class App extends ApplicationAdapter {
       float xx = timeline.suggestedTime * timeline.timescale;
       float yy = 0;
       float width = 1;
-      float height = (maxY + 1) * (timeline.operationHeight + gap) - gap;
+      float height = cursorHeight * (timeline.operationHeight + gap) - gap;
       
       renderer.fillRect(xx, yy, width, height);
     }
@@ -431,7 +433,7 @@ public class App extends ApplicationAdapter {
               Operation operation = droplet.operation;
               Assert.that(operation != null);
               
-              // dispose operation don't have successor droplet unit. So skip drawing those droplet units
+              // dispose operations don't have successor droplet units. So skip drawing those droplet units
               DropletUnit successor = dropletUnit.successor;
               if (successor == null) continue;
               Assert.that(!operation.name.equals(OperationType.dispose));

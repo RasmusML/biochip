@@ -195,8 +195,7 @@ public class DropletAwareGreedyRouter implements Router {
           // @TOOD: move
           if (stalled.name.equals(OperationType.heating))  {
             float temperature = (float) stalled.attributes.get(Tags.temperature);
-            String moduleIdentifier = String.format("heater%d", (int) temperature); // @TODO: hack
-            stalledExtra.module = moduleManager.allocate(moduleIdentifier);
+            stalledExtra.module = moduleManager.allocate(OperationType.heating, new Tag(Tags.temperature, temperature));
             
             // @TODO: make sure the shape fits into the module. (get width, height, otherwise) if this does not help, terminate.
             

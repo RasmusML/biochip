@@ -7,4 +7,5 @@ public class Timeline {
   public float operationGap;
   
   public int suggestedTime;
+  public int minCursorHeight;
 }

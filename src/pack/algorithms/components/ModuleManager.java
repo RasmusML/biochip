@@ -8,6 +8,7 @@ import java.util.Map;
 import pack.algorithms.Module;
 import pack.algorithms.ModuleCatalog;
 import pack.algorithms.ModulePolicy;
+import pack.algorithms.Tag;
 import pack.helpers.Assert;
 
 public class ModuleManager {
@@ -26,8 +27,8 @@ public class ModuleManager {
     }
   }
 
-  public Module allocate(String moduleName) {
-    List<Module> modules = getModulesOfType(moduleName);
+  public Module allocate(String operation, Tag... tags) {
+    List<Module> modules = getModulesOfOperation(operation, tags);
     Assert.that(modules.size() > 0);
 
     Module module = modules.get(0); // @TODO: better policy
@@ -63,15 +64,22 @@ public class ModuleManager {
     return allocation.count > 0;
   }
 
-  private List<Module> getModulesOfType(String moduleName) {
+  private List<Module> getModulesOfOperation(String operation, Tag... tags) {
     List<Module> matches = new ArrayList<>();
 
-    for (Module module : catalog.modules) {
-      if (module.name.equals(moduleName)) {
+    outer: for (Module module : catalog.modules) {
+      if (module.operation.equals(operation)) {
+
+        for (Tag tag : tags) {
+          Object value = module.attributes.get(tag.key);
+          if (value == null) continue outer;
+          if (!value.equals(tag.value)) continue outer;
+        }
+        
         matches.add(module);
       }
     }
-
+    
     return matches;
   }
 

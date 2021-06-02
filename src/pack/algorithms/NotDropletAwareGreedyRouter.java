@@ -193,8 +193,7 @@ public class NotDropletAwareGreedyRouter implements Router {
 
           if (stalled.name.equals(OperationType.heating))  {
             float temperature = (float) stalled.attributes.get(Tags.temperature);
-            String moduleIdentifier = String.format("heater%d", (int) temperature); // @TODO: hack
-            stalledExtra.module = moduleManager.allocate(moduleIdentifier);
+            stalledExtra.module = moduleManager.allocate(OperationType.heating, new Tag(Tags.temperature, temperature));
             
             /*
             Droplet droplet = stalled.manipulating[0];

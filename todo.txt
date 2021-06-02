@@ -10,8 +10,6 @@ waste operation (variable droplet size)
 greedy router change probabilities on deadlock
 probabilities for all moves (greedy router) (also move to module operation)
 
-fix: when a droplet spawn and has no succeding operation, then the color of the droplet is blue (dispense), but it should be gray
-
 add droplet sizes on edges (graphviz)
 
 // @TODO: look into splitting a droplet into smaller, maybe extra operation option ("optimization")
