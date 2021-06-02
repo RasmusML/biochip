@@ -296,7 +296,6 @@ public class DropletAwareGreedyRouter implements Router {
             float area1 = units1;
             float area2 = droplet.area - area1;
             
-
             // select the bottom droplet-units to go down
             List<DropletUnit> downUnits = units.subList(0, units1);
             Droplet d1 = createForwardedDroplet(Move.Down, downUnits, area1);

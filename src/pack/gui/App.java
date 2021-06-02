@@ -21,6 +21,7 @@ import pack.algorithms.DropletAwareGreedyRouter;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.ElectrodeActivations;
 import pack.algorithms.Module;
+import pack.algorithms.NotDropletAwareGreedyRouter;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
@@ -144,7 +145,7 @@ public class App extends ApplicationAdapter {
     array = new PlatformArray4();
 
     Router router = new DropletAwareGreedyRouter();
-		//Router router = new NotDropletAwareGreedyRouter();
+		router = new NotDropletAwareGreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
 		ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator();
