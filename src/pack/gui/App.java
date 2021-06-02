@@ -30,7 +30,6 @@ import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.ElectrodeActivationTranslator;
 import pack.algorithms.components.MixingPercentages;
 import pack.gui.timeline.CompactTimelineLayout;
-import pack.gui.timeline.SimpleTimelineLayout;
 import pack.gui.timeline.Timeline;
 import pack.gui.timeline.TimelineLayout;
 import pack.gui.timeline.TimelineUnit;
@@ -309,8 +308,11 @@ public class App extends ApplicationAdapter {
     timeline.operationGap = 0.8f;
     timeline.operationHeight = 7;
     
-    List<Operation> operations = assay.getOperations();
+    int maxY = 0;
+    
     for (TimelineUnit unit : timelineUnits) {
+      if (unit.y > maxY) maxY = unit.y;
+      
       float width = unit.duration * timeline.timescale;
       float height = timeline.operationHeight;
 
@@ -327,14 +329,11 @@ public class App extends ApplicationAdapter {
       renderer.drawRect(x, y, width, height);
     }
     
-    // @TODO:
-    int nonDispenseOperation = operations.size();
-    
     {
       float xx = timestamp * timeline.timescale;
       float yy = 0;
       float width = 1;
-      float height = nonDispenseOperation * (timeline.operationHeight + gap) - gap;
+      float height = (maxY + 1) * (timeline.operationHeight + gap) - gap;
       
       renderer.fillRect(xx, yy, width, height);
     }
@@ -345,7 +344,7 @@ public class App extends ApplicationAdapter {
       float xx = timeline.suggestedTime * timeline.timescale;
       float yy = 0;
       float width = 1;
-      float height = nonDispenseOperation * (timeline.operationHeight + gap) - gap;
+      float height = (maxY + 1) * (timeline.operationHeight + gap) - gap;
       
       renderer.fillRect(xx, yy, width, height);
     }

@@ -12,6 +12,7 @@ public class CompactTimelineLayout implements TimelineLayout {
 
   // Packing the timeline corresponds to the activity selection problem.
   // The optimal solution the activity selection problem can be found using a greedy-algorithm. Thus, the computation is tractable.
+  // https://en.wikipedia.org/wiki/Activity_selection_problem
   
   @Override
   public List<TimelineUnit> pack(List<Operation> operations) {
@@ -61,6 +62,7 @@ public class CompactTimelineLayout implements TimelineLayout {
     }
     
     // activity selection problem is solved here with the greedy-algorithm.
+    // https://en.wikipedia.org/wiki/Activity_selection_problem#Optimal_solution
     
     left.sort((u1, u2) -> {
       int end1 = u1.start + u1.duration;
