@@ -11,7 +11,7 @@ public class Test1BioArray extends BioArray {
 		
 		catalog = new EmptyModuleCatalog();
 		
-    catalog.registerDispenser(0, 0, 1);
-    catalog.registerDispenser(5, 6, 1);
+    catalog.registerDispenser(0, 0, 4);
+    catalog.registerDispenser(5, 6, 2);
 	}
 }

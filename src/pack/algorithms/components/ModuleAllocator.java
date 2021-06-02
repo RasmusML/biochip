@@ -11,12 +11,12 @@ import pack.algorithms.ModulePolicy;
 import pack.algorithms.Tag;
 import pack.helpers.Assert;
 
-public class ModuleManager {  // ModuleAllocator
+public class ModuleAllocator {
 
   private ModuleCatalog catalog;
   private Map<Module, ModuleAllocation> moduleToModuleAllocation;
 
-  public ModuleManager(ModuleCatalog catalog /* , ModuleAllocationStrategy strategy */) {
+  public ModuleAllocator(ModuleCatalog catalog /* , ModuleAllocationStrategy strategy */) {
     this.catalog = catalog;
 
     moduleToModuleAllocation = new HashMap<>();
@@ -44,6 +44,7 @@ public class ModuleManager {  // ModuleAllocator
 
   public void free(Module module) {
     ModuleAllocation allocation = moduleToModuleAllocation.get(module);
+    Assert.that(allocation.count > 0);
     allocation.count -= 1;
   }
 
@@ -59,7 +60,7 @@ public class ModuleManager {  // ModuleAllocator
     return inUse;
   }
 
-  private boolean isInUse(Module module) {
+  public boolean isInUse(Module module) {
     ModuleAllocation allocation = moduleToModuleAllocation.get(module);
     return allocation.count > 0;
   }

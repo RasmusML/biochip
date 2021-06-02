@@ -14,12 +14,12 @@ import pack.helpers.Assert;
 
 public class SubstanceToReservoirAssigner {
   
-  public void assign(BioAssay assay, BioArray array, ModuleManager moduleManager) {
+  public void assign(BioAssay assay, BioArray array, ModuleAllocator moduleAllocator) {
     List<Operation> dispenseOperations = assay.getOperations(OperationType.dispense);
     
     Collections.shuffle(dispenseOperations, RandomUtil.get());
     
-    List<Module> dispensers = moduleManager.getModulesOfOperationType(OperationType.dispense);
+    List<Module> dispensers = moduleAllocator.getModulesOfOperationType(OperationType.dispense);
 
     List<String> assigned = new ArrayList<>();
     List<String> pending = new ArrayList<>();

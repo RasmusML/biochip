@@ -1,7 +1,6 @@
 package pack.testbench.tests.functionality;
 
 import pack.algorithms.BioArray;
-import pack.algorithms.Point;
 import pack.testbench.catalogs.EmptyModuleCatalog;
 
 public class DispenseArray1 extends BioArray {
@@ -15,6 +14,6 @@ public class DispenseArray1 extends BioArray {
     catalog.registerDispenser(0, 0, 1);
     // reservoirTiles.add(new Point(5, 6));
 
-    wasteTiles.add(new Point(width - 1, height - 1));
+    catalog.registerDisposer(width - 1, height - 1);
   }
 }

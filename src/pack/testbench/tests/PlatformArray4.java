@@ -28,6 +28,6 @@ public class PlatformArray4 extends BioArray {
     catalog.registerDispenser(width - 1, 0, 1);
     catalog.registerDispenser(20, 14, 1);
     
-    wasteTiles.add(new Point(0, height - 1));
+    catalog.registerDisposer(0, height - 1);
   }
 }

@@ -15,20 +15,23 @@ public class ReservoirManager {
   
   private List<Module> dispensers;
   private List<Module> reserved;
+  private List<Module> commited;
 
   private ConstraintsChecker checker;
-  private ModuleManager moduleManager;
+  private ModuleAllocator moduleAllocator;
   
-  public ReservoirManager(ModuleManager moduleManager, ConstraintsChecker checker) {
-    this.moduleManager = moduleManager;
+  public ReservoirManager(ModuleAllocator moduleAllocator, ConstraintsChecker checker) {
+    this.moduleAllocator = moduleAllocator;
     this.checker = checker;
     
-    dispensers = moduleManager.getModulesOfOperationType(OperationType.dispense);
+    dispensers = moduleAllocator.getModulesOfOperationType(OperationType.dispense);
     reserved = new ArrayList<>();
+    commited = new ArrayList<>();
   }
   
   public Module reserve(String substance, List<Droplet> droplets, int timestamp) {
     outer: for (Module dispenser : dispensers) {
+      if (moduleAllocator.isInUse(dispenser)) continue;
       if (reserved.contains(dispenser)) continue;
 
       String dispenserSubstance = (String) dispenser.attributes.get(Tags.substance);
@@ -42,7 +45,7 @@ public class ReservoirManager {
           }
         }
         
-        moduleManager.allocate(dispenser);
+        moduleAllocator.allocate(dispenser);
         reserved.add(dispenser);
         
         return dispenser;
@@ -52,9 +55,16 @@ public class ReservoirManager {
     return null;
   }
   
+  public void commit(Module module) {
+    commited.add(module);
+  }
+  
   public void consumeReservations() {
+    reserved.removeAll(commited);
+    commited.clear();
+    
     for (Module dispenser : reserved) {
-      moduleManager.free(dispenser);
+      moduleAllocator.free(dispenser);
       
     }
     reserved.clear();

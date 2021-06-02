@@ -1,4 +1,3 @@
-module allocation (work on selecting module)
 // @TODO: make sure the shape fits into the module. (get width, height, otherwise) if this does not help, terminate.
 
 use the reshape algorithm (greedy router)
@@ -7,7 +6,9 @@ fix constraintschecker on merge, it is outdated?
 
 waste operation (variable droplet size)            
 
-greedy router change probabilities on deadlock
+todo: make notDropletAwareRouter up to date: support dispense operations taking time, support priority, 
+
+greedy router change probabilities on deadlock (droplet moving to module can deadlock atm, if another modules blocks, because the droplet selects the best move, aka. Move.None, adding probabilities will fix this deadlock)
 probabilities for all moves (greedy router) (also move to module operation)
 
 add droplet sizes on edges (graphviz)

@@ -34,16 +34,24 @@ import pack.gui.timeline.Timeline;
 import pack.gui.timeline.TimelineLayout;
 import pack.gui.timeline.TimelineUnit;
 import pack.helpers.Assert;
+import pack.testbench.tests.BlockingDispenserTestBioArray;
+import pack.testbench.tests.BlockingDispenserTestBioAssay;
 import pack.testbench.tests.CrowdedModuleBioArray;
 import pack.testbench.tests.CrowdedModuleBioAssay;
 import pack.testbench.tests.ModuleBioArray1;
+import pack.testbench.tests.ModuleBioArray3;
 import pack.testbench.tests.ModuleBioArray4;
 import pack.testbench.tests.ModuleBioAssay1;
+import pack.testbench.tests.ModuleBioAssay3;
 import pack.testbench.tests.ModuleBioAssay4;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
 import pack.testbench.tests.PlatformArray4;
 import pack.testbench.tests.PlatformAssay4;
+import pack.testbench.tests.Test1BioArray;
+import pack.testbench.tests.Test1BioAssay;
+import pack.testbench.tests.Test3BioArray;
+import pack.testbench.tests.Test3BioAssay;
 import pack.testbench.tests.functionality.DisposeArray1;
 import pack.testbench.tests.functionality.DisposeAssay1;
 
@@ -109,25 +117,26 @@ public class App extends ApplicationAdapter {
 		
 		percentages = new DefaultMixingPercentages();
 
-		/*
-		assay = new ModuleBioAssay4();
-    array = new ModuleBioArray4();
-		
-    assay = new CrowdedModuleBioAssay();
-    array = new CrowdedModuleBioArray();
-
     assay = new PCRMixingTreeAssay();
     array = new PCRMixingTreeArray();
 
     assay = new DisposeAssay1();
     array = new DisposeArray1();
     
+    assay = new Test1BioAssay();
+    array = new Test1BioArray();
+
+    assay = new BlockingDispenserTestBioAssay();
+    array = new BlockingDispenserTestBioArray();
+    
+    assay = new CrowdedModuleBioAssay();
+    array = new CrowdedModuleBioArray();
+
+    assay = new ModuleBioAssay4();
+    array = new ModuleBioArray4();
+
     assay = new PlatformAssay4();
     array = new PlatformArray4();
-    */
-
-    assay = new ModuleBioAssay1();
-    array = new ModuleBioArray1();
     
 		Router router = new DropletAwareGreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();
