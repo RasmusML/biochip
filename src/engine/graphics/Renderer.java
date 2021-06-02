@@ -145,8 +145,8 @@ public class Renderer {
 		int wy = Math.round(position.y);
 		
 		float zoom = viewport.getCameraZoom();
-		int wwidth = Math.round(width * viewport.getScaleX() * zoom);
-		int wheight = Math.round(height * viewport.getScaleY() * zoom);
+		int wwidth = (int) Math.floor(width * viewport.getScaleX() * zoom);
+    int wheight = (int) Math.floor(height * viewport.getScaleY() * zoom);
 		
 		if (viewport.flipped())	wy -= wheight;
 		
@@ -161,8 +161,8 @@ public class Renderer {
 		int wy = Math.round(position.y);
 		
 		float zoom = viewport.getCameraZoom();
-		int wwidth = Math.round(width * viewport.getScaleX() * zoom);
-		int wheight = Math.round(height * viewport.getScaleY() * zoom);
+		int wwidth = (int) Math.floor(width * viewport.getScaleX() * zoom);
+		int wheight = (int) Math.floor(height * viewport.getScaleY() * zoom);
 		
 		if (viewport.flipped())	wy -= wheight;
 		
@@ -177,8 +177,8 @@ public class Renderer {
 		int wy = Math.round(position.y);
 		
 		float zoom = viewport.getCameraZoom();
-		int wwidth = Math.round(width * viewport.getScaleX() * zoom);
-		int wheight = Math.round(height * viewport.getScaleY() * zoom);
+    int wwidth = (int) Math.floor(width * viewport.getScaleX() * zoom);
+    int wheight = (int) Math.floor(height * viewport.getScaleY() * zoom);
 		
 		if (viewport.flipped())	wy -= wheight;
 
@@ -193,8 +193,8 @@ public class Renderer {
 		int wy = Math.round(position.y);
 		
 		float zoom = viewport.getCameraZoom();
-		int wwidth = Math.round(width * viewport.getScaleX() * zoom);
-		int wheight = Math.round(height * viewport.getScaleY() * zoom);
+    int wwidth = (int) Math.floor(width * viewport.getScaleX() * zoom);
+    int wheight = (int) Math.floor(height * viewport.getScaleY() * zoom);
 		
 		if (viewport.flipped())	wy -= wheight;
 
@@ -217,8 +217,8 @@ public class Renderer {
 		int wy = Math.round(position.y);
 
 		float zoom = viewport.getCameraZoom();
-		int wwidth = Math.round(dw * viewport.getScaleX() * zoom);
-		int wheight = Math.round(dh * viewport.getScaleY() * zoom);
+    int wwidth = (int) Math.floor(dw * viewport.getScaleX() * zoom);
+    int wheight = (int) Math.floor(dh * viewport.getScaleY() * zoom);
 		
 		if (viewport.flipped())	wy -= wheight;
 		

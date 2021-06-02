@@ -61,6 +61,8 @@ public class App extends ApplicationAdapter {
 	Canvas canvas;
 	
 	float maxZoom;
+	
+	boolean mouseWithinTimeline;
 
 	// mouse
 	float oldX, oldY;
@@ -69,6 +71,10 @@ public class App extends ApplicationAdapter {
 	// rendering
 	float tilesize = 32f;
 	float gap = 1f;
+	
+	// timeline input help
+	float bufferX = 25;
+	float offsetX;
 
 	BioArray array;
 	BioAssay assay;
@@ -100,7 +106,7 @@ public class App extends ApplicationAdapter {
 		app.attachInputListenersToComponent(canvas);
 		
 		movementTime = .12f;
-		stopTime = .22f; // 0.45f
+		stopTime = .25f; // 0.45f
 		
 		maxZoom = 4f;
 
@@ -115,9 +121,6 @@ public class App extends ApplicationAdapter {
 		renderer.setCanvas(canvas);
 		
 		percentages = new DefaultMixingPercentages();
-
-    assay = new PCRMixingTreeAssay();
-    array = new PCRMixingTreeArray();
 
     assay = new DisposeAssay1();
     array = new DisposeArray1();
@@ -134,10 +137,13 @@ public class App extends ApplicationAdapter {
     assay = new ModuleBioAssay4();
     array = new ModuleBioArray4();
 
+    assay = new PCRMixingTreeAssay();
+    array = new PCRMixingTreeArray();
+
     assay = new PlatformAssay4();
     array = new PlatformArray4();
-    
-		Router router = new DropletAwareGreedyRouter();
+
+    Router router = new DropletAwareGreedyRouter();
 		//Router router = new NotDropletAwareGreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
@@ -159,31 +165,59 @@ public class App extends ApplicationAdapter {
 		}
 		*/
 		
-		float width = array.width * tilesize;
-		float height = array.height * tilesize;
+		{
+  		float width = array.width * tilesize;
+  		float height = array.height * tilesize;
+  		
+  		float cx = width / 2f;
+  		float cy = height / 2f;
+  		boardCamera.lookAtNow(cx, cy);
+  
+  		float zoomX = viewport.getVirtualWidth() / width;
+  		float zoomY = viewport.getVirtualHeight() / height;
+  
+  		float zoom = Math.min(zoomX, zoomY);
+  		if (zoom > maxZoom) zoom = maxZoom;
+  		boardCamera.zoomNow(zoom);
+		}
 		
-		float cx = width / 2f;
-		float cy = height / 2f;
-		boardCamera.lookAtNow(cx, cy);
-
-		float zoomX = viewport.getVirtualWidth() / width;
-		float zoomY = viewport.getVirtualHeight() / height;
-
-		float zoom = Math.min(zoomX, zoomY);
-		if (zoom > maxZoom) zoom = maxZoom;
-		boardCamera.zoomNow(zoom);
 		
-		timelineCamera.lookAtNow(viewport.getVirtualWidth() / 2f - 100, viewport.getVirtualHeight() / 2f - 30);
-		
-		timeline = new Timeline();
 		//timelineLayout = new SimpleTimelineLayout();
 		timelineLayout = new CompactTimelineLayout();
 		timelineUnits = timelineLayout.pack(assay.getOperations());
+		
+		timeline = new Timeline();
+		timeline.minCursorHeight = 4;
+    timeline.timescale = 1f;
+    timeline.operationGap = 0.8f;
+    timeline.operationHeight = 7;
+		
+		for (TimelineUnit unit : timelineUnits) {
+		  int end = unit.start + unit.duration;
+		  if (end > timeline.width) timeline.width = end;
+		  if (unit.y > timeline.height) timeline.height = unit.y;
+		}
+		
+		offsetX = viewport.getVirtualWidth() * 1f / 5f;
+		
+		timeline.height += 1;
+
+    float tx = timestamp + offsetX;
+    float ty = viewport.getVirtualHeight() / 2f - 30;
+    
+    timelineCamera.lookAtNow(tx, ty);
+
 	}
+	
 
 	@Override
 	public void update() {
 		handleInput();
+		
+    float tx = timestamp + offsetX;
+    float ty = viewport.getVirtualHeight() / 2f - 30;
+    
+    timelineCamera.lookAtNow(tx, ty);
 
     String title = String.format("@%d", app.getFps());
     app.setTitle(title);
@@ -215,99 +249,120 @@ public class App extends ApplicationAdapter {
 	}
 
   private void handleInput() {
-    if (input.isKeyPressed(Keys.X)) {
-		  float zoom = boardCamera.targetZoom * 1.02f;
-		  if (zoom > maxZoom) zoom = maxZoom;
-		  
-			boardCamera.zoomNow(zoom);
-		}
-		
-		if (input.isKeyPressed(Keys.Z)) {
-      boardCamera.zoomNow(boardCamera.targetZoom * 0.98f);
-    }
-		
-		if (input.isKeyJustPressed(Keys.SPACE)) {
-		  if (running) {
-		    if (!moving) {  // if the droplets are not in the moving state, then just stop immediately. Otherwise, let them finish the move. Yielding a smooth animation
-		      step = false;
-		      dt = 0;
-		    }
-		  } else {
-		    // start at move-state, so they move instantly.
-		    moving = true;
-		  }
-		  
-		  running = !running;
-		  
-		}
-		
-		if (input.isKeyJustPressed(Keys.R)) {
-		  running = false;
-		  step = false;
-		  timestamp = 0;
-		  dt = 0;
-		}
-
-		{
+    
+    { // book-keeping
       viewport.setCamera(timelineCamera);
       Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
+      
+      float width = timeline.width * timeline.timescale;
+      float height = timeline.height * (timeline.operationHeight + gap) - gap;
+  
+      mouseWithinTimeline = mouse.x >= -bufferX && mouse.x <= width + bufferX && mouse.y >= 0 && mouse.y <= height;
+    }
+
+		{ // timeline
+  		viewport.setCamera(timelineCamera);
+  		Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
   		
-  		float suggestedTime = MathUtils.clamp(0, result.executionTime - 1, mouse.x / (float) timeline.timescale);
-  		timeline.suggestedTime = Math.round(suggestedTime);
+  		if (mouseWithinTimeline) {
+  	    float suggestedTime = MathUtils.clamp(0, result.executionTime - 1, mouse.x / (float) timeline.timescale);
+  	    timeline.suggestedTime = Math.round(suggestedTime);
+  	    
+  	    if (input.isMouseJustReleased(Button.LEFT)) {
+  	      timestamp = timeline.suggestedTime;
+  	      dt = 0;
+  	      moving = false;
+  	    }
+  		}
 		}
 		
-    if (input.isMouseJustReleased(Button.LEFT)) {
-      timestamp = timeline.suggestedTime;
-      dt = 0;
-      moving = false;
-    }
-
-    viewport.setCamera(boardCamera);
-
-    if (input.isMouseJustPressed(Button.RIGHT)) {
-      dragging = true;
-
-      Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
-      oldX = mouse.x;
-      oldY = mouse.y;
-    }
-
-    if (input.isMouseJustReleased(Button.RIGHT)) {
-      dragging = false;
-    }
-		
-		if (dragging) {
-		  Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
-			float mouseX = mouse.x;
-			float mouseY = mouse.y;
-
-			float dx = mouseX - oldX;
-			float dy = mouseY - oldY;
-
-			float tx = boardCamera.x - dx;
-			float ty = boardCamera.y - dy;
-
-			boardCamera.lookAtNow(tx, ty);
-		}
-		
-		if (input.isKeyJustPressed(Keys.RIGHT)) {
-		  running = false;
-		  step = false;
-		  timestamp += 1;
-		  
-		  if (timestamp > result.executionTime - 1) {
-		    timestamp = result.executionTime - 1;
+		{ // board
+		  if (!mouseWithinTimeline) {
+		    // do nothing...
 		  }
 		}
 		
-		if (input.isKeyJustPressed(Keys.LEFT)) {
-		  running = false;
-		  step = false;
-		  dt = 0;
+    { // global
 
-		  timestamp -= 1;
-		  if (timestamp < 0) timestamp = 0;
-		}
+      if (input.isKeyPressed(Keys.X)) {
+        float zoom = boardCamera.targetZoom * 1.02f;
+        if (zoom > maxZoom) zoom = maxZoom;
+        
+        boardCamera.zoomNow(zoom);
+      }
+      
+      if (input.isKeyPressed(Keys.Z)) {
+        boardCamera.zoomNow(boardCamera.targetZoom * 0.98f);
+      }
+      
+      if (input.isKeyJustPressed(Keys.SPACE)) {
+        if (running) {
+          if (!moving) {  // if the droplets are not in the moving state, then just stop immediately. Otherwise, let them finish the move. Yielding a smooth animation
+            step = false;
+            dt = 0;
+          }
+        } else {
+          // start at move-state, so they move instantly.
+          moving = true;
+        }
+        
+        running = !running;
+      }
+      
+      if (input.isKeyJustPressed(Keys.R)) {
+        running = false;
+        step = false;
+        timestamp = 0;
+        dt = 0;
+      }
+      
+      if (input.isKeyJustPressed(Keys.RIGHT)) {
+        running = false;
+        step = false;
+        timestamp += 1;
+        
+        if (timestamp > result.executionTime - 1) {
+          timestamp = result.executionTime - 1;
+        }
+      }
+      
+      if (input.isKeyJustPressed(Keys.LEFT)) {
+        running = false;
+        step = false;
+        dt = 0;
+
+        timestamp -= 1;
+        if (timestamp < 0) timestamp = 0;
+      }
+      
+      viewport.setCamera(boardCamera);
+      
+      if (input.isMouseJustPressed(Button.RIGHT)) {
+        dragging = true;
+
+        Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
+        oldX = mouse.x;
+        oldY = mouse.y;
+      }
+
+      if (input.isMouseJustReleased(Button.RIGHT)) {
+        dragging = false;
+      }
+      
+      if (dragging) {
+        Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
+        float mouseX = mouse.x;
+        float mouseY = mouse.y;
+
+        float dx = mouseX - oldX;
+        float dy = mouseY - oldY;
+
+        float tx = boardCamera.x - dx;
+        float ty = boardCamera.y - dy;
+
+        boardCamera.lookAtNow(tx, ty);
+      }
+    }
   }
 
 	@Override
@@ -324,16 +379,18 @@ public class App extends ApplicationAdapter {
   private void drawTimeline() {
     viewport.setCamera(timelineCamera);
     
-    timeline.minCursorHeight = 4;
-    timeline.timescale = 1f;
-    timeline.operationGap = 0.8f;
-    timeline.operationHeight = 7;
-    
-    int maxY = 0;
+    {
+      renderer.setColor(ColorPalette.backgroundGray);
+      
+      float xx = 0;
+      float yy = 0;
+      float width = timeline.width * timeline.timescale;
+      float height = timeline.height * (timeline.operationHeight + gap) - gap;
+      
+      renderer.fillRect(xx, yy, width, height);
+    }
     
     for (TimelineUnit unit : timelineUnits) {
-      if (unit.y > maxY) maxY = unit.y;
-      
       float width = unit.duration * timeline.timescale;
       float height = timeline.operationHeight;
 
@@ -345,12 +402,12 @@ public class App extends ApplicationAdapter {
 
       renderer.fillRect(x, y, width, height);
 
-      Color colorOutline = Color.black;
+      Color colorOutline = ColorPalette.black;
       renderer.setColor(colorOutline);
       renderer.drawRect(x, y, width, height);
     }
     
-    int cursorHeight = Math.max(maxY + 1, timeline.minCursorHeight);
+    int cursorHeight = Math.max(timeline.height, timeline.minCursorHeight);
     
     {
       float xx = timestamp * timeline.timescale;
@@ -362,14 +419,16 @@ public class App extends ApplicationAdapter {
     }
     
     {
-      renderer.setColor(Color.gray);
-      
-      float xx = timeline.suggestedTime * timeline.timescale;
-      float yy = 0;
-      float width = 1;
-      float height = cursorHeight * (timeline.operationHeight + gap) - gap;
-      
-      renderer.fillRect(xx, yy, width, height);
+      if (mouseWithinTimeline) {
+        renderer.setColor(ColorPalette.gray);
+        
+        float xx = timeline.suggestedTime * timeline.timescale;
+        float yy = 0;
+        float width = 1;
+        float height = cursorHeight * (timeline.operationHeight + gap) - gap;
+        
+        renderer.fillRect(xx, yy, width, height);
+      }
     }
   }
 
@@ -377,7 +436,7 @@ public class App extends ApplicationAdapter {
     viewport.setCamera(boardCamera);
     
     { // frame
-			renderer.setColor(Color.GRAY);
+			renderer.setColor(ColorPalette.gray);
 
 			float xx = -gap;
 			float yy = -gap;
@@ -388,7 +447,7 @@ public class App extends ApplicationAdapter {
 		}
 
 		{ // grid tiles
-		  renderer.setColor(Color.WHITE);
+		  renderer.setColor(ColorPalette.white);
 			for (int x = 0; x < array.width; x++) {
 				for (int y = 0; y < array.height; y++) {
 			    float xx = x * tilesize + gap;
@@ -410,11 +469,10 @@ public class App extends ApplicationAdapter {
             float width = tilesize - gap * 2f;
             float height = tilesize - gap * 2f;
 
-            renderer.setColor(Color.white);
+            renderer.setColor(ColorPalette.white);
             renderer.fillRect(xx, yy, width, height);
             
-            Color seeThroughRed = new Color(1f, 0f, 0f, 0.2f);
-            renderer.setColor(seeThroughRed);
+            renderer.setColor(ColorPalette.seeThroughRed);
             renderer.fillRect(xx, yy, width, height);
 
           }
@@ -430,7 +488,7 @@ public class App extends ApplicationAdapter {
         float width = tilesize - gap * 2f;
         float height = tilesize - gap * 2f;
         
-        renderer.setColor(new Color(.1f, .2f, .3f, .4f));
+        renderer.setColor(ColorPalette.seeThroughGray);
         renderer.fillRect(xx, yy, width, height);
 		  }
 		}
@@ -518,7 +576,7 @@ public class App extends ApplicationAdapter {
     float tx = x + width / 2f;
     float ty = y + height / 2f;
     
-    renderer.setColor(Color.BLACK);
+    renderer.setColor(ColorPalette.black);
     renderer.drawText(id, tx, ty, Alignment.Center);
     
     renderer.drawOval(x, y, width, height);
@@ -527,21 +585,21 @@ public class App extends ApplicationAdapter {
   }
 
   private Color getOperationColor(Operation operation) {
-    if (operation == null) return Color.gray;
+    if (operation == null) return ColorPalette.gray;
     
     switch (operation.name) {
     case OperationType.merge: 
-      return Color.orange;
+      return ColorPalette.orange;
     case OperationType.mix:
-      return Color.green;
+      return ColorPalette.green;
     case OperationType.split:
-      return Color.cyan;
+      return ColorPalette.cyan;
     case OperationType.dispense:
-      return Color.blue;
+      return ColorPalette.blue;
     case OperationType.heating:
-      return Color.red;
+      return ColorPalette.red;
     case OperationType.dispose:
-      return Color.pink;
+      return ColorPalette.pink;
     default:
       throw new IllegalStateException("broken!");
     }

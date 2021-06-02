@@ -8,4 +8,7 @@ public class Timeline {
   
   public int suggestedTime;
   public int minCursorHeight;
+  
+  public int width;
+  public int height;
 }
