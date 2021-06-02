@@ -251,12 +251,16 @@ public class DropletAwareGreedyRouter implements Router {
           // execute built-in operations
           
           if (operation.name.equals(OperationType.dispense)) {
-            // Dispense location is already selected at this point. Do nothing.
-            
-            Droplet droplet = operation.forwarding[0];
-            Point to = droplet.units.get(0).route.getPosition(timestamp);
-            Assert.that(to != null);
+            Droplet droplet = operation.manipulating[0];
+            DropletUnit unit = droplet.units.get(0);
+            Point to = unit.route.getPosition(timestamp);
+            if (to != null) continue;
 
+            retire(droplet);
+
+            Droplet forwarded = createForwardedDroplet(Move.None, droplet.units, droplet.area); // @TODO: move out of spawn.
+            
+            operation.forwarding[0] = forwarded;
             extra.done = true;
 
           } else if (operation.name.equals(OperationType.merge)) {
@@ -277,10 +281,7 @@ public class DropletAwareGreedyRouter implements Router {
               extra.done = true;
 
               Droplet mergedDroplet = createMergedDroplet(droplet0, droplet1);
-
               operation.forwarding[0] = mergedDroplet;
-
-              runningDroplets.add(mergedDroplet);
 
               // undo move, it has been set on the merged droplet
               for (DropletUnit unit : droplet0.units) {
@@ -324,9 +325,6 @@ public class DropletAwareGreedyRouter implements Router {
               List<DropletUnit> upUnits = units.subList(units1, droplet.units.size());
               Droplet d2 = createForwardedDroplet(Move.Up, upUnits, area2);
               
-              runningDroplets.add(d1);
-              runningDroplets.add(d2);
-              
               operation.forwarding[0] = d1;
               operation.forwarding[1] = d2;
               
@@ -355,9 +353,6 @@ public class DropletAwareGreedyRouter implements Router {
               List<DropletUnit> rightUnits = units.subList(units1, droplet.units.size());
               Droplet d2 = createForwardedDroplet(Move.Right, rightUnits, area2);
               
-              runningDroplets.add(d1);
-              runningDroplets.add(d2);
-              
               operation.forwarding[0] = d1;
               operation.forwarding[1] = d2;
               
@@ -385,8 +380,6 @@ public class DropletAwareGreedyRouter implements Router {
 
               Droplet forward = createForwardedDroplet(move, droplet.units, droplet.area);
               operation.forwarding[0] = forward;
-
-              runningDroplets.add(forward);
 
               retire(droplet);
               
@@ -450,7 +443,6 @@ public class DropletAwareGreedyRouter implements Router {
               
               Droplet forward = createForwardedDroplet(move, droplet.units, droplet.area);
               operation.forwarding[0] = forward;
-              runningDroplets.add(forward);
               
               moduleManager.free(module);
               
@@ -716,6 +708,8 @@ public class DropletAwareGreedyRouter implements Router {
       droplet.units.add(copy);
     }
     
+    runningDroplets.add(droplet);
+    
     return droplet;
   }
   
@@ -748,6 +742,8 @@ public class DropletAwareGreedyRouter implements Router {
       droplet.units.add(copy);
     }
     
+    runningDroplets.add(droplet);
+    
     return droplet;
   }
 
@@ -762,7 +758,7 @@ public class DropletAwareGreedyRouter implements Router {
 
     runningDroplets.add(droplet);
 
-    operation.forwarding[0] = droplet;
+    operation.manipulating[0] = droplet;
   }
 
   private Move getMixMove(Droplet droplet, MixingPercentages percentages, BioArray array) {

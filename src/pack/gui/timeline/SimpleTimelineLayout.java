@@ -32,8 +32,10 @@ public class SimpleTimelineLayout implements TimelineLayout {
         Droplet droplet = operation.manipulating[0];
         start = droplet.getStartTimestamp();
         end = droplet.getEndTimestamp();
-      } else if (operation.name.equals(OperationType.dispense)){
-        continue;
+      } else if (operation.name.equals(OperationType.dispense)) {
+        Droplet droplet = operation.manipulating[0];
+        start = droplet.getStartTimestamp();
+        end = droplet.getEndTimestamp();
       } else if (operation.name.equals(OperationType.heating)) {
         Droplet droplet = operation.manipulating[0];
         start = droplet.getStartTimestamp();

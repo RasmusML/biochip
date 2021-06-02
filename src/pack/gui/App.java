@@ -44,6 +44,8 @@ import pack.testbench.tests.PlatformArray4;
 import pack.testbench.tests.PlatformAssay4;
 import pack.testbench.tests.Test4BioArray;
 import pack.testbench.tests.Test4BioAssay;
+import pack.testbench.tests.functionality.DispenseArray1;
+import pack.testbench.tests.functionality.DispenseAssay1;
 import pack.testbench.tests.functionality.DisposeArray1;
 import pack.testbench.tests.functionality.DisposeAssay1;
 

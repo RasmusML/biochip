@@ -26,7 +26,7 @@ public class BioAssayBuilder {
     operation.name = OperationType.dispense;
     operation.inputs = new Operation[0];
     operation.outputs = new Operation[1];
-    operation.manipulating = new Droplet[0];
+    operation.manipulating = new Droplet[1];
     operation.forwarding = new Droplet[1];
 
     Map<String, Object> attributes = operation.attributes;
