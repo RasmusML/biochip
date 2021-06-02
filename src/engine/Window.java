@@ -2,6 +2,7 @@ package engine;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -51,7 +52,10 @@ public class Window {
 		frame.addWindowListener(onCloseListener);
 		frame.setResizable(resizable);
 		frame.setLocationRelativeTo(null);
-		frame.setVisible(true);
+	}
+	
+	public void display() {
+	  frame.setVisible(true);
 	}
 
 	public void setTitle(String title) {
@@ -67,16 +71,14 @@ public class Window {
 			setRootUnsafe(newRoot);
 		} else {
 			try {
-				SwingUtilities.invokeAndWait(() -> {
-					setRootUnsafe(newRoot);
-				});
+				SwingUtilities.invokeAndWait(() -> setRootUnsafe(newRoot));
 			} catch (InvocationTargetException | InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
-	public void setRootUnsafe(Component newRoot) {
+	private void setRootUnsafe(Component newRoot) {
 		if (root != null) frame.remove(root);
 		frame.add(newRoot);
 		frame.revalidate();
@@ -92,6 +94,10 @@ public class Window {
 
 	public int getHeight() {
 		return dimensions.height;
+	}
+	
+	public void setIconImage(Image image) {
+	  frame.setIconImage(image);
 	}
 
 	private void setUILookAndFeel(String uiName) {

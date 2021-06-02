@@ -1,6 +1,7 @@
 package engine;
 
 import java.awt.Component;
+import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -72,8 +73,10 @@ public class Application {
 		
 		appAdapter.init();
 		appAdapter.resize(initialWidth, initialHeight);
-		
+
 		initialize();
+		
+		window.display();
 	}
 
 	private void initialize() {
@@ -158,27 +161,21 @@ public class Application {
 			}
 		};
 		
-		try {
-			SwingUtilities.invokeAndWait(new Runnable() {
-
-				@Override
-				public void run() {
-					window.init(title, initialWidth, initialHeight, resizable, onCloseListener);
-				}
-			});
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		window.init(title, initialWidth, initialHeight, resizable, onCloseListener);
 	}
 	
-	 public static void sleep(long ms) {
-	    try {
-	      Thread.sleep(ms);
-	    } catch (InterruptedException e) {
-	      e.printStackTrace();
-	    }
-	  }
+	private void sleep(long ms) {
+    try {
+      Thread.sleep(ms);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+ 
+
+	public void setIconImage(Image image) {
+	  window.setIconImage(image);
+	}
 
 	public void exit() {
 		running = false;

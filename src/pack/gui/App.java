@@ -2,6 +2,7 @@ package pack.gui;
 
 import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Image;
 import java.util.List;
 
 import engine.ApplicationAdapter;
@@ -34,15 +35,12 @@ import pack.gui.timeline.Timeline;
 import pack.gui.timeline.TimelineLayout;
 import pack.gui.timeline.TimelineUnit;
 import pack.helpers.Assert;
+import pack.helpers.IOUtils;
 import pack.testbench.tests.BlockingDispenserTestBioArray;
 import pack.testbench.tests.BlockingDispenserTestBioAssay;
 import pack.testbench.tests.CrowdedModuleBioArray;
 import pack.testbench.tests.CrowdedModuleBioAssay;
-import pack.testbench.tests.ModuleBioArray1;
-import pack.testbench.tests.ModuleBioArray3;
 import pack.testbench.tests.ModuleBioArray4;
-import pack.testbench.tests.ModuleBioAssay1;
-import pack.testbench.tests.ModuleBioAssay3;
 import pack.testbench.tests.ModuleBioAssay4;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
@@ -50,8 +48,6 @@ import pack.testbench.tests.PlatformArray4;
 import pack.testbench.tests.PlatformAssay4;
 import pack.testbench.tests.Test1BioArray;
 import pack.testbench.tests.Test1BioAssay;
-import pack.testbench.tests.Test3BioArray;
-import pack.testbench.tests.Test3BioAssay;
 import pack.testbench.tests.functionality.DisposeArray1;
 import pack.testbench.tests.functionality.DisposeAssay1;
 
@@ -96,6 +92,9 @@ public class App extends ApplicationAdapter {
 
 	@Override
 	public void init() {
+	  Image image = IOUtils.loadImage("/biochipIcon.png");
+	  app.setIconImage(image);
+	  
 		canvas = new Canvas();
 		app.setRoot(canvas);
 		app.attachInputListenersToComponent(canvas);
@@ -184,32 +183,39 @@ public class App extends ApplicationAdapter {
 
 	@Override
 	public void update() {
-	  if (running) step = true;
-	  
-	  if (timestamp <= result.executionTime - 2) {
-      if (step) {
-  	    float maxTime = moving ? movementTime : stopTime;
-  
-  	    dt += app.getDelta() / 1000f;
-  	    dt = MathUtils.clamp(0, maxTime, dt);
-  	    
-  	    if (dt == maxTime) {
-  	      dt = 0;
-  
-  	      if (moving) {
-  	        timestamp += 1;
-  	        step = false;
-  	      }
-  	      
-  	      moving = !moving;
-  	    }
-  	  }
-	  }
-	  
-		String title = String.format("@%d", app.getFps());
-		app.setTitle(title);
+		handleInput();
 
-		if (input.isKeyPressed(Keys.X)) {
+    String title = String.format("@%d", app.getFps());
+    app.setTitle(title);
+		
+		boardCamera.update();
+		
+    if (timestamp <= result.executionTime - 2) {
+      if (running) step = true;
+      if (step) {
+        float maxTime = moving ? movementTime : stopTime;
+  
+        dt += app.getDelta() / 1000f;
+        dt = MathUtils.clamp(0, maxTime, dt);
+        
+        if (dt == maxTime) {
+          dt = 0;
+  
+          if (moving) {
+            timestamp += 1;
+            step = false;
+          }
+          
+          moving = !moving;
+        }
+      }
+    } else {
+      moving = false;
+    }
+	}
+
+  private void handleInput() {
+    if (input.isKeyPressed(Keys.X)) {
 		  float zoom = boardCamera.targetZoom * 1.02f;
 		  if (zoom > maxZoom) zoom = maxZoom;
 		  
@@ -288,6 +294,10 @@ public class App extends ApplicationAdapter {
 		  running = false;
 		  step = false;
 		  timestamp += 1;
+		  
+		  if (timestamp > result.executionTime - 1) {
+		    timestamp = result.executionTime - 1;
+		  }
 		}
 		
 		if (input.isKeyJustPressed(Keys.LEFT)) {
@@ -298,9 +308,7 @@ public class App extends ApplicationAdapter {
 		  timestamp -= 1;
 		  if (timestamp < 0) timestamp = 0;
 		}
-
-		boardCamera.update();
-	}
+  }
 
 	@Override
 	public void draw() {
@@ -533,7 +541,7 @@ public class App extends ApplicationAdapter {
     case OperationType.heating:
       return Color.red;
     case OperationType.dispose:
-      return Color.pink;  // @TODO: purple
+      return Color.pink;
     default:
       throw new IllegalStateException("broken!");
     }

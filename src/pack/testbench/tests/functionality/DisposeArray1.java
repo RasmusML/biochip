@@ -12,7 +12,6 @@ public class DisposeArray1 extends BioArray {
     catalog = new EmptyModuleCatalog();
 
     catalog.registerDispenser(0, 0, 1);
-    // reservoirTiles.add(new Point(5, 6));
 
     catalog.registerDisposer(width - 1, height - 1);
   }

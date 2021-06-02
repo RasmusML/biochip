@@ -1,7 +1,6 @@
 package pack.testbench.tests;
 
 import pack.algorithms.BioArray;
-import pack.algorithms.Point;
 import pack.testbench.catalogs.LargeSoftPolicyModuleCatalog;
 
 public class PlatformArray4 extends BioArray {
