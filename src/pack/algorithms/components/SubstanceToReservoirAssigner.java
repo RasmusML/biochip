@@ -6,26 +6,23 @@ import java.util.List;
 
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
+import pack.algorithms.Module;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
-import pack.algorithms.Point;
-import pack.algorithms.Reservoir;
 import pack.algorithms.Tags;
 import pack.helpers.Assert;
 
 public class SubstanceToReservoirAssigner {
   
-  public List<Reservoir> assign(BioAssay assay, BioArray array) {
+  public void assign(BioAssay assay, BioArray array, ModuleManager moduleManager) {
     List<Operation> dispenseOperations = assay.getOperations(OperationType.dispense);
     
     Collections.shuffle(dispenseOperations, RandomUtil.get());
     
-    List<Point> reservoirTiles = array.reservoirTiles;
+    List<Module> dispensers = moduleManager.getModulesOfOperationType(OperationType.dispense);
 
     List<String> assigned = new ArrayList<>();
     List<String> pending = new ArrayList<>();
-
-    List<Reservoir> reservoirs = new ArrayList<>();
 
     int reservoirIndex = 0;
     int dispenseIndex = 0;
@@ -40,37 +37,23 @@ public class SubstanceToReservoirAssigner {
         // leftover reservoirs to the substance.  
         pending.add(substance);
       } else {
-        Assert.that(reservoirIndex < reservoirTiles.size(), "no reservoirs left to assign substance to! Add more reservoirs in the array");
+        Assert.that(reservoirIndex < dispensers.size(), "no reservoirs left to assign substance to! Add more reservoirs in the array");
         
         assigned.add(substance);
 
-        Point reservoirTile = reservoirTiles.get(reservoirIndex);
+        Module dispenser = dispensers.get(reservoirIndex);
+        dispenser.attributes.put(Tags.substance, substance);
         reservoirIndex += 1;
-
-        Reservoir reservoir = new Reservoir();
-        reservoir.substance = substance;
-        reservoir.position = reservoirTile.copy();
-        reservoirs.add(reservoir);
-
-        if (reservoirIndex > reservoirTiles.size()) {
-          throw new IllegalStateException("not enough reservoir tiles!");
-        }
       }
     }
 
     // assign leftover reservoirs to substances which occur multiple times.
-    while (reservoirIndex < reservoirTiles.size() && pending.size() > 0) {
+    while (reservoirIndex < dispensers.size() && pending.size() > 0) {
       String substance = pending.remove(0);
 
-      Point reservoirTile = reservoirTiles.get(reservoirIndex);
+      Module dispenser = dispensers.get(reservoirIndex);
+      dispenser.attributes.put(Tags.substance, substance);
       reservoirIndex += 1;
-
-      Reservoir reservoir = new Reservoir();
-      reservoir.substance = substance;
-      reservoir.position = reservoirTile.copy();
-      reservoirs.add(reservoir);
     }
-
-    return reservoirs;
   }
 }

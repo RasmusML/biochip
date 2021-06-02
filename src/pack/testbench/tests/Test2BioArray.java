@@ -1,7 +1,6 @@
 package pack.testbench.tests;
 
 import pack.algorithms.BioArray;
-import pack.algorithms.Point;
 import pack.testbench.catalogs.EmptyModuleCatalog;
 
 public class Test2BioArray extends BioArray {
@@ -12,6 +11,6 @@ public class Test2BioArray extends BioArray {
 		
 		catalog = new EmptyModuleCatalog();
 		
-		reservoirTiles.add(new Point(6, 6));
+    catalog.registerDispenser(6, 6, 1);
 	}
 }

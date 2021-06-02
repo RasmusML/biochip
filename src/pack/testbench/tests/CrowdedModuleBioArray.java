@@ -1,10 +1,6 @@
 package pack.testbench.tests;
 
-import java.util.Collections;
-
 import pack.algorithms.BioArray;
-import pack.algorithms.Point;
-import pack.algorithms.components.RandomUtil;
 import pack.testbench.catalogs.LargeSoftPolicyModuleCatalog;
 
 public class CrowdedModuleBioArray extends BioArray {
@@ -15,27 +11,27 @@ public class CrowdedModuleBioArray extends BioArray {
     
     catalog = new LargeSoftPolicyModuleCatalog();
     
-    reservoirTiles.add(new Point(0, 0));
-    reservoirTiles.add(new Point(width - 1, height - 1));
+    catalog.registerDispenser(0, 0, 1);
+    catalog.registerDispenser(width - 1, height - 1, 1);
     
-    reservoirTiles.add(new Point(6, 3));
-    reservoirTiles.add(new Point(6, 5));
-    reservoirTiles.add(new Point(6, 7));
+    catalog.registerDispenser(6, 3, 1);
+    catalog.registerDispenser(6, 5, 1);
+    catalog.registerDispenser(6, 7, 1);
     
-    reservoirTiles.add(new Point(8, 3));
-    reservoirTiles.add(new Point(8, 5));
-    reservoirTiles.add(new Point(8, 7));
+    catalog.registerDispenser(8, 3, 1);
+    catalog.registerDispenser(8, 5, 1);
+    catalog.registerDispenser(8, 7, 1);
     
-    reservoirTiles.add(new Point(10, 3));
-    reservoirTiles.add(new Point(10, 5));
-    reservoirTiles.add(new Point(10, 7));
+    catalog.registerDispenser(10, 3, 1);
+    catalog.registerDispenser(10, 5, 1);
+    catalog.registerDispenser(10, 7, 1);
     
-    reservoirTiles.add(new Point(12, 3));
-    reservoirTiles.add(new Point(12, 5));
-    reservoirTiles.add(new Point(12, 7));
+    catalog.registerDispenser(12, 3, 1);
+    catalog.registerDispenser(12, 5, 1);
+    catalog.registerDispenser(12, 7, 1);
     
     // shuffle for now, so merge operations don't spawn next to each other. Another options to ensure this, is to move around when the different operations are created in the assay.
-    Collections.shuffle(reservoirTiles, RandomUtil.get());
+    //Collections.shuffle(reservoirTiles, RandomUtil.get());
     
   }
 }

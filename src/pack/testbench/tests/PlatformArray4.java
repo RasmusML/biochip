@@ -12,21 +12,21 @@ public class PlatformArray4 extends BioArray {
     
     catalog = new LargeSoftPolicyModuleCatalog();
     
-    reservoirTiles.add(new Point(6, 3));
-    reservoirTiles.add(new Point(6, 5));
-    reservoirTiles.add(new Point(6, 7));
-    reservoirTiles.add(new Point(8, 7));
-    reservoirTiles.add(new Point(10, 5));
-    reservoirTiles.add(new Point(10, 7));
-    reservoirTiles.add(new Point(8, 5));
-    reservoirTiles.add(new Point(10, 3));
-    reservoirTiles.add(new Point(12, 7));
-    reservoirTiles.add(new Point(8, 3));
-    reservoirTiles.add(new Point(10, 9));
-    reservoirTiles.add(new Point(0, 0));
-    reservoirTiles.add(new Point(width - 1, height - 1));
-    reservoirTiles.add(new Point(width - 1, 0));
-    reservoirTiles.add(new Point(20, 14));
+    catalog.registerDispenser(6, 3, 1);
+    catalog.registerDispenser(6, 5, 1);
+    catalog.registerDispenser(6, 7, 1);
+    catalog.registerDispenser(8, 7, 1);
+    catalog.registerDispenser(10, 5, 1);
+    catalog.registerDispenser(10, 7, 1);
+    catalog.registerDispenser(8, 5, 1);
+    catalog.registerDispenser(10, 3, 1);
+    catalog.registerDispenser(12, 7, 1);
+    catalog.registerDispenser(8, 3, 1);
+    catalog.registerDispenser(10, 9, 1);
+    catalog.registerDispenser(0, 0, 1);
+    catalog.registerDispenser(width - 1, height - 1, 1);
+    catalog.registerDispenser(width - 1, 0, 1);
+    catalog.registerDispenser(20, 14, 1);
     
     wasteTiles.add(new Point(0, height - 1));
   }

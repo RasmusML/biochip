@@ -5,42 +5,47 @@ import java.util.List;
 
 import pack.algorithms.Droplet;
 import pack.algorithms.DropletUnit;
+import pack.algorithms.Module;
+import pack.algorithms.OperationType;
 import pack.algorithms.Point;
 import pack.algorithms.Reservoir;
+import pack.algorithms.Tags;
 
 public class ReservoirManager {
   
-  private List<Reservoir> reservoirs;
-  private List<Reservoir> reserved;
+  private List<Module> dispensers;
+  private List<Module> reserved;
 
   private ConstraintsChecker checker;
+  private ModuleManager moduleManager;
   
-  public ReservoirManager(List<Reservoir> reservoirs, ConstraintsChecker checker) {
-    this.reservoirs = reservoirs;
+  public ReservoirManager(ModuleManager moduleManager, ConstraintsChecker checker) {
+    this.moduleManager = moduleManager;
     this.checker = checker;
     
+    dispensers = moduleManager.getModulesOfOperationType(OperationType.dispense);
     reserved = new ArrayList<>();
   }
   
-  public Reservoir reserve(String substance, List<Droplet> droplets, int timestamp) {
-    outer: for (Reservoir reservoir : reservoirs) {
-      if (reserved.contains(reservoir)) continue;
+  public Module reserve(String substance, List<Droplet> droplets, int timestamp) {
+    outer: for (Module dispenser : dispensers) {
+      if (reserved.contains(dispenser)) continue;
 
-      if (reservoir.substance.equals(substance)) {
-        
+      String dispenserSubstance = (String) dispenser.attributes.get(Tags.substance);
+      if (dispenserSubstance.equals(substance)) {
         for (Droplet droplet : droplets) {
-          
           for (DropletUnit unit : droplet.units) {
             Point at = unit.route.getPosition(timestamp - 1);
             Point to = unit.route.getPosition(timestamp);
   
-            if (!checker.satifiesConstraints(reservoir.position, at, to)) continue outer;
+            if (!checker.satifiesConstraints(dispenser.position, at, to)) continue outer;
           }
         }
         
-        reserved.add(reservoir);
+        moduleManager.allocate(dispenser);
+        reserved.add(dispenser);
         
-        return reservoir;
+        return dispenser;
       }
     }
   
@@ -48,18 +53,36 @@ public class ReservoirManager {
   }
   
   public void consumeReservations() {
+    for (Module dispenser : reserved) {
+      moduleManager.free(dispenser);
+      
+    }
     reserved.clear();
   }
   
   public int countReservoirsContainingSubstance(String substance) {
     int count = 0;
-    for (Reservoir reservoir : reservoirs) {
-      if (reservoir.substance.equals(substance)) count += 1;
+    for (Module dispenser : dispensers) {
+      String dispenserSubstance = (String) dispenser.attributes.get(Tags.substance);
+      if (dispenserSubstance.equals(substance)) count += 1;
     }
+    
     return count;
   }
 
   public List<Reservoir> getReservoirs() {
+    List<Reservoir> reservoirs = new ArrayList<>();
+    for (Module dispenser : dispensers) {
+      Reservoir reservoir = new Reservoir();
+      reservoir.position = new Point(dispenser.position);
+      
+      String dispenserSubstance = (String) dispenser.attributes.get(Tags.substance);
+      reservoir.substance = dispenserSubstance;
+      
+      reservoirs.add(reservoir);
+      
+    }
+    
     return reservoirs;
   }
 }

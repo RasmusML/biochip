@@ -28,9 +28,9 @@ public class TrafficRouter implements Router {
     moveFinder = new MoveFinder(checker);
 
     SubstanceToReservoirAssigner s2rAssigner = new SubstanceToReservoirAssigner();
-    List<Reservoir> reservoirs = s2rAssigner.assign(assay, array);
+    //List<Reservoir> reservoirs = s2rAssigner.assign(assay, array);
 
-    reservoirManager = new ReservoirManager(reservoirs, checker);
+    //reservoirManager = new ReservoirManager(reservoirs, checker);
     
     // static lanes for now
     Road road = new Road();

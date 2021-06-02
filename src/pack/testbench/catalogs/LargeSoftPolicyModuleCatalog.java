@@ -9,7 +9,7 @@ import pack.algorithms.Tags;
 public class LargeSoftPolicyModuleCatalog extends ModuleCatalog {
   
   public LargeSoftPolicyModuleCatalog() {
-    register(OperationType.heating, 20, ModulePolicy.lockedOnOperation, 3, 1, 2, 3, new Tag(Tags.temperature, 90f));
-    register(OperationType.heating, 40, ModulePolicy.lockedOnOperation, 6, 3, 7, 7, new Tag(Tags.temperature, 9000f));
+    register(OperationType.heating, 3, 1, 2, 3, 20, ModulePolicy.lockedOnOperation, new Tag(Tags.temperature, 90f));
+    register(OperationType.heating, 6, 3, 7, 7, 40, ModulePolicy.lockedOnOperation, new Tag(Tags.temperature, 9000f));
   }
 }

@@ -67,9 +67,11 @@ public class DropletAwareGreedyRouter implements Router {
     indexSelector = new RandomIndexSelector();
     moveFinder = new MoveFinder(checker);
 
+    moduleManager = new ModuleManager(array.catalog);
+
     SubstanceToReservoirAssigner s2rAssigner = new SubstanceToReservoirAssigner();
-    List<Reservoir> reservoirs = s2rAssigner.assign(assay, array);
-    reservoirManager = new ReservoirManager(reservoirs, checker);
+    s2rAssigner.assign(assay, array, moduleManager);
+    reservoirManager = new ReservoirManager(moduleManager, checker);
     
     probabilitiesA = new float[] {85f, 10f, 5f};
     probabilitiesB = new float[] {50f, 33f, 17f};
@@ -79,7 +81,6 @@ public class DropletAwareGreedyRouter implements Router {
     
     //pathFinder = new ModifiedAStarPathFinder();
     
-    moduleManager = new ModuleManager(array.catalog);
     
     maxIterationsPerOperation = 500;  // if no operation terminates before iteration is this value, then we assume that no solution can be found.
     iteration = 0;
@@ -128,7 +129,7 @@ public class DropletAwareGreedyRouter implements Router {
           Operation successor = stalled.outputs[0];
 
           String substance = (String) stalled.attributes.get(Tags.substance);
-          Reservoir reserved = reservoirManager.reserve(substance, runningDroplets, timestamp);
+          Module reserved = reservoirManager.reserve(substance, runningDroplets, timestamp);
           
           if (reserved != null) {
             
@@ -140,7 +141,7 @@ public class DropletAwareGreedyRouter implements Router {
               if (sibling.name.equals(OperationType.dispense)) {
                 String siblingSubstance = (String) sibling.attributes.get(Tags.substance);
                 
-                Reservoir siblingReservoir = reservoirManager.reserve(siblingSubstance, runningDroplets, timestamp);
+                Module siblingReservoir = reservoirManager.reserve(siblingSubstance, runningDroplets, timestamp);
 
                 if (siblingReservoir == null) {
                   if (siblingSubstance.equals(substance)) {

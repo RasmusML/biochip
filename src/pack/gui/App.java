@@ -109,6 +109,7 @@ public class App extends ApplicationAdapter {
 		
 		percentages = new DefaultMixingPercentages();
 
+		/*
 		assay = new ModuleBioAssay4();
     array = new ModuleBioArray4();
 		
@@ -123,6 +124,7 @@ public class App extends ApplicationAdapter {
     
     assay = new PlatformAssay4();
     array = new PlatformArray4();
+    */
 
     assay = new ModuleBioAssay1();
     array = new ModuleBioArray1();

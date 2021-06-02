@@ -1,7 +1,6 @@
 package pack.testbench.tests;
 
 import pack.algorithms.BioArray;
-import pack.algorithms.Point;
 import pack.testbench.catalogs.EmptyModuleCatalog;
 
 public class PCRMixingTreeArray extends BioArray {
@@ -12,10 +11,9 @@ public class PCRMixingTreeArray extends BioArray {
 		
 		catalog = new EmptyModuleCatalog();
 		
-		reservoirTiles.add(new Point(0, 0));
-		reservoirTiles.add(new Point(width - 1, 0));
-		reservoirTiles.add(new Point(0, height - 1));
-		reservoirTiles.add(new Point(width - 1, height - 1));
-		
+    catalog.registerDispenser(0, 0, 1);
+    catalog.registerDispenser(width - 1, 0, 1);
+    catalog.registerDispenser(width - 1, height - 1, 1);
+    catalog.registerDispenser(0, height - 1, 1);
 	}
 }

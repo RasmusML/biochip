@@ -1,7 +1,6 @@
 package pack.testbench.tests;
 
 import pack.algorithms.BioArray;
-import pack.algorithms.Point;
 import pack.testbench.catalogs.LargeStrictPolicyModuleCatalog;
 
 public class ModuleBioArray3 extends BioArray {
@@ -12,13 +11,11 @@ public class ModuleBioArray3 extends BioArray {
     
     catalog = new LargeStrictPolicyModuleCatalog();
     
-    reservoirTiles.add(new Point(0, 0));
-    reservoirTiles.add(new Point(width - 1, height - 1));
-    reservoirTiles.add(new Point(8, 5));
-    reservoirTiles.add(new Point(width - 1, 0));
-    reservoirTiles.add(new Point(10, 7));
-    reservoirTiles.add(new Point(8, 7));
-    
-    
+    catalog.registerDispenser(0, 0, 1);
+    catalog.registerDispenser(width - 1, height - 1, 1);
+    catalog.registerDispenser(8, 5, 1);
+    catalog.registerDispenser(width - 1, 0, 1);
+    catalog.registerDispenser(10, 7, 1);
+    catalog.registerDispenser(8, 7, 1);
   }
 }

@@ -119,6 +119,7 @@ public class TestSuite {
       int id = i + 1;
       
       TestResult testResult = new TestResult();
+      testResult.name = testName;
       testResult.completed = result.completed;
       testResult.id = id;
       testResult.executionTime = result.executionTime;
@@ -136,9 +137,9 @@ public class TestSuite {
      
       String message;
       if (result.completed) {
-        message = String.format("test %d found a solution with %d steps and took %.3f secs to compute.\n", result.id, result.executionTime, result.runningTime);
+        message = String.format("%s found a solution with %d steps and took %.3f secs to compute.\n", result.name, result.executionTime, result.runningTime);
       } else {
-        message = String.format("test %d failed.\n", result.id);
+        message = String.format("%s failed.\n", result.name);
       }
       
       System.out.printf(message);
@@ -194,6 +195,7 @@ public class TestSuite {
 
   static private class TestResult {
     public int id;
+    public String name;
     public boolean completed;
     public int executionTime;
     public float runningTime;

@@ -11,19 +11,32 @@ public class ModuleCatalog {
     modules = new ArrayList<>();
   }
   
-  protected void register(String operation, int duration, ModulePolicy policy, int x, int y, int width, int height, Tag... tags) {
+  public void register(String operation, int x, int y, int width, int height, int duration, ModulePolicy policy, Tag... attributes) {
     Module module = new Module();
     module.operation = operation;
-    module.duration = duration;
-    module.policy = policy;
     module.position = new Point(x, y);
     module.width = width;
     module.height = height;
+
+    module.duration = duration;
+    module.policy = policy;
     
-    for (Tag tag : tags) {
+    for (Tag tag : attributes) {
       module.attributes.put(tag.key, tag.value);
     }
     
     modules.add(module);
+  }
+  
+  public void registerDispenser(int x, int y, int duration) {
+    register(OperationType.dispense, x, y, 1, 1, duration, ModulePolicy.lockedOnOperation);
+  }
+  
+  public void registerDisposer(int x, int y) {
+    register(OperationType.dispose, x, y, 1, 1, 1, ModulePolicy.alwaysOpen);
+  }
+  
+  public void registerHeater(int x, int y, int width, int height, int duration, float temperature) {
+    register(OperationType.heating, x, y, width, height, duration, ModulePolicy.lockedOnOperation, new Tag(Tags.temperature, temperature));
   }
 }

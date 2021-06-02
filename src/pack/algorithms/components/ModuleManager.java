@@ -11,7 +11,7 @@ import pack.algorithms.ModulePolicy;
 import pack.algorithms.Tag;
 import pack.helpers.Assert;
 
-public class ModuleManager {
+public class ModuleManager {  // ModuleAllocator
 
   private ModuleCatalog catalog;
   private Map<Module, ModuleAllocation> moduleToModuleAllocation;
@@ -28,7 +28,7 @@ public class ModuleManager {
   }
 
   public Module allocate(String operation, Tag... tags) {
-    List<Module> modules = getModulesOfOperation(operation, tags);
+    List<Module> modules = getModulesOfOperationType(operation, tags);
     Assert.that(modules.size() > 0);
 
     Module module = modules.get(0); // @TODO: better policy
@@ -64,7 +64,7 @@ public class ModuleManager {
     return allocation.count > 0;
   }
 
-  private List<Module> getModulesOfOperation(String operation, Tag... tags) {
+  public List<Module> getModulesOfOperationType(String operation, Tag... tags) {
     List<Module> matches = new ArrayList<>();
 
     outer: for (Module module : catalog.modules) {
