@@ -11,6 +11,7 @@ import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Tags;
 import pack.helpers.Assert;
+import pack.helpers.RandomUtil;
 
 public class SubstanceToReservoirAssigner {
   

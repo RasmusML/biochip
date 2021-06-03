@@ -26,6 +26,6 @@ public class ShellUtil {
   public static String getShellRunCommand() {
     String os = System.getProperty("os.name");
     if (os.startsWith("Windows")) return "cmd /c";
-    throw new IllegalStateException("os unsupported!" + os);
+    throw new IllegalStateException("os unsupported! " + os);
   }
 }

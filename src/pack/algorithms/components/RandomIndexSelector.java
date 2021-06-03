@@ -2,6 +2,8 @@ package pack.algorithms.components;
 
 import java.util.Random;
 
+import pack.helpers.RandomUtil;
+
 public class RandomIndexSelector {
 
   private Random random;

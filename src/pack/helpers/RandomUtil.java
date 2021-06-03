@@ -1,4 +1,4 @@
-package pack.algorithms.components;
+package pack.helpers;
 
 import java.util.Random;
 

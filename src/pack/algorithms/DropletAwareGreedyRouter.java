@@ -13,13 +13,13 @@ import pack.algorithms.components.MixingPercentages;
 import pack.algorithms.components.ModuleAllocator;
 import pack.algorithms.components.MoveFinder;
 import pack.algorithms.components.RandomIndexSelector;
-import pack.algorithms.components.RandomUtil;
 import pack.algorithms.components.ReservoirManager;
 import pack.algorithms.components.SubstanceToReservoirAssigner;
 import pack.algorithms.components.UidGenerator;
 import pack.helpers.Assert;
 import pack.helpers.GeometryUtil;
 import pack.helpers.Logger;
+import pack.helpers.RandomUtil;
 
 public class DropletAwareGreedyRouter implements Router {
 

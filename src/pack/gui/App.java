@@ -2,7 +2,6 @@ package pack.gui;
 
 import java.awt.Canvas;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Image;
 import java.util.List;
 
@@ -22,6 +21,7 @@ import pack.algorithms.DropletAwareGreedyRouter;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.ElectrodeActivations;
 import pack.algorithms.Module;
+import pack.algorithms.NotDropletAwareGreedyRouter;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
@@ -133,8 +133,6 @@ public class App extends ApplicationAdapter {
     assay = new BlockingDispenserTestBioAssay();
     array = new BlockingDispenserTestBioArray();
     
-    assay = new CrowdedModuleBioAssay();
-    array = new CrowdedModuleBioArray();
 
     assay = new ModuleBioAssay4();
     array = new ModuleBioArray4();
@@ -145,6 +143,9 @@ public class App extends ApplicationAdapter {
     assay = new Test3BioAssay();
     array = new Test3BioArray();
     
+    assay = new CrowdedModuleBioAssay();
+    array = new CrowdedModuleBioArray();
+
     assay = new PlatformAssay4();
     array = new PlatformArray4();
     
@@ -488,10 +489,6 @@ public class App extends ApplicationAdapter {
     }
     
     {
-      if (selectedDroplet != null) {
-        // nothing atm. @TODO
-      }
-
       if (selectedTimelineUnit != null) {
         
         float width = selectedTimelineUnit.duration * timeline.timescale;
@@ -537,9 +534,11 @@ public class App extends ApplicationAdapter {
 		}
 		
 		{ // module
-		  renderer.setColor(ColorPalette.seeThroughRed);
-
 		  for (Module module : result.modules) {
+		    
+		    Color color = getModuleColor(module);
+		    renderer.setColor(color);
+		    
         for (int x = 0; x < module.width; x++) {
           for (int y = 0; y < module.height; y++) {
             
@@ -555,6 +554,7 @@ public class App extends ApplicationAdapter {
       }
     }
 		
+		/*
 		{ // reservoirs
 		  for (Reservoir reservoir : result.reservoirs) {
 		    float xx = reservoir.position.x * tilesize + gap;
@@ -567,6 +567,7 @@ public class App extends ApplicationAdapter {
         renderer.fillRect(xx, yy, width, height);
 		  }
 		}
+		*/
 
     { // droplets
       
@@ -615,6 +616,18 @@ public class App extends ApplicationAdapter {
     }
   }
 
+  private Color getModuleColor(Module module) {
+    if (module.operation.equals(OperationType.dispense)) {
+      return ColorPalette.seeThroughGray;
+    } else if (module.operation.equals(OperationType.dispose)) {
+      return ColorPalette.orange;
+    } else if (module.operation.equals(OperationType.heating)) {
+      return ColorPalette.seeThroughRed;
+    } 
+    
+    throw new IllegalStateException("unknown module operation");
+  }
+
   private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy) {
     float percentage = dt / (float) movementTime;
     
@@ -622,12 +635,12 @@ public class App extends ApplicationAdapter {
     float baseDiameter = 2f * baseRadius;
     float diameterScaler = 1f / baseDiameter;
 
-    float unscaledRadius = (float) Math.sqrt(droplet.area / Math.PI); 
+    float area = droplet.area / droplet.units.size();
+    
+    float unscaledRadius = (float) Math.sqrt(area / Math.PI); 
     float unscaledDiameter = 2f * unscaledRadius;
     
     float diameter = diameterScaler * unscaledDiameter;
-    
-    diameter = 1; // @TODO: remove
     
     float size = tilesize * diameter;
     
@@ -652,7 +665,7 @@ public class App extends ApplicationAdapter {
     float ty = y + height / 2f;
     
     renderer.setColor(ColorPalette.black);
-    renderer.drawText(id, tx, ty, Alignment.Center);
+    //renderer.drawText(id, tx, ty, Alignment.Center);
     
     renderer.drawOval(x, y, width, height);
     //renderer.drawRect(x, y, width, height);
