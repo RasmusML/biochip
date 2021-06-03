@@ -6,6 +6,8 @@ public class Timeline {
   public float operationHeight;
   public float operationGap;
   
+  public float stretchScaler;
+  
   public int suggestedTime;
   public int minCursorHeight;
   

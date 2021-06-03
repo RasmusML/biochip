@@ -63,6 +63,7 @@ public class App extends ApplicationAdapter {
 	Canvas canvas;
 	
 	float maxZoom;
+	float zoomScaler;
 	
 	Droplet selectedDroplet;
 	TimelineUnit selectedTimelineUnit;
@@ -114,6 +115,7 @@ public class App extends ApplicationAdapter {
 		stopTime = .25f; // 0.45f
 		
 		maxZoom = 4f;
+		zoomScaler = 1.02f;
 
 		canvas.createBufferStrategy(3);
 		canvas.setIgnoreRepaint(true);
@@ -199,6 +201,7 @@ public class App extends ApplicationAdapter {
     timeline.timescale = 1f;
     timeline.operationGap = 0.8f;
     timeline.operationHeight = 7;
+    timeline.stretchScaler = 1.02f;
 		
 		for (TimelineUnit unit : timelineUnits) {
 		  int end = unit.start + unit.duration;
@@ -341,15 +344,23 @@ public class App extends ApplicationAdapter {
 		
     { // global
 
+      if (input.isKeyPressed(Keys.Q)) {
+        timeline.timescale *= timeline.stretchScaler;
+      }
+      
+      if (input.isKeyPressed(Keys.W)) {
+        timeline.timescale /= timeline.stretchScaler;
+      }
+      
       if (input.isKeyPressed(Keys.X)) {
-        float zoom = boardCamera.targetZoom * 1.02f;
+        float zoom = boardCamera.targetZoom * zoomScaler;
         if (zoom > maxZoom) zoom = maxZoom;
         
         boardCamera.zoomNow(zoom);
       }
       
       if (input.isKeyPressed(Keys.Z)) {
-        boardCamera.zoomNow(boardCamera.targetZoom * 0.98f);
+        boardCamera.zoomNow(boardCamera.targetZoom / zoomScaler);
       }
       
       if (input.isKeyJustPressed(Keys.SPACE)) {
@@ -469,7 +480,7 @@ public class App extends ApplicationAdapter {
     {
       float xx = timestamp * timeline.timescale;
       float yy = 0;
-      float width = 1;
+      float width = timeline.timescale;
       float height = cursorHeight * (timeline.operationHeight + gap) - gap;
       
       renderer.fillRect(xx, yy, width, height);
@@ -481,7 +492,7 @@ public class App extends ApplicationAdapter {
         
         float xx = timeline.suggestedTime * timeline.timescale;
         float yy = 0;
-        float width = 1;
+        float width = timeline.timescale;
         float height = cursorHeight * (timeline.operationHeight + gap) - gap;
         
         renderer.fillRect(xx, yy, width, height);
