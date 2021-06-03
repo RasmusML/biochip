@@ -2,6 +2,7 @@ package pack.gui;
 
 import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Image;
 import java.util.List;
 
@@ -21,7 +22,6 @@ import pack.algorithms.DropletAwareGreedyRouter;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.ElectrodeActivations;
 import pack.algorithms.Module;
-import pack.algorithms.NotDropletAwareGreedyRouter;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
@@ -47,8 +47,8 @@ import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
 import pack.testbench.tests.PlatformArray4;
 import pack.testbench.tests.PlatformAssay4;
-import pack.testbench.tests.Test1BioArray;
-import pack.testbench.tests.Test1BioAssay;
+import pack.testbench.tests.Test3BioArray;
+import pack.testbench.tests.Test3BioAssay;
 import pack.testbench.tests.functionality.DisposeArray1;
 import pack.testbench.tests.functionality.DisposeAssay1;
 
@@ -59,9 +59,13 @@ public class App extends ApplicationAdapter {
 	FitViewport viewport;
 	Camera boardCamera;
 	Camera timelineCamera;
+  
 	Canvas canvas;
 	
 	float maxZoom;
+	
+	Droplet selectedDroplet;
+	TimelineUnit selectedTimelineUnit;
 	
 	boolean mouseWithinTimeline;
 
@@ -125,9 +129,6 @@ public class App extends ApplicationAdapter {
 
     assay = new DisposeAssay1();
     array = new DisposeArray1();
-    
-    assay = new Test1BioAssay();
-    array = new Test1BioArray();
 
     assay = new BlockingDispenserTestBioAssay();
     array = new BlockingDispenserTestBioArray();
@@ -141,11 +142,16 @@ public class App extends ApplicationAdapter {
     assay = new PCRMixingTreeAssay();
     array = new PCRMixingTreeArray();
 
+    assay = new Test3BioAssay();
+    array = new Test3BioArray();
+    
     assay = new PlatformAssay4();
     array = new PlatformArray4();
-
+    
+    selectedDroplet = null;
+    
     Router router = new DropletAwareGreedyRouter();
-		router = new NotDropletAwareGreedyRouter();
+		//router = new NotDropletAwareGreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
 		ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator();
@@ -207,10 +213,9 @@ public class App extends ApplicationAdapter {
     float ty = viewport.getVirtualHeight() / 2f - 30;
     
     timelineCamera.lookAtNow(tx, ty);
-
+    
 	}
 	
-
 	@Override
 	public void update() {
 		handleInput();
@@ -224,6 +229,14 @@ public class App extends ApplicationAdapter {
     app.setTitle(title);
 		
 		boardCamera.update();
+
+		if (selectedTimelineUnit != null) {
+		  int end = selectedTimelineUnit.start + selectedTimelineUnit.duration;
+		  if (timestamp >= end) {
+		    selectedDroplet = null;
+		    selectedTimelineUnit = null;
+		  }
+		}
 		
     if (timestamp <= result.executionTime - 2) {
       if (running) step = true;
@@ -279,7 +292,49 @@ public class App extends ApplicationAdapter {
 		
 		{ // board
 		  if (!mouseWithinTimeline) {
-		    // do nothing...
+		    viewport.setCamera(boardCamera);
+		    Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
+		    
+		    // selected droplet
+		    if (input.isMouseJustReleased(Button.LEFT)) {
+		      
+		      List<Droplet> droplets = result.droplets;
+		      outer: for (Droplet droplet : droplets) {
+		        
+		        for (DropletUnit unit : droplet.units) {
+		          Point at = unit.route.getPosition(timestamp);
+		          if (at == null) continue;
+		          
+		          float x = at.x * tilesize;
+		          float y = at.y * tilesize;
+              
+		          float width = tilesize;
+		          float height = tilesize;
+		          
+		          if (mouse.x >= x && mouse.x <= x + width && mouse.y >= y && mouse.y <= y + height) {
+		            
+		            if (droplet == selectedDroplet) {
+		              // deselect
+		              selectedDroplet = null;
+		              selectedTimelineUnit = null;
+		            } else {
+		              // select
+		              selectedDroplet = droplet;
+
+		              if (selectedDroplet.operation != null) {
+		                for (TimelineUnit timelineUnit : timelineUnits) {
+		                  if (timelineUnit.operation == selectedDroplet.operation) {
+		                    selectedTimelineUnit = timelineUnit;
+		                  }
+		                }
+		              }
+		            }
+		            
+		            break outer;
+		          }
+		        }
+		      }
+        }
 		  }
 		}
 		
@@ -431,7 +486,27 @@ public class App extends ApplicationAdapter {
         renderer.fillRect(xx, yy, width, height);
       }
     }
+    
+    {
+      if (selectedDroplet != null) {
+        // nothing atm. @TODO
+      }
+
+      if (selectedTimelineUnit != null) {
+        
+        float width = selectedTimelineUnit.duration * timeline.timescale;
+        float height = timeline.operationHeight;
+
+        float x = selectedTimelineUnit.start * timeline.timescale;
+        float y = selectedTimelineUnit.y * (height + gap);
+        
+        Color color = ColorPalette.timelineSelection;
+        renderer.setColor(color);
+        renderer.fillRect(x, y, width, height);
+      }
+    }
   }
+
 
   private void drawBoard() {
     viewport.setCamera(boardCamera);
@@ -449,6 +524,7 @@ public class App extends ApplicationAdapter {
 
 		{ // grid tiles
 		  renderer.setColor(ColorPalette.white);
+		  
 			for (int x = 0; x < array.width; x++) {
 				for (int y = 0; y < array.height; y++) {
 			    float xx = x * tilesize + gap;
@@ -461,7 +537,9 @@ public class App extends ApplicationAdapter {
 		}
 		
 		{ // module
-      for (Module module : result.modules) {
+		  renderer.setColor(ColorPalette.seeThroughRed);
+
+		  for (Module module : result.modules) {
         for (int x = 0; x < module.width; x++) {
           for (int y = 0; y < module.height; y++) {
             
@@ -470,10 +548,6 @@ public class App extends ApplicationAdapter {
             float width = tilesize - gap * 2f;
             float height = tilesize - gap * 2f;
 
-            renderer.setColor(ColorPalette.white);
-            renderer.fillRect(xx, yy, width, height);
-            
-            renderer.setColor(ColorPalette.seeThroughRed);
             renderer.fillRect(xx, yy, width, height);
 
           }

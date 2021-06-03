@@ -123,7 +123,7 @@ public class Renderer {
 	    Font font = getFont(name, style, size);
 	    activeFont = font;
 	  }
-	  
+	 
   private Font getFont(String name, int style, int size) {
     Font font = null;
     String id = String.format("%s-%d-%d", name, style, size);
@@ -141,12 +141,12 @@ public class Renderer {
 		ensureDrawing();
 		
 		Vector2 position = viewport.worldToScreen(x, y);
-		int wx = Math.round(position.x);
-		int wy = Math.round(position.y);
+		int wx = (int) Math.round(position.x);
+		int wy = (int) Math.round(position.y);
 		
 		float zoom = viewport.getCameraZoom();
-		int wwidth = (int) Math.floor(width * viewport.getScaleX() * zoom);
-    int wheight = (int) Math.floor(height * viewport.getScaleY() * zoom);
+		int wwidth = (int) Math.round(width * viewport.getScaleX() * zoom);
+    int wheight = (int) Math.round(height * viewport.getScaleY() * zoom);
 		
 		if (viewport.flipped())	wy -= wheight;
 		
@@ -157,12 +157,12 @@ public class Renderer {
 		ensureDrawing();
 
 		Vector2 position = viewport.worldToScreen(x, y);
-		int wx = Math.round(position.x);
-		int wy = Math.round(position.y);
+		int wx = (int) Math.round(position.x);
+		int wy = (int) Math.round(position.y);
 		
 		float zoom = viewport.getCameraZoom();
-		int wwidth = (int) Math.floor(width * viewport.getScaleX() * zoom);
-		int wheight = (int) Math.floor(height * viewport.getScaleY() * zoom);
+		int wwidth = (int) Math.round(width * viewport.getScaleX() * zoom);
+		int wheight = (int) Math.round(height * viewport.getScaleY() * zoom);
 		
 		if (viewport.flipped())	wy -= wheight;
 		
@@ -173,12 +173,12 @@ public class Renderer {
 		ensureDrawing();
 
 		Vector2 position = viewport.worldToScreen(x, y);
-		int wx = Math.round(position.x);
-		int wy = Math.round(position.y);
+		int wx = (int) Math.round(position.x);
+		int wy = (int) Math.round(position.y);
 		
 		float zoom = viewport.getCameraZoom();
-    int wwidth = (int) Math.floor(width * viewport.getScaleX() * zoom);
-    int wheight = (int) Math.floor(height * viewport.getScaleY() * zoom);
+    int wwidth = (int) Math.round(width * viewport.getScaleX() * zoom);
+    int wheight = (int) Math.round(height * viewport.getScaleY() * zoom);
 		
 		if (viewport.flipped())	wy -= wheight;
 
@@ -189,12 +189,12 @@ public class Renderer {
 		ensureDrawing();
 
 		Vector2 position = viewport.worldToScreen(x, y);
-		int wx = Math.round(position.x);
-		int wy = Math.round(position.y);
+		int wx = (int) Math.round(position.x);
+		int wy = (int) Math.round(position.y);
 		
 		float zoom = viewport.getCameraZoom();
-    int wwidth = (int) Math.floor(width * viewport.getScaleX() * zoom);
-    int wheight = (int) Math.floor(height * viewport.getScaleY() * zoom);
+    int wwidth = (int) Math.round(width * viewport.getScaleX() * zoom);
+    int wheight = (int) Math.round(height * viewport.getScaleY() * zoom);
 		
 		if (viewport.flipped())	wy -= wheight;
 
@@ -217,8 +217,8 @@ public class Renderer {
 		int wy = Math.round(position.y);
 
 		float zoom = viewport.getCameraZoom();
-    int wwidth = (int) Math.floor(dw * viewport.getScaleX() * zoom);
-    int wheight = (int) Math.floor(dh * viewport.getScaleY() * zoom);
+    int wwidth = (int) Math.round(dw * viewport.getScaleX() * zoom);
+    int wheight = (int) Math.round(dh * viewport.getScaleY() * zoom);
 		
 		if (viewport.flipped())	wy -= wheight;
 		

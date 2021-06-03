@@ -84,7 +84,7 @@ public class Window {
 		frame.revalidate();
 		frame.repaint();
 		newRoot.setFocusable(true);
-		// newRoot.requestFocusInWindow();
+		newRoot.requestFocusInWindow();
 		root = newRoot;
 	}
 
