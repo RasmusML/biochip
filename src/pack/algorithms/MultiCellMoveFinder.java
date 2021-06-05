@@ -23,6 +23,37 @@ public class MultiCellMoveFinder extends MoveFinder {
   }
   
   @Override
+  public List<Move> getValidMoves(DropletUnit dropletUnit, Droplet droplet, Module targetModule, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
+    List<Move> validMoves = new ArrayList<>();
+    
+    for (Move move : Move.values()) {
+      if (!isWithinArray(move, dropletUnit, timestamp, array)) continue;
+      if (isWithinModule(move, dropletUnit, targetModule, modules, timestamp)) continue;
+      if (!satifiesSpacingConstraints(dropletUnit, droplet, timestamp, move)) continue;
+      if (!satisfiesInterDropletUnitConstraints(move, dropletUnit, droplet, timestamp)) continue;
+      
+      validMoves.add(move);
+    }
+    
+    return validMoves;
+  }
+
+  private boolean satisfiesInterDropletUnitConstraints(Move move, DropletUnit dropletUnit, Droplet droplet, int timestamp) {
+    Point at = dropletUnit.route.getPosition(timestamp - 1);
+    Point to = at.copy().add(move.x, move.y);
+
+    // droplet units within the same droplet.
+    for (DropletUnit brotherUnit : droplet.units) {
+      if (brotherUnit == dropletUnit) continue;
+      Point brotherAt = brotherUnit.route.getPosition(timestamp - 1);
+      
+      if (to.x == brotherAt.x && to.y == brotherAt.y) return false;
+    }
+    
+    return true;
+  }
+  
+  @Override
   public List<Move> getValidMoves(Droplet droplet, Droplet mergeSibling, Module targetModule, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
     List<Move> validMoves = new ArrayList<>();
     
@@ -66,13 +97,19 @@ public class MultiCellMoveFinder extends MoveFinder {
   private boolean isWithinModule(Move move, Droplet droplet, Module targetModule, List<Module> modules, int timestamp) {
     // skip moves which overlap modules, unless the module is the target module.
     for (DropletUnit unit : droplet.units) {
-      Point at = unit.route.getPosition(timestamp - 1);
-      Point to = at.copy().add(move.x, move.y);
-      
-      for (Module other : modules) {
-        if (other == targetModule) continue;
-        if (GeometryUtil.inside(to.x, to.y, other.position.x, other.position.y, other.width, other.height)) return true;
-      }
+      if(isWithinModule(move, unit, targetModule, modules, timestamp)) return true;
+    }
+    
+    return false;
+  }
+
+  private boolean isWithinModule(Move move, DropletUnit unit, Module targetModule, List<Module> modules, int timestamp) {
+    Point at = unit.route.getPosition(timestamp - 1);
+    Point to = at.copy().add(move.x, move.y);
+    
+    for (Module other : modules) {
+      if (other == targetModule) continue;
+      if (GeometryUtil.inside(to.x, to.y, other.position.x, other.position.y, other.width, other.height)) return true;
     }
     
     return false;
@@ -80,13 +117,16 @@ public class MultiCellMoveFinder extends MoveFinder {
   
   private boolean isWithinArray(Move move, Droplet droplet, int timestamp, BioArray array) {
     for (DropletUnit unit : droplet.units) {
-      Point at = unit.route.getPosition(timestamp - 1);
-      Point to = at.copy().add(move.x, move.y);
-
-      if (!GeometryUtil.inside(to.x, to.y, array.width, array.height)) return false;
+      if (!isWithinArray(move, unit, timestamp, array)) return false;
     }
     
     return true;
+  }
+
+  private boolean isWithinArray(Move move, DropletUnit unit, int timestamp, BioArray array) {
+    Point at = unit.route.getPosition(timestamp - 1);
+    Point to = at.copy().add(move.x, move.y);
+    return GeometryUtil.inside(to.x, to.y, array.width, array.height);
   }
 
   private boolean willMerge(Droplet droplet, Droplet mergeSibling, int timestamp, Move move) {
@@ -115,6 +155,20 @@ public class MultiCellMoveFinder extends MoveFinder {
         
         if (!checker.satifiesConstraints(at, to, otherAt, otherTo)) return false;
       }
+    }
+
+    return true;
+  }
+  
+  private boolean satifiesSpacingConstraints(DropletUnit unit, Droplet other, int timestamp, Move move) {
+    Point at = unit.route.getPosition(timestamp - 1);
+    Point to = at.copy().add(move.x, move.y);
+
+    for (DropletUnit otherUnits : other.units) {
+      Point otherAt = otherUnits.route.getPosition(timestamp - 1);
+      Point otherTo = otherUnits.route.getPosition(timestamp);
+      
+      if (!checker.satifiesConstraints(at, to, otherAt, otherTo)) return false;
     }
 
     return true;

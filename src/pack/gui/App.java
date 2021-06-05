@@ -63,10 +63,7 @@ public class App extends ApplicationAdapter {
 	float maxZoom;
 	float zoomScaler;
 	
-	Droplet selectedDroplet;
-	TimelineUnit selectedTimelineUnit;
-	
-	boolean mouseWithinTimeline;
+	Selected selected;
 	
 	boolean debug = false;
 
@@ -74,13 +71,11 @@ public class App extends ApplicationAdapter {
 	float oldX, oldY;
 	boolean dragging;
 
+	boolean mouseWithinTimeline;
+
 	// rendering
 	float tilesize = 32f;
 	float gap = 1f;
-	
-	// timeline input help
-	float bufferX = 25;
-	float offsetX;
 
 	BioArray array;
 	BioAssay assay;
@@ -135,10 +130,8 @@ public class App extends ApplicationAdapter {
     assay = new BlockingDispenserTestBioAssay();
     array = new BlockingDispenserTestBioArray();
     
-
     assay = new ModuleBioAssay4();
     array = new ModuleBioArray4();
-
 
     assay = new Test3BioAssay();
     array = new Test3BioArray();
@@ -152,7 +145,16 @@ public class App extends ApplicationAdapter {
     assay = new PlatformAssay4();
     array = new PlatformArray4();
 
-    selectedDroplet = null;
+    selected = new Selected();
+    
+    timeline = new Timeline();
+    timeline.minCursorHeight = 4;
+    timeline.timescale = 1f;
+    timeline.operationGap = 0.8f;
+    timeline.operationHeight = 7;
+    timeline.stretchScaler = 1.02f;
+    timeline.bufferX = 25;
+    timeline.offsetX = viewport.getVirtualWidth() / 5f;
     
     Router router = new DropletAwareGreedyRouter();
 		//router = new NotDropletAwareGreedyRouter();
@@ -192,16 +194,7 @@ public class App extends ApplicationAdapter {
   		boardCamera.zoomNow(zoom);
 		}
 		
-		timeline = new Timeline();
-		timeline.minCursorHeight = 4;
-		timeline.timescale = 1f;
-		timeline.operationGap = 0.8f;
-		timeline.operationHeight = 7;
-		timeline.stretchScaler = 1.02f;
-		
-		
 		if (!debug) {
-		  
   		//timelineLayout = new SimpleTimelineLayout();
   		timelineLayout = new CompactTimelineLayout();
   		timelineUnits = timelineLayout.pack(assay.getOperations());
@@ -212,11 +205,9 @@ public class App extends ApplicationAdapter {
   		  if (unit.y > timeline.height) timeline.height = unit.y;
   		}
   		
-  		offsetX = viewport.getVirtualWidth() * 1f / 5f;
-  		
   		timeline.height += 1;
   
-      float tx = (timestamp * timeline.timescale) + offsetX;
+      float tx = (timestamp * timeline.timescale) + timeline.offsetX;
       float ty = viewport.getVirtualHeight() / 2f - 30;
       
       timelineCamera.lookAtNow(tx, ty);
@@ -228,7 +219,7 @@ public class App extends ApplicationAdapter {
 	public void update() {
 		handleInput();
 		
-    float tx = (timestamp * timeline.timescale) + offsetX;
+    float tx = (timestamp * timeline.timescale) + timeline.offsetX;
     float ty = viewport.getVirtualHeight() / 2f - 30;
     
     timelineCamera.lookAtNow(tx, ty);
@@ -238,11 +229,11 @@ public class App extends ApplicationAdapter {
 		
 		boardCamera.update();
 
-		if (selectedTimelineUnit != null) {
-		  int end = selectedTimelineUnit.start + selectedTimelineUnit.duration;
+		if (selected.unit != null) {
+		  int end = selected.unit.start + selected.unit.duration;
 		  if (timestamp >= end) {
-		    selectedDroplet = null;
-		    selectedTimelineUnit = null;
+		    selected.droplet = null;
+		    selected.unit = null;
 		  }
 		}
 		
@@ -279,7 +270,7 @@ public class App extends ApplicationAdapter {
       float width = timeline.width * timeline.timescale;
       float height = timeline.height * (timeline.operationHeight + gap) - gap;
   
-      mouseWithinTimeline = mouse.x >= -bufferX && mouse.x <= width + bufferX && mouse.y >= 0 && mouse.y <= height;
+      mouseWithinTimeline = mouse.x >= -timeline.bufferX && mouse.x <= width + timeline.bufferX && mouse.y >= 0 && mouse.y <= height;
     }
 
 		{ // timeline
@@ -320,19 +311,18 @@ public class App extends ApplicationAdapter {
 		          float height = tilesize;
 		          
 		          if (mouse.x >= x && mouse.x <= x + width && mouse.y >= y && mouse.y <= y + height) {
-		            
-		            if (droplet == selectedDroplet) {
+		            if (droplet == selected.droplet) {
 		              // deselect
-		              selectedDroplet = null;
-		              selectedTimelineUnit = null;
+		              selected.droplet = null;
+		              selected.unit = null;
 		            } else {
 		              // select
-		              selectedDroplet = droplet;
+		              selected.droplet = droplet;
 
-		              if (selectedDroplet.operation != null) {
+		              if (selected.droplet.operation != null) {
 		                for (TimelineUnit timelineUnit : timelineUnits) {
-		                  if (timelineUnit.operation == selectedDroplet.operation) {
-		                    selectedTimelineUnit = timelineUnit;
+		                  if (timelineUnit.operation == selected.droplet.operation) {
+		                    selected.unit = timelineUnit;
 		                  }
 		                }
 		              }
@@ -510,13 +500,13 @@ public class App extends ApplicationAdapter {
     }
     
     {
-      if (selectedTimelineUnit != null) {
+      if (selected.unit != null) {
         
-        float width = selectedTimelineUnit.duration * timeline.timescale;
+        float width = selected.unit.duration * timeline.timescale;
         float height = timeline.operationHeight;
 
-        float x = selectedTimelineUnit.start * timeline.timescale;
-        float y = selectedTimelineUnit.y * (height + gap);
+        float x = selected.unit.start * timeline.timescale;
+        float y = selected.unit.y * (height + gap);
         
         Color color = ColorPalette.timelineSelection;
         renderer.setColor(color);
@@ -575,21 +565,6 @@ public class App extends ApplicationAdapter {
       }
     }
 		
-		/*
-		{ // reservoirs
-		  for (Reservoir reservoir : result.reservoirs) {
-		    float xx = reservoir.position.x * tilesize + gap;
-        float yy = reservoir.position.y * tilesize + gap;
-        
-        float width = tilesize - gap * 2f;
-        float height = tilesize - gap * 2f;
-        
-        renderer.setColor(ColorPalette.seeThroughGray);
-        renderer.fillRect(xx, yy, width, height);
-		  }
-		}
-		*/
-
     { // droplets
       
       List<Droplet> droplets = result.droplets;
@@ -637,19 +612,18 @@ public class App extends ApplicationAdapter {
     }
     
     { // selected droplets
-      List<Droplet> selected = new ArrayList<>();
-      if (selectedDroplet != null) {
-        Operation operation = selectedTimelineUnit.operation;
-        
-        if (operation != null && operation.name.equals(OperationType.merge)) {
-          selected.add(operation.manipulating[0]);
-          selected.add(operation.manipulating[1]);
+      List<Droplet> dropletSelection = new ArrayList<>();
+      if (selected.droplet != null) {
+        if (selected.unit != null && selected.unit.operation.name.equals(OperationType.merge)) {
+          Operation operation = selected.unit.operation;
+          dropletSelection.add(operation.manipulating[0]);
+          dropletSelection.add(operation.manipulating[1]);
         } else {
-          selected.add(selectedDroplet);
+          dropletSelection.add(selected.droplet);
         }
       }
       
-      for (Droplet droplet : selected) {
+      for (Droplet droplet : dropletSelection) {
         if (moving) {
           for (int i = 0; i < droplet.units.size(); i++) {
             DropletUnit dropletUnit = droplet.units.get(i);

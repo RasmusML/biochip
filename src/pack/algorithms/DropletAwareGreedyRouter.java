@@ -13,7 +13,6 @@ import pack.algorithms.components.MixingPercentages;
 import pack.algorithms.components.ModuleAllocator;
 import pack.algorithms.components.RandomIndexSelector;
 import pack.algorithms.components.ReservoirManager;
-import pack.algorithms.components.SingleCellMoveFinder;
 import pack.algorithms.components.SubstanceToReservoirAssigner;
 import pack.algorithms.components.UidGenerator;
 import pack.helpers.Assert;
@@ -81,7 +80,7 @@ public class DropletAwareGreedyRouter implements Router {
     
     //pathFinder = new ModifiedAStarPathFinder();
     
-    maxIterationsPerOperation = 750;  // if no operation terminates before iteration is this value, then we assume that no solution can be found.
+    maxIterationsPerOperation = 500;  // if no operation terminates before iteration is this value, then we assume that no solution can be found.
     iteration = 0;
 
     operationIdToExtra = new HashMap<>();
@@ -233,7 +232,7 @@ public class DropletAwareGreedyRouter implements Router {
           Module dispenser = extra.module;
           if (extra.currentDurationInTimesteps >= dispenser.duration) {
             retire(droplet);
-            Droplet forwarded = createForwardedDroplet(Move.None, droplet.units, droplet.area); // @TODO: move out of spawn.
+            Droplet forwarded = createForwardedDroplet(Move.None, droplet.units, droplet.area);
             
             moduleAllocator.free(dispenser);
             
@@ -504,7 +503,6 @@ public class DropletAwareGreedyRouter implements Router {
     RoutingResult result = new RoutingResult();
     result.completed = !earlyTerminated;
     result.droplets.addAll(retiredDroplets);
-    result.reservoirs.addAll(reservoirManager.getReservoirs());
     result.executionTime = timestamp;
     
     List<Module> modulePlacements = moduleAllocator.getModules();

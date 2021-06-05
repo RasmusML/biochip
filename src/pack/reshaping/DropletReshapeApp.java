@@ -1,4 +1,4 @@
-package pack.gui;
+package pack.reshaping;
 
 import java.awt.Canvas;
 import java.awt.Color;
@@ -15,8 +15,6 @@ import engine.input.Keys;
 import engine.math.Vector2;
 import pack.algorithms.BioArray;
 import pack.algorithms.Point;
-import pack.algorithms.ShapedDroplet;
-import pack.algorithms.simulation.DropletReshapeSimulator;
 import pack.testbench.tests.Test1BioArray;
 
 public class DropletReshapeApp extends ApplicationAdapter {

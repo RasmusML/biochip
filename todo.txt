@@ -11,6 +11,8 @@ prepare reshape test on the physical platform + behavoir of merge (droplet-aware
 
 non-uniform split "simulator"
 
+===================================================
+
 waste operation (variable droplet size)            
 
 // @TODO: look into splitting a droplet into smaller, maybe extra operation option ("optimization")

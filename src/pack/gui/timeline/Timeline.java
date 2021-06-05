@@ -13,4 +13,7 @@ public class Timeline {
   
   public int width;
   public int height;
+  
+  public float bufferX;
+  public float offsetX;
 }

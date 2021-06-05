@@ -236,7 +236,7 @@ public class NotDropletAwareGreedyRouter implements Router {
           Module dispenser = extra.module;
           if (extra.currentDurationInTimesteps >= dispenser.duration) {
             retire(droplet);
-            Droplet forwarded = createForwardedDroplet(Move.None, droplet, droplet.area); // @TODO: move out of spawn.
+            Droplet forwarded = createForwardedDroplet(Move.None, droplet, droplet.area);
             
             moduleAllocator.free(dispenser);
             
@@ -487,7 +487,6 @@ public class NotDropletAwareGreedyRouter implements Router {
     RoutingResult result = new RoutingResult();
     result.completed = !earlyTerminated;
     result.droplets.addAll(retiredDroplets);
-    result.reservoirs.addAll(reservoirManager.getReservoirs());
     result.executionTime = timestamp;
     
     List<Module> modulePlacements = moduleAllocator.getModules();
