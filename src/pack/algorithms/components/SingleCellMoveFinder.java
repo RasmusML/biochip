@@ -16,63 +16,74 @@ import pack.helpers.GeometryUtil;
 public class SingleCellMoveFinder extends MoveFinder {
   
   private ConstraintsChecker checker;
-  private Point to;
   
   // The behavior of single-unit droplets and multi-units droplets are different. In single-unit droplet, we assume after a merge, the two droplets occupy the same cell and not adjacent tiles. Multi-unit droplets will occupy adjacent cells.
   
   public SingleCellMoveFinder(ConstraintsChecker checker) {
     this.checker = checker;
-    
-    to = new Point();
   }
   
   @Override
-  public List<Move> getValidMoves(Droplet droplet, Droplet mergeSibling, Module module, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
+  public List<Move> getValidMoves(Droplet droplet, Droplet mergeSibling, Module targetModule, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
     Assert.that(droplet.units.size() == 1);
-    DropletUnit dropletUnit = droplet.units.get(0);
+    DropletUnit unit = droplet.units.get(0);
     
     List<Move> validMoves = new ArrayList<>();
-    outer: for (Move move : Move.values()) {
-      Point at = dropletUnit.route.getPosition(timestamp - 1);
-      to.set(at).add(move.x, move.y);
+    
+    for (Move move : Move.values()) {
+      Point at = unit.route.getPosition(timestamp - 1);
+      Point to = at.copy().add(move.x, move.y);
       
-      if (!GeometryUtil.inside(to.x, to.y, array.width, array.height)) continue outer;
+      if (!GeometryUtil.inside(to.x, to.y, array.width, array.height)) continue;
 
       // skip moves which overlap modules, unless the module is the target module.
-      for (Module other : modules) {
-        if (other == module) continue;
-        if (GeometryUtil.inside(to.x, to.y, other.position.x, other.position.y, other.width, other.height)) continue outer;
-      }
+      if (isWithinModule(at, to, targetModule, modules)) continue;
       
       // Special case for droplets which should merge with another droplet.
       if (mergeSibling != null) {
         
         Assert.that(mergeSibling.units.size() == 1);
-        DropletUnit unit = mergeSibling.units.get(0);
+        DropletUnit siblingUnit = mergeSibling.units.get(0);
         
-        Point siblingAt = unit.route.getPosition(timestamp - 1);
-        Point siblingTo = unit.route.getPosition(timestamp);
+        Point siblingAt = siblingUnit.route.getPosition(timestamp - 1);
+        Point siblingTo = siblingUnit.route.getPosition(timestamp);
 
-        if (!checker.satisfiesCompanionConstraints(at, to, siblingAt, siblingTo)) continue outer;
+        if (!checker.satisfiesCompanionConstraints(at, to, siblingAt, siblingTo)) continue;
       }
       
       // skip moves which does not satisfy droplet-droplet constraints.
-      for (Droplet other : droplets) {
-        if (other.id == droplet.id) continue;
-        if (mergeSibling != null && other.id == mergeSibling.id) continue;
-
-        for (DropletUnit unit : other.units) {
-          Point otherAt = unit.route.getPosition(timestamp - 1);
-          Point otherTo = unit.route.getPosition(timestamp);
-          
-          if (!checker.satifiesConstraints(at, to, otherAt, otherTo)) continue outer;
-        }
-      }
+      if (!satisfiesDropletDropletConstraints(at, to, droplet, mergeSibling, droplets, timestamp)) continue;
 
       // a move is only added, if the move is valid for all droplet units.
       validMoves.add(move);
     }
 
     return validMoves;
+  }
+  
+  private boolean satisfiesDropletDropletConstraints(Point at, Point to, Droplet droplet, Droplet mergeSibling, List<Droplet> droplets, int timestamp) {
+    for (Droplet other : droplets) {
+      Assert.that(other.units.size() == 1);
+      DropletUnit otherUnit = other.units.get(0);
+      
+      if (other.id == droplet.id) continue;
+      if (mergeSibling != null && other.id == mergeSibling.id) continue;
+      
+      Point otherAt = otherUnit.route.getPosition(timestamp - 1);
+      Point otherTo = otherUnit.route.getPosition(timestamp);
+      
+      if (!checker.satifiesConstraints(at, to, otherAt, otherTo)) return false;
+    }
+    
+    return true;
+  }
+  
+  
+  private boolean isWithinModule(Point at, Point to, Module module, List<Module> modules) {
+    for (Module other : modules) {
+      if (other == module) continue;
+      if (GeometryUtil.inside(to.x, to.y, other.position.x, other.position.y, other.width, other.height)) return true;
+    }
+    return false;
   }
 }
