@@ -42,13 +42,17 @@ public class ConstraintsChecker {
   }
 
   public boolean satisfiesSpacingConstraint(Point p1, Point p2) {
+    return satisfiesSpacingConstraint(p1, p2, 2);
+  }
+  
+  public boolean satisfiesSpacingConstraint(Point p1, Point p2, int spacing) {
     // If 1 or more points are null, then we assume that those points are not placed. Thus, the placement is valid, because the points do not interfere. @docs
     if (p1 == null || p2 == null) return true;  
     
     int dx = Math.abs(p1.x - p2.x);
     int dy = Math.abs(p1.y - p2.y);
     
-    return dx >= 2 || dy >= 2;
+    return dx >= spacing || dy >= spacing;
   }
   
   private boolean satifiesStaticCompanionConstraint(Point to0, Point to1) {

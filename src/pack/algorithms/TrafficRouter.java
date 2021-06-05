@@ -5,14 +5,14 @@ import java.util.List;
 
 import pack.algorithms.components.ConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
-import pack.algorithms.components.MoveFinder;
+import pack.algorithms.components.SingleCellMoveFinder;
 import pack.algorithms.components.ReservoirManager;
 import pack.algorithms.components.SubstanceToReservoirAssigner;
 
 public class TrafficRouter implements Router {
 
   private ConstraintsChecker checker;
-  private MoveFinder moveFinder;
+  private SingleCellMoveFinder moveFinder;
 
   private ReservoirManager reservoirManager;
 
@@ -25,7 +25,7 @@ public class TrafficRouter implements Router {
   @Override
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
     checker = new ConstraintsChecker();
-    moveFinder = new MoveFinder(checker);
+    moveFinder = new SingleCellMoveFinder(checker);
 
     SubstanceToReservoirAssigner s2rAssigner = new SubstanceToReservoirAssigner();
     //List<Reservoir> reservoirs = s2rAssigner.assign(assay, array);

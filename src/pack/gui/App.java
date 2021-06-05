@@ -69,6 +69,8 @@ public class App extends ApplicationAdapter {
 	TimelineUnit selectedTimelineUnit;
 	
 	boolean mouseWithinTimeline;
+	
+	boolean debug = false;
 
 	// mouse
 	float oldX, oldY;
@@ -139,8 +141,6 @@ public class App extends ApplicationAdapter {
     assay = new ModuleBioAssay4();
     array = new ModuleBioArray4();
 
-    assay = new PCRMixingTreeAssay();
-    array = new PCRMixingTreeArray();
 
     assay = new Test3BioAssay();
     array = new Test3BioArray();
@@ -148,9 +148,12 @@ public class App extends ApplicationAdapter {
     assay = new CrowdedModuleBioAssay();
     array = new CrowdedModuleBioArray();
 
+    assay = new PCRMixingTreeAssay();
+    array = new PCRMixingTreeArray();
+
     assay = new PlatformAssay4();
     array = new PlatformArray4();
-    
+
     selectedDroplet = null;
     
     Router router = new DropletAwareGreedyRouter();
@@ -191,32 +194,35 @@ public class App extends ApplicationAdapter {
   		boardCamera.zoomNow(zoom);
 		}
 		
-		
-		//timelineLayout = new SimpleTimelineLayout();
-		timelineLayout = new CompactTimelineLayout();
-		timelineUnits = timelineLayout.pack(assay.getOperations());
-		
 		timeline = new Timeline();
 		timeline.minCursorHeight = 4;
-    timeline.timescale = 1f;
-    timeline.operationGap = 0.8f;
-    timeline.operationHeight = 7;
-    timeline.stretchScaler = 1.02f;
+		timeline.timescale = 1f;
+		timeline.operationGap = 0.8f;
+		timeline.operationHeight = 7;
+		timeline.stretchScaler = 1.02f;
 		
-		for (TimelineUnit unit : timelineUnits) {
-		  int end = unit.start + unit.duration;
-		  if (end > timeline.width) timeline.width = end;
-		  if (unit.y > timeline.height) timeline.height = unit.y;
+		
+		if (!debug) {
+		  
+  		//timelineLayout = new SimpleTimelineLayout();
+  		timelineLayout = new CompactTimelineLayout();
+  		timelineUnits = timelineLayout.pack(assay.getOperations());
+  		
+  		for (TimelineUnit unit : timelineUnits) {
+  		  int end = unit.start + unit.duration;
+  		  if (end > timeline.width) timeline.width = end;
+  		  if (unit.y > timeline.height) timeline.height = unit.y;
+  		}
+  		
+  		offsetX = viewport.getVirtualWidth() * 1f / 5f;
+  		
+  		timeline.height += 1;
+  
+      float tx = timestamp + offsetX;
+      float ty = viewport.getVirtualHeight() / 2f - 30;
+      
+      timelineCamera.lookAtNow(tx, ty);
 		}
-		
-		offsetX = viewport.getVirtualWidth() * 1f / 5f;
-		
-		timeline.height += 1;
-
-    float tx = timestamp + offsetX;
-    float ty = viewport.getVirtualHeight() / 2f - 30;
-    
-    timelineCamera.lookAtNow(tx, ty);
     
 	}
 	
@@ -343,6 +349,10 @@ public class App extends ApplicationAdapter {
 		}
 		
     { // global
+      
+      if (input.isKeyJustPressed(Keys.E)) {
+        timestamp = result.executionTime - 1;
+      }
 
       if (input.isKeyPressed(Keys.Q)) {
         timeline.timescale *= timeline.stretchScaler;
@@ -392,6 +402,8 @@ public class App extends ApplicationAdapter {
         if (timestamp > result.executionTime - 1) {
           timestamp = result.executionTime - 1;
         }
+        
+        dt = 0;
       }
       
       if (input.isKeyJustPressed(Keys.LEFT)) {
@@ -439,7 +451,8 @@ public class App extends ApplicationAdapter {
 		renderer.clear();
 
 		drawBoard();
-    drawTimeline();
+		
+		if (!debug) drawTimeline();
     
 		renderer.end();
 	}

@@ -1,3 +1,7 @@
+
+dropelt aware merge droplet may need to merge vertically or horizontally. It may not be possible to make one droplet move up and the other left due to tension. Test on platform
+for now we assume we can.
+
 400 x 400 grid can run at 60fps on my laptop.
 
 

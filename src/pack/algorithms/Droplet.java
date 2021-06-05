@@ -15,6 +15,7 @@ public class Droplet {
     units = new ArrayList<>();
   }
   
+  // we assume for now that all no other droplet unit of another droplet move in between droplet units of the same droplet.
   public boolean hasPosition(int timestamp) {
     DropletUnit unit = units.get(0);
     Point position = unit.route.getPosition(timestamp);

@@ -11,9 +11,9 @@ import engine.math.MathUtils;
 import pack.algorithms.components.ConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
 import pack.algorithms.components.ModuleAllocator;
-import pack.algorithms.components.MoveFinder;
 import pack.algorithms.components.RandomIndexSelector;
 import pack.algorithms.components.ReservoirManager;
+import pack.algorithms.components.SingleCellMoveFinder;
 import pack.algorithms.components.SubstanceToReservoirAssigner;
 import pack.algorithms.components.UidGenerator;
 import pack.helpers.Assert;
@@ -65,7 +65,7 @@ public class DropletAwareGreedyRouter implements Router {
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
     checker = new ConstraintsChecker();
     indexSelector = new RandomIndexSelector();
-    moveFinder = new MoveFinder(checker);
+    moveFinder = new MultiCellMoveFinder(checker);
 
     moduleAllocator = new ModuleAllocator(array.catalog);
 
@@ -81,7 +81,7 @@ public class DropletAwareGreedyRouter implements Router {
     
     //pathFinder = new ModifiedAStarPathFinder();
     
-    maxIterationsPerOperation = 500;  // if no operation terminates before iteration is this value, then we assume that no solution can be found.
+    maxIterationsPerOperation = 750;  // if no operation terminates before iteration is this value, then we assume that no solution can be found.
     iteration = 0;
 
     operationIdToExtra = new HashMap<>();
