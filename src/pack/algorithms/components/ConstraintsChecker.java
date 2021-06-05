@@ -25,6 +25,22 @@ public class ConstraintsChecker {
     return true;
   }
 
+  public boolean satisfiesSpacingConstraint(Point p1, Point p2) {
+    return satisfiesSpacingConstraint(p1, p2, 2);
+  }
+  
+  public boolean satisfiesSpacingConstraint(Point p1, Point p2, int spacing) {
+    // If 1 or more points are null, then we assume that those points are not placed. Thus, the placement is valid, because the points do not interfere. @docs
+    if (p1 == null || p2 == null) return true;  
+    
+    int dx = Math.abs(p1.x - p2.x);
+    int dy = Math.abs(p1.y - p2.y);
+    
+    return dx >= spacing || dy >= spacing;
+  }
+  
+  // @TODO: cleanup the functions below are only for single unit droplets. @Refactor
+
   public boolean satisfiesCompanionConstraints(Point to0, Point at1, Point to1) {
     if (satifiesConstraints(to0, at1, to1)) return true;
     if (!satisfiesDynamicCompanionConstraint(to0, at1)) return false;
@@ -41,34 +57,21 @@ public class ConstraintsChecker {
     return true;
   }
 
-  public boolean satisfiesSpacingConstraint(Point p1, Point p2) {
-    return satisfiesSpacingConstraint(p1, p2, 2);
-  }
-  
-  public boolean satisfiesSpacingConstraint(Point p1, Point p2, int spacing) {
-    // If 1 or more points are null, then we assume that those points are not placed. Thus, the placement is valid, because the points do not interfere. @docs
-    if (p1 == null || p2 == null) return true;  
-    
-    int dx = Math.abs(p1.x - p2.x);
-    int dy = Math.abs(p1.y - p2.y);
-    
-    return dx >= spacing || dy >= spacing;
-  }
   
   private boolean satifiesStaticCompanionConstraint(Point to0, Point to1) {
-    if (to0 != null && to1 != null) {
-      // special case for a merge and split points can't be next to each other, but they may overlap.
-      
-      // Illegal:
-      // o o o o
-      // o x x o
-      // o o o o
-      int dx = Math.abs(to0.x - to1.x);
-      int dy = Math.abs(to0.y - to1.y);
-      
-      boolean staticOk = dx == 0 && dy == 0;
-      if (!staticOk) return false;
-    }
+    if (to0 == null || to1 == null) return true;
+    
+    // special case for a merge and split points can't be next to each other, but they may overlap.
+    
+    // Illegal:
+    // o o o o
+    // o x x o
+    // o o o o
+    int dx = Math.abs(to0.x - to1.x);
+    int dy = Math.abs(to0.y - to1.y);
+    
+    boolean staticOk = dx == 0 && dy == 0;
+    if (!staticOk) return false;
     
     return true;
   }

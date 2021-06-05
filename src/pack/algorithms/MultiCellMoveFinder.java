@@ -7,11 +7,16 @@ import engine.math.MathUtils;
 import pack.algorithms.components.ConstraintsChecker;
 import pack.helpers.GeometryUtil;
 
+/**
+ * MultiCellMoveFinder finds the valid moves for a droplet which can occupy multiple cells.
+ * MultiCellMoveFinder assumes two droplets merge if they are vertical or horizontal adjacent.
+ * 
+ * @author Rasmus
+ *
+ */
 public class MultiCellMoveFinder extends MoveFinder {
   
   private ConstraintsChecker checker;
-  
-  // The behavior of single-unit droplets and multi-units droplets are different. In single-unit droplet, we assume after a merge, the two droplets occupy the same cell and not adjacent tiles. Multi-unit droplets will occupy adjacent cells.
   
   public MultiCellMoveFinder(ConstraintsChecker checker) {
     this.checker = checker;
@@ -38,10 +43,9 @@ public class MultiCellMoveFinder extends MoveFinder {
         }
       }
       
-      // skip moves which does not satisfy droplet-droplet constraints.
+      // skip moves which do not satisfy droplet-droplet constraints.
       if (!satifiesDropletDropletConstraints(move, droplet, mergeSibling, droplets, timestamp)) continue;
 
-      // a move is only added, if the move is valid for all droplet units.
       validMoves.add(move);
     }
     
@@ -96,6 +100,7 @@ public class MultiCellMoveFinder extends MoveFinder {
         if (distance == 1) return true;
       }
     }
+    
     return false;
   }
 

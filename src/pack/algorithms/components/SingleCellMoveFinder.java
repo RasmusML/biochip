@@ -13,11 +13,17 @@ import pack.algorithms.Point;
 import pack.helpers.Assert;
 import pack.helpers.GeometryUtil;
 
+/**
+ * SingleCellMoveFinder finds the valid moves for a droplet which can only occupy a single cell.
+ * MultiCellMoveFinder assumes two droplets merge if they occupy the same cell.
+ * 
+ * @author Rasmus
+ *
+ */
+
 public class SingleCellMoveFinder extends MoveFinder {
   
   private ConstraintsChecker checker;
-  
-  // The behavior of single-unit droplets and multi-units droplets are different. In single-unit droplet, we assume after a merge, the two droplets occupy the same cell and not adjacent tiles. Multi-unit droplets will occupy adjacent cells.
   
   public SingleCellMoveFinder(ConstraintsChecker checker) {
     this.checker = checker;
@@ -78,12 +84,12 @@ public class SingleCellMoveFinder extends MoveFinder {
     return true;
   }
   
-  
   private boolean isWithinModule(Point at, Point to, Module module, List<Module> modules) {
     for (Module other : modules) {
       if (other == module) continue;
       if (GeometryUtil.inside(to.x, to.y, other.position.x, other.position.y, other.width, other.height)) return true;
     }
+    
     return false;
   }
 }

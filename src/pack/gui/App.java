@@ -3,10 +3,10 @@ package pack.gui;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Image;
+import java.util.ArrayList;
 import java.util.List;
 
 import engine.ApplicationAdapter;
-import engine.graphics.Alignment;
 import engine.graphics.Camera;
 import engine.graphics.FitViewport;
 import engine.graphics.Renderer;
@@ -21,11 +21,9 @@ import pack.algorithms.DropletAwareGreedyRouter;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.ElectrodeActivations;
 import pack.algorithms.Module;
-import pack.algorithms.NotDropletAwareGreedyRouter;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
-import pack.algorithms.Reservoir;
 import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
@@ -218,7 +216,7 @@ public class App extends ApplicationAdapter {
   		
   		timeline.height += 1;
   
-      float tx = timestamp + offsetX;
+      float tx = (timestamp * timeline.timescale) + offsetX;
       float ty = viewport.getVirtualHeight() / 2f - 30;
       
       timelineCamera.lookAtNow(tx, ty);
@@ -230,7 +228,7 @@ public class App extends ApplicationAdapter {
 	public void update() {
 		handleInput();
 		
-    float tx = timestamp + offsetX;
+    float tx = (timestamp * timeline.timescale) + offsetX;
     float ty = viewport.getVirtualHeight() / 2f - 30;
     
     timelineCamera.lookAtNow(tx, ty);
@@ -354,11 +352,11 @@ public class App extends ApplicationAdapter {
         timestamp = result.executionTime - 1;
       }
 
-      if (input.isKeyPressed(Keys.Q)) {
+      if (input.isKeyPressed(Keys.W)) {
         timeline.timescale *= timeline.stretchScaler;
       }
       
-      if (input.isKeyPressed(Keys.W)) {
+      if (input.isKeyPressed(Keys.Q)) {
         timeline.timescale /= timeline.stretchScaler;
       }
       
@@ -451,7 +449,6 @@ public class App extends ApplicationAdapter {
 		renderer.clear();
 
 		drawBoard();
-		
 		if (!debug) drawTimeline();
     
 		renderer.end();
@@ -617,7 +614,7 @@ public class App extends ApplicationAdapter {
               
               target = successor.route.getPosition(timestamp + 1);
               move.set(target).sub(at);
-              
+
               drawDropletUnit(droplet, at, move.x, move.y);
               
             } else {
@@ -634,6 +631,87 @@ public class App extends ApplicationAdapter {
             if (at == null) continue;
 
             drawDropletUnit(droplet, at, 0, 0);
+          }
+        }
+      }
+    }
+    
+    { // selected droplets
+      List<Droplet> selected = new ArrayList<>();
+      if (selectedDroplet != null) {
+        Operation operation = selectedTimelineUnit.operation;
+        
+        if (operation != null && operation.name.equals(OperationType.merge)) {
+          selected.add(operation.manipulating[0]);
+          selected.add(operation.manipulating[1]);
+        } else {
+          selected.add(selectedDroplet);
+        }
+      }
+      
+      for (Droplet droplet : selected) {
+        if (moving) {
+          for (int i = 0; i < droplet.units.size(); i++) {
+            DropletUnit dropletUnit = droplet.units.get(i);
+            Point at = dropletUnit.route.getPosition(timestamp);
+            if (at == null) continue;
+    
+            Point target = dropletUnit.route.getPosition(timestamp + 1);
+            Point move = new Point();
+            
+            if (target == null) {
+              Operation operation = droplet.operation;
+              Assert.that(operation != null);
+              
+              // dispose operations don't have successor droplet units. So skip drawing those droplet units
+              DropletUnit successor = dropletUnit.successor;
+              if (successor == null) continue;
+              Assert.that(!operation.name.equals(OperationType.dispose));
+              
+              target = successor.route.getPosition(timestamp + 1);
+              move.set(target).sub(at);
+              
+              float percentage = dt / (float) movementTime;
+              
+              float x = (at.x + move.x * percentage) * tilesize + gap;
+              float y = (at.y + move.y * percentage) * tilesize + gap;
+              float width = tilesize - gap * 2f;
+              float height = tilesize - gap * 2f;
+
+              renderer.setColor(ColorPalette.seeThroughGray);
+              
+              renderer.fillRect(x, y, width, height);
+              
+            } else {
+              move.set(target).sub(at);
+              
+              float percentage = dt / (float) movementTime;
+              
+              float x = (at.x + move.x * percentage) * tilesize + gap;
+              float y = (at.y + move.y * percentage) * tilesize + gap;
+              float width = tilesize - gap * 2f;
+              float height = tilesize - gap * 2f;
+
+              renderer.setColor(ColorPalette.seeThroughGray);
+              
+              renderer.fillRect(x, y, width, height);
+            }
+          }
+          
+        } else {
+          for (int i = 0; i < droplet.units.size(); i++) {
+            DropletUnit dropletUnit = droplet.units.get(i);
+            Point at = dropletUnit.route.getPosition(timestamp);
+            if (at == null) continue;
+
+            float x = at.x * tilesize + gap;
+            float y = at.y * tilesize + gap;
+            float width = tilesize - gap * 2f;
+            float height = tilesize - gap * 2f;
+
+            renderer.setColor(ColorPalette.seeThroughGray);
+            
+            renderer.fillRect(x, y, width, height);
           }
         }
       }
