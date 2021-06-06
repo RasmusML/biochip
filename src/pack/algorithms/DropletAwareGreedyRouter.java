@@ -35,7 +35,12 @@ public class DropletAwareGreedyRouter implements Router {
   private List<Operation> readyOperations;
   private List<Operation> runningOperations;
 
-  private List<Droplet> runningDroplets;
+  // Droplet lifecycle: (reshapingDroplets) -> movingDroplets -> retiredDroplets
+
+  private List<Droplet> runningDroplets;  // all the droplets currently on the array: operationalDrivenDroplets + reshapingDroplets
+  private List<Droplet> operationalDrivenDroplets;
+  private List<Droplet> reshapingDroplets;
+  
   private List<Droplet> retiredDroplets;
 
   private Map<Integer, OperationExtra> operationIdToExtra;
@@ -101,6 +106,8 @@ public class DropletAwareGreedyRouter implements Router {
 
     runningDroplets = new ArrayList<>();
     retiredDroplets = new ArrayList<>();
+    operationalDrivenDroplets = new ArrayList<>();
+    reshapingDroplets = new ArrayList<>();
 
     List<Operation> dispenseOperations = assay.getOperations(OperationType.dispense);
     readyOperations.addAll(dispenseOperations);
@@ -520,7 +527,12 @@ public class DropletAwareGreedyRouter implements Router {
   }
 
   private void retire(Droplet droplet) {
+    Assert.that(operationalDrivenDroplets.contains(droplet));
+    Assert.that(runningDroplets.contains(droplet));
+    
+    operationalDrivenDroplets.remove(droplet);
     runningDroplets.remove(droplet);
+
     retiredDroplets.add(droplet);
   }
 
@@ -690,6 +702,8 @@ public class DropletAwareGreedyRouter implements Router {
     }
     
     runningDroplets.add(droplet);
+    operationalDrivenDroplets.add(droplet); // @todo: replace with reshaping
+    //reshapingDroplets.add(droplet);
     
     return droplet;
   }
@@ -724,6 +738,9 @@ public class DropletAwareGreedyRouter implements Router {
     }
     
     runningDroplets.add(droplet);
+    operationalDrivenDroplets.add(droplet); // @todo: replace with reshaping
+    //reshapingDroplets.add(droplet);
+   
     
     return droplet;
   }
@@ -741,6 +758,7 @@ public class DropletAwareGreedyRouter implements Router {
     droplet.operation = operation;
 
     runningDroplets.add(droplet);
+    operationalDrivenDroplets.add(droplet);
 
     operation.manipulating[0] = droplet;
   }
