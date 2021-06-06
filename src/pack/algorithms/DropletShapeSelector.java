@@ -47,8 +47,4 @@ public class DropletShapeSelector {
     
     throw new IllegalStateException("broken!");
   }
-  
-  public static void main(String[] args) {
-    new DropletShapeSelector().select(null);
-  }
 }
