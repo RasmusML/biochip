@@ -15,6 +15,7 @@ public class Droplet {
     units = new ArrayList<>();
   }
   
+  // we assume for now that all no other droplet unit of another droplet move in between droplet units of the same droplet.
   public boolean hasPosition(int timestamp) {
     DropletUnit unit = units.get(0);
     Point position = unit.route.getPosition(timestamp);
@@ -47,9 +48,23 @@ public class Droplet {
       if (at.y > maxY) maxY = at.y;
     }
 
-    int cx = (maxX-minX) / 2;
-    int cy = (maxY-minY) / 2;
+    int cx = (maxX - minX) / 2;
+    int cy = (maxY - minY) / 2;
     
     return new Point(minX + cx, minY + cy);
+  }
+  
+  public Point getBottomLeftPosition() {
+    int x = Integer.MAX_VALUE;
+    int y = Integer.MAX_VALUE;
+    
+    for (DropletUnit unit : units) {
+      Point at = unit.route.getPosition();
+      
+      if (at.x < x) x = at.x;
+      if (at.y < y) y = at.y;
+    }
+
+    return new Point(x, y);
   }
 }

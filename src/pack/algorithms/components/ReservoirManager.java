@@ -8,7 +8,6 @@ import pack.algorithms.DropletUnit;
 import pack.algorithms.Module;
 import pack.algorithms.OperationType;
 import pack.algorithms.Point;
-import pack.algorithms.Reservoir;
 import pack.algorithms.Tags;
 
 public class ReservoirManager {
@@ -78,21 +77,5 @@ public class ReservoirManager {
     }
     
     return count;
-  }
-
-  public List<Reservoir> getReservoirs() {
-    List<Reservoir> reservoirs = new ArrayList<>();
-    for (Module dispenser : dispensers) {
-      Reservoir reservoir = new Reservoir();
-      reservoir.position = new Point(dispenser.position);
-      
-      String dispenserSubstance = (String) dispenser.attributes.get(Tags.substance);
-      reservoir.substance = dispenserSubstance;
-      
-      reservoirs.add(reservoir);
-      
-    }
-    
-    return reservoirs;
   }
 }

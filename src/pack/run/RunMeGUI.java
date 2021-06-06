@@ -15,6 +15,5 @@ public class RunMeGUI {
 		cfg.fps = 60;
 		
 		new Application(new App(), cfg);
-		//new Application(new DropletReshapeApp(), cfg);
 	}
 }

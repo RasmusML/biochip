@@ -1,4 +1,4 @@
-package pack.algorithms.simulation;
+package pack.reshaping;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -9,7 +9,6 @@ import java.util.Map;
 import engine.math.MathUtils;
 import pack.algorithms.Move;
 import pack.algorithms.Point;
-import pack.algorithms.ShapedDroplet;
 import pack.helpers.GeometryUtil;
 
 public class DropletReshapeSimulator {
@@ -151,8 +150,8 @@ public class DropletReshapeSimulator {
       }
     }
     
-    // points not moved are either no inside the target shape or they "stuck" within the shape.
-    // the points not within the target shape, move those closer.
+    // points not moved are either not inside the target shape or they "stuck" within the shape.
+    // the points not within the target shape move those closer.
     
     left.sort(secondIterationSorter);
 
@@ -176,8 +175,10 @@ public class DropletReshapeSimulator {
   private Move getFillingMove(Point point) {
     Point target = new Point();
     
-    Move[] moves = {Move.Left, Move.Right, Move.Up, Move.Down};
+    Move[] moves = Move.values();
     for (Move move : moves) {
+      if (move == Move.None) continue;
+      
       target.set(point).add(move.x, move.y);
       
       if (!GeometryUtil.inside(target.x, target.y, 0, 0, width, height)) continue;

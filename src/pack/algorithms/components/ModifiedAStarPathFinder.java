@@ -47,7 +47,7 @@ public class ModifiedAStarPathFinder {
    * @return the path from {@code droplet} to {@code target}, if no path exist return an empty list.
    * 
    */
-  public List<Point> search(Droplet droplet, Point target, Module module, List<Droplet> droplets, BioArray array, MoveFinder moveFinder, List<Module> modules, int timestamp, int maxSteps) {
+  public List<Point> search(Droplet droplet, Point target, Module module, List<Droplet> droplets, BioArray array, SingleCellMoveFinder moveFinder, List<Module> modules, int timestamp, int maxSteps) {
     Map<PositionInTime, Node<PositionInTime>> positionInTimeToNode = new HashMap<>();
     List<PositionInTime> explored = new ArrayList<>();
 

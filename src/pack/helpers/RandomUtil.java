@@ -26,7 +26,6 @@ public class RandomUtil {
    * @return random integer in the range [min;max] (both inclusive)
    */
   public static int randomInt(int min, int max) {
-    return (int) (min + random.nextFloat() * ((max + 1)- min));
+    return (int) (min + random.nextFloat() * ((max + 1) - min));
   }
-  
 }

@@ -11,7 +11,6 @@ import engine.math.MathUtils;
 import pack.algorithms.components.ConstraintsChecker;
 import pack.algorithms.components.MixingPercentages;
 import pack.algorithms.components.ModuleAllocator;
-import pack.algorithms.components.MoveFinder;
 import pack.algorithms.components.RandomIndexSelector;
 import pack.algorithms.components.ReservoirManager;
 import pack.algorithms.components.SubstanceToReservoirAssigner;
@@ -36,7 +35,12 @@ public class DropletAwareGreedyRouter implements Router {
   private List<Operation> readyOperations;
   private List<Operation> runningOperations;
 
-  private List<Droplet> runningDroplets;
+  // Droplet lifecycle: (reshapingDroplets) -> movingDroplets -> retiredDroplets
+
+  private List<Droplet> runningDroplets;  // all the droplets currently on the array: operationalDrivenDroplets + reshapingDroplets
+  private List<Droplet> operationalDrivenDroplets;
+  private List<Droplet> reshapingDroplets;
+  
   private List<Droplet> retiredDroplets;
 
   private Map<Integer, OperationExtra> operationIdToExtra;
@@ -65,7 +69,7 @@ public class DropletAwareGreedyRouter implements Router {
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {
     checker = new ConstraintsChecker();
     indexSelector = new RandomIndexSelector();
-    moveFinder = new MoveFinder(checker);
+    moveFinder = new MultiCellMoveFinder(checker);
 
     moduleAllocator = new ModuleAllocator(array.catalog);
 
@@ -102,6 +106,8 @@ public class DropletAwareGreedyRouter implements Router {
 
     runningDroplets = new ArrayList<>();
     retiredDroplets = new ArrayList<>();
+    operationalDrivenDroplets = new ArrayList<>();
+    reshapingDroplets = new ArrayList<>();
 
     List<Operation> dispenseOperations = assay.getOperations(OperationType.dispense);
     readyOperations.addAll(dispenseOperations);
@@ -233,7 +239,7 @@ public class DropletAwareGreedyRouter implements Router {
           Module dispenser = extra.module;
           if (extra.currentDurationInTimesteps >= dispenser.duration) {
             retire(droplet);
-            Droplet forwarded = createForwardedDroplet(Move.None, droplet.units, droplet.area); // @TODO: move out of spawn.
+            Droplet forwarded = createForwardedDroplet(Move.None, droplet.units, droplet.area);
             
             moduleAllocator.free(dispenser);
             
@@ -504,7 +510,6 @@ public class DropletAwareGreedyRouter implements Router {
     RoutingResult result = new RoutingResult();
     result.completed = !earlyTerminated;
     result.droplets.addAll(retiredDroplets);
-    result.reservoirs.addAll(reservoirManager.getReservoirs());
     result.executionTime = timestamp;
     
     List<Module> modulePlacements = moduleAllocator.getModules();
@@ -522,7 +527,12 @@ public class DropletAwareGreedyRouter implements Router {
   }
 
   private void retire(Droplet droplet) {
+    Assert.that(operationalDrivenDroplets.contains(droplet));
+    Assert.that(runningDroplets.contains(droplet));
+    
+    operationalDrivenDroplets.remove(droplet);
     runningDroplets.remove(droplet);
+
     retiredDroplets.add(droplet);
   }
 
@@ -692,6 +702,8 @@ public class DropletAwareGreedyRouter implements Router {
     }
     
     runningDroplets.add(droplet);
+    operationalDrivenDroplets.add(droplet); // @todo: replace with reshaping
+    //reshapingDroplets.add(droplet);
     
     return droplet;
   }
@@ -726,6 +738,9 @@ public class DropletAwareGreedyRouter implements Router {
     }
     
     runningDroplets.add(droplet);
+    operationalDrivenDroplets.add(droplet); // @todo: replace with reshaping
+    //reshapingDroplets.add(droplet);
+   
     
     return droplet;
   }
@@ -743,6 +758,7 @@ public class DropletAwareGreedyRouter implements Router {
     droplet.operation = operation;
 
     runningDroplets.add(droplet);
+    operationalDrivenDroplets.add(droplet);
 
     operation.manipulating[0] = droplet;
   }
@@ -837,13 +853,15 @@ public class DropletAwareGreedyRouter implements Router {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
     
     Point at = droplet.getCenterPosition();
-    
     Point to = new Point();
+    
+    int mcx = module.position.x + module.width / 2;
+    int mcy = module.position.y + module.height/ 2;
 
     for (Move move : validMoves) {
       to.set(at).add(move.x, move.y);
       
-      float distance = MathUtils.distanceToRectangle(to.x, to.y, module.position.x, module.position.y, module.width, module.height);
+      float distance = MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
       if (distance < bestMoveDistance) {
         bestMoveDistance = distance;
         bestMove = move;
