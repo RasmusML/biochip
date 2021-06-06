@@ -32,7 +32,7 @@ public class PlatformInterface {
   }
   
   public void connect() {
-    String port = null;
+    String port = null; // @TODO
     transmitter.open(port);
   }
   

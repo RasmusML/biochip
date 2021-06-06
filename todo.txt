@@ -2,10 +2,11 @@
 
 use the reshape algorithm (greedy router)
 
-fix constraintschecker on merge, it is outdated?
+fix constraintschecker on merge, it is outdated? fix droplet not merging, droplet 1 goes into merge distance the other does not commit, due to the random move selection
 
-waste operation (variable droplet size)            
-
+waste operation (variable droplet size)
+            
+kig mere på deadlock (prevention)
 greedy router change probabilities on deadlock (droplet moving to module can deadlock atm, if another modules blocks, because the droplet selects the best move, aka. Move.None, adding probabilities will fix this deadlock)
 probabilities for all moves (greedy router) (also move to module operation)
 
@@ -15,3 +16,6 @@ add droplet sizes on edges (graphviz)
 
 // @TODO: build verboseBioAssay from bioAssay (with merge, move etc...)
 - Create an update Graphviz, when the routing is (how long does each operation take, or start and stop time for operation)
+
+
+husk javadocs!

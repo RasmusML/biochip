@@ -2,6 +2,7 @@ package pack.gui;
 
 import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.util.List;
 
@@ -131,7 +132,7 @@ public class App extends ApplicationAdapter {
 
     assay = new DisposeAssay1();
     array = new DisposeArray1();
-
+    
     assay = new BlockingDispenserTestBioAssay();
     array = new BlockingDispenserTestBioArray();
     
