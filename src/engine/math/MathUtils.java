@@ -13,11 +13,11 @@ public class MathUtils {
 	}
 
 	public static int ceil(float value) {
-		return (int) Math.round(value + 1 / 2 - Double.MIN_VALUE);
+	  return (int) ((value % 1 == 0) ? value : value + 1);
 	}
 	
 	public static int floor(float value) {
-		return (int) Math.round(value - 1 / 2 - Double.MIN_VALUE);
+		return (int) value;
 	}
 	
 	public static int wrap(int value, int max) {
@@ -40,11 +40,5 @@ public class MathUtils {
   
   public static float distance(float dx, float dy) {
     return (float) Math.sqrt(dx * dx + dy * dy);
-  }
-  
-  public static float distanceToRectangle(float px, float py, float x, float y, float width, float height) {
-    float dx = Math.max(px - x, x + width - px);
-    float dy = Math.max(py - y, y + height - py);
-    return distance(dx, dy);
   }
 }

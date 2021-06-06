@@ -835,13 +835,15 @@ public class DropletAwareGreedyRouter implements Router {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
     
     Point at = droplet.getCenterPosition();
-    
     Point to = new Point();
+    
+    int mcx = module.position.x + module.width / 2;
+    int mcy = module.position.y + module.height/ 2;
 
     for (Move move : validMoves) {
       to.set(at).add(move.x, move.y);
       
-      float distance = MathUtils.distanceToRectangle(to.x, to.y, module.position.x, module.position.y, module.width, module.height);
+      float distance = MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
       if (distance < bestMoveDistance) {
         bestMoveDistance = distance;
         bestMove = move;
