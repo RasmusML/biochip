@@ -25,7 +25,7 @@ public class MultiCellMoveFinder extends MoveFinder {
   @Override
   public List<Move> getValidMoves(DropletUnit dropletUnit, Droplet droplet, Module targetModule, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
     List<Move> validMoves = new ArrayList<>();
-    int i = 11;
+
     for (Move move : Move.values()) {
       if (!isWithinArray(move, dropletUnit, timestamp, array)) continue;
       if (isWithinModule(move, dropletUnit, targetModule, modules, timestamp)) continue;

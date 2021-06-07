@@ -22,6 +22,9 @@ public class DropletReshaper {
   private List<DropletReshapeTask> tasks;
   private DropletReshapeTask task;
   
+  private DropletReshapingResult result;
+  private Point offset;
+  
   private Map<DropletUnit, Point> pointToTarget;
   private Map<DropletUnit, Integer> pointToMinOutsidePointDistance;
   
@@ -33,6 +36,10 @@ public class DropletReshaper {
     this.array = array;
     
     targetShape = new int[array.width][array.height];
+    
+    result = new DropletReshapingResult();
+    
+    offset = new Point();
 
     tasks = new ArrayList<>();
     uidGenerator = new DisposableUidGenerator();
@@ -68,23 +75,23 @@ public class DropletReshaper {
     };
   }
   
-  public void reshape(Droplet droplet, List<Point> shape) {
+  public void reshape(Droplet droplet, DropletShape dropletShape) {
     int id = uidGenerator.getId();
 
     DropletReshapeTask task = new DropletReshapeTask();
     task.droplet = droplet;
-    task.shape = shape;
+    task.dropletShape = dropletShape;
     task.id = id;
     
     tasks.add(task);
-    
-    for (Point point : shape) {
-      targetShape[point.x][point.y] = id;
-    }
   }
   
-  public boolean step(Droplet droplet, List<Droplet> droplets, List<Module> modules, int timestamp) {
+  public DropletReshapingResult step(Droplet droplet, List<Droplet> droplets, List<Module> modules, int timestamp) {
     this.task = getTask(droplet);
+    
+    if (task.dropletShape.useRelativePosition) updateOffset();
+
+    fillTaskInTargetShape();
     
     pointToTarget = new HashMap<>();
     pointToMinOutsidePointDistance = new HashMap<>();
@@ -97,7 +104,9 @@ public class DropletReshaper {
       int minDistance = Integer.MAX_VALUE;
       Point closestTarget = null;
       
-      for (Point target : task.shape) {
+      for (Point point : task.dropletShape.shape) {
+        Point target = point.copy().add(offset);
+        
         int distance = (int) MathUtils.getManhattanDistance(at.x, at.y, target.x, target.y);
         
         if (distance < minDistance) {
@@ -124,7 +133,6 @@ public class DropletReshaper {
       }
     }
     
-    int i = 1;
     boolean anyMove = true;
     while (anyMove) {
       
@@ -197,19 +205,38 @@ public class DropletReshaper {
     
     boolean doneReshaping = doneReshaping();
     if (doneReshaping) {
-      clearTaskInTargetShape();
-
       uidGenerator.dispose(task.id);
       tasks.remove(task);
     }
+
+    result.done = doneReshaping;
+    result.progress = anyProgess(timestamp);
+
+    clearTaskInTargetShape();
     
-    return doneReshaping;
+    return result;
     
   }
   
+  private boolean anyProgess(int timestamp) {
+    for (DropletUnit unit : task.droplet.units) {
+      Point at = unit.route.getPosition(timestamp - 1);
+      Point to = unit.route.getPosition(timestamp);
+      if (at.x != to.x || at.y != to.y) return true;
+    }
+    
+    return false;
+  }
+  
   private void clearTaskInTargetShape() {
-    for (Point at : task.shape) {
-      targetShape[at.x][at.y] = 0;
+    for (Point point : task.dropletShape.shape) {
+      targetShape[point.x + offset.x][point.y + offset.y] = 0;
+    }
+  }
+  
+  private void fillTaskInTargetShape() {
+    for (Point point : task.dropletShape.shape) {
+      targetShape[point.x + offset.x][point.y + offset.y] = task.id;
     }
   }
 
@@ -235,8 +262,6 @@ public class DropletReshaper {
     Point at = unit.route.getPosition();
     Point to = new Point();
     
-    int i = 1;
-    
     List<Move> moves = moveFinder.getValidMoves(unit, droplet, timestamp, droplets, modules, array);
     for (Move move : moves) {
       if (move == Move.None) continue;
@@ -251,6 +276,15 @@ public class DropletReshaper {
     }
     
     return null;
+  }
+  
+  private void updateOffset() {
+    Point bottomLeft = task.droplet.getBottomLeftPosition();
+
+    int offsetX = (int) MathUtils.clamp(0, array.width - 1 - task.dropletShape.width, bottomLeft.x);
+    int offsetY = (int) MathUtils.clamp(0, array.height - 1 - task.dropletShape.height, bottomLeft.y);
+    
+    offset.set(offsetX, offsetY);
   }
 
   private Move getNonFillingMove(DropletUnit unit, Droplet droplet, List<Droplet> droplets, List<Module> modules, int timestamp) {
@@ -282,7 +316,7 @@ public class DropletReshaper {
   static private class DropletReshapeTask {
     public int id;
     public Droplet droplet;
-    public List<Point> shape;
+    public DropletShape dropletShape;
   }
 }
 

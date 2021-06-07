@@ -451,13 +451,21 @@ public class DropletSizeAwareGreedyRouter implements Router {
         Assert.that(operation.forwarding.length == 1);
         Droplet droplet = operation.forwarding[0];
         
-        boolean done = reshaper.step(droplet, runningDroplets, moduleAllocator.getInUseOrAlwaysLockedModules(), timestamp);
-        if (done) {
+        DropletReshapingResult result = reshaper.step(droplet, runningDroplets, moduleAllocator.getInUseOrAlwaysLockedModules(), timestamp);
+        if (result.done) {
           OperationExtra extra = operationIdToExtra.get(operation.id);
           extra.completelyDone = true;
 
           it.remove();
           completedOperations.add(operation);
+        } else {
+          
+          if (!result.progress) {
+            // undo move, and detour if no progress has been made.
+            for (DropletUnit unit : droplet.units) {
+              unit.route.path.remove(unit.route.path.size() - 1);
+            }
+          }
         }
       }
        
@@ -491,7 +499,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
               reshapeOperations.add(operation);
               
               for (Droplet droplet : operation.forwarding) {
-                List<Point> shape = shapeSelector.select(droplet, array.width, array.height);
+                DropletShape shape = shapeSelector.select(droplet, array.width, array.height);
                 reshaper.reshape(droplet, shape);
               }
               

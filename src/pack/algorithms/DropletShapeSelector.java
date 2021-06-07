@@ -8,7 +8,7 @@ import pack.helpers.Assert;
 
 public class DropletShapeSelector {
   
-  public List<Point> select(Droplet droplet, int assayWidth, int assayHeight) {
+  public DropletShape select(Droplet droplet, int arrayWidth, int arrayHeight) {
     int cellsOccupied = droplet.units.size();
     
     float squareSides = (float) Math.sqrt(cellsOccupied);
@@ -19,21 +19,17 @@ public class DropletShapeSelector {
     Assert.that(side1 * side2 >= cellsOccupied);
     
     List<Point> shape = fillShape(side1, side2, droplet);
-    offsetShape(shape, side1, side2, assayWidth, assayHeight, droplet);
     
-    return shape;
-  }
-
-  private void offsetShape(List<Point> shape, int width, int height, int assayWidth, int assayHeight, Droplet droplet) {
-    Point bottomLeft = droplet.getBottomLeftPosition();
-
-    int offsetX = (int) MathUtils.clamp(0, assayWidth - 1 - width, bottomLeft.x);
-    int offsetY = (int) MathUtils.clamp(0, assayHeight - 1 - height, bottomLeft.y);
+    DropletShape dropletShape = new DropletShape();
+    dropletShape.shape = shape;
+    dropletShape.useRelativePosition = true;
+    dropletShape.width = side1;
+    dropletShape.height = side2;
     
-    for (Point at : shape) {
-      at.x += offsetX;
-      at.y += offsetY;
-    }
+    // vv- is global, but we will use the relative position for now in case reshaping droplets detour.
+    //offsetShape(shape, side1, side2, arrayWidth, arrayHeight, droplet);
+    
+    return dropletShape;
   }
 
   private List<Point> fillShape(int side1, int side2, Droplet droplet) {
@@ -54,4 +50,17 @@ public class DropletShapeSelector {
     
     throw new IllegalStateException("broken!");
   }
+
+  private void offsetShape(List<Point> shape, int width, int height, int arrayWidth, int arrayHeight, Droplet droplet) {
+    Point bottomLeft = droplet.getBottomLeftPosition();
+    
+    int offsetX = (int) MathUtils.clamp(0, arrayWidth - 1 - width, bottomLeft.x);
+    int offsetY = (int) MathUtils.clamp(0, arrayHeight - 1 - height, bottomLeft.y);
+    
+    for (Point at : shape) {
+      at.x += offsetX;
+      at.y += offsetY;
+    }
+  }
+  
 }

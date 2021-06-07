@@ -139,11 +139,11 @@ public class App extends ApplicationAdapter {
     assay = new CrowdedModuleBioAssay();
     array = new CrowdedModuleBioArray();
 
-    assay = new PCRMixingTreeAssay();
-    array = new PCRMixingTreeArray();
-
     assay = new PlatformAssay2();
     array = new PlatformArray2();
+
+    assay = new PCRMixingTreeAssay();
+    array = new PCRMixingTreeArray();
 
     selected = new Selected();
     
