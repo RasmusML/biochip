@@ -1,15 +1,9 @@
 // @TODO: make sure the shape fits into the module. (get width, height, otherwise) if this does not help, terminate.
 
-use the reshape algorithm (greedy router)
-
-<<<<<<< HEAD
-fix constraintschecker on merge, it is outdated? fix droplet not merging, droplet 1 goes into merge distance the other does not commit, due to the random move selection
-
 waste operation (variable droplet size)
             
-kig mere på deadlock (prevention)
-=======
->>>>>>> 0ee2ea877fc7695697969daf0722d93dacdad541
+kig mere pï¿½ deadlock (prevention)
+
 greedy router change probabilities on deadlock (droplet moving to module can deadlock atm, if another modules blocks, because the droplet selects the best move, aka. Move.None, adding probabilities will fix this deadlock)
 probabilities for all moves (greedy router) (also move to module operation)
 
@@ -19,8 +13,6 @@ prepare reshape test on the physical platform + behavoir of merge (droplet-aware
 non-uniform split "simulator"
 
 run test suite with different seeds to ensure we find a solution + get better estimates for execution times.
-
-===================================================
 
 waste operation (variable droplet size)            
 

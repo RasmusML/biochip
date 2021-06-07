@@ -635,8 +635,9 @@ public class GreedyRouter implements Router {
   }
 
   private Move getDetourMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
-    List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
     
+    
+List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
     // we could be within multiple modules; a dispenser within a heater or a sensor within a heater.
     List<Module> inside = new ArrayList<>();  
     for (Module other : inUseModules) {
@@ -652,25 +653,58 @@ public class GreedyRouter implements Router {
     
     Assert.that(inside.size() > 0);
     
-    // @cleanup: a droplet may within multiple droplets, movefinder does not support selecting multiple modules to ignore. so we just remove the modules the droplet is inside from the modules the movefinder checks against. @TODO: change movefinder so this is not necessary.
+    // @cleanup: a droplet may be within multiple droplets, movefinder does not support selecting multiple modules to ignore. so we just remove the modules the droplet is inside from the modules the movefinder checks against. @TODO: change movefinder so this is not necessary.
     inUseModules.removeAll(inside);
 
+    List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, inUseModules, array);
+    if (validMoves.size() == 0) return null;
+    
+    Collections.shuffle(validMoves, RandomUtil.get());
+    
+    Point at = droplet.getCenterPosition();
+    Module module = inside.get(0);
+    
+    float mcx = module.position.x + module.width / 2f;
+    float mcy = module.position.y + module.height / 2f;
+    
+    Point to = new Point();
+
+    validMoves.sort((move1, move2) -> {
+      to.set(at).add(move1.x, move1.y);
+      int distance1 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
+
+      to.set(at).add(move2.x, move2.y);
+      int distance2 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
+
+      return distance1 - distance2;
+    });
+
+    float[] allWeights = { 50f, 33.3f, 16.6f };
+
+    int candidateSize = (int) MathUtils.clamp(1, 3, validMoves.size());
+
+    float[] weights = new float[candidateSize];
+    System.arraycopy(allWeights, 0, weights, 0, candidateSize);
+
+    int bestMoveIndex = indexSelector.select(weights);
+
+    return validMoves.get(bestMoveIndex);
+    
+    /*
     Move bestMove = null;
     float maxDistance = -1;
     
     Point to = new Point();
     
-    // @TODO: probabilistic moves, it possible for deadlocks @create test which does deadlock!
-    
+    float mcx = module.position.x + module.width / 2f;
+    float mcy = module.position.y + module.height / 2f;
+      
     Point at = droplet.getCenterPosition();
     Module module = inside.get(0);  // just select 1 of the modules, which droplet is within to remove away from. When the droplet is not within this module, do the same thing for the next module till the droplet is not within any module.
     
     List<Move> moves = moveFinder.getValidMoves(droplet, timestamp, droplets, inUseModules, array);
     for (Move move : moves) {
       to.set(at).add(move.x, move.y);
-      
-      float mcx = module.position.x + module.width / 2f;
-      float mcy = module.position.y + module.height / 2f;
       
       float distance = MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
       if (distance > maxDistance) {
@@ -680,6 +714,7 @@ public class GreedyRouter implements Router {
     }
     
     return bestMove;
+     */
   }
 
   private Droplet createDroplet(Point position, float area) {

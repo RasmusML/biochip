@@ -43,8 +43,8 @@ import pack.testbench.tests.ModuleBioArray4;
 import pack.testbench.tests.ModuleBioAssay4;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
-import pack.testbench.tests.PlatformArray2;
-import pack.testbench.tests.PlatformAssay2;
+import pack.testbench.tests.PlatformArray4;
+import pack.testbench.tests.PlatformAssay4;
 import pack.testbench.tests.Test3BioArray;
 import pack.testbench.tests.Test3BioAssay;
 import pack.testbench.tests.functionality.DisposeArray1;
@@ -139,11 +139,11 @@ public class App extends ApplicationAdapter {
     assay = new CrowdedModuleBioAssay();
     array = new CrowdedModuleBioArray();
 
-    assay = new PlatformAssay2();
-    array = new PlatformArray2();
-
     assay = new PCRMixingTreeAssay();
     array = new PCRMixingTreeArray();
+
+    assay = new PlatformAssay4();
+    array = new PlatformArray4();
 
     selected = new Selected();
     

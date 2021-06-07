@@ -89,7 +89,7 @@ public class DropletReshaper {
   public DropletReshapingResult step(Droplet droplet, List<Droplet> droplets, List<Module> modules, int timestamp) {
     this.task = getTask(droplet);
     
-    if (task.dropletShape.useRelativePosition) updateOffset();
+    updateOffset();
 
     fillTaskInTargetShape();
     

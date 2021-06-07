@@ -22,12 +22,8 @@ public class DropletShapeSelector {
     
     DropletShape dropletShape = new DropletShape();
     dropletShape.shape = shape;
-    dropletShape.useRelativePosition = true;
     dropletShape.width = side1;
     dropletShape.height = side2;
-    
-    // vv- is global, but we will use the relative position for now in case reshaping droplets detour.
-    //offsetShape(shape, side1, side2, arrayWidth, arrayHeight, droplet);
     
     return dropletShape;
   }
@@ -50,17 +46,4 @@ public class DropletShapeSelector {
     
     throw new IllegalStateException("broken!");
   }
-
-  private void offsetShape(List<Point> shape, int width, int height, int arrayWidth, int arrayHeight, Droplet droplet) {
-    Point bottomLeft = droplet.getBottomLeftPosition();
-    
-    int offsetX = (int) MathUtils.clamp(0, arrayWidth - 1 - width, bottomLeft.x);
-    int offsetY = (int) MathUtils.clamp(0, arrayHeight - 1 - height, bottomLeft.y);
-    
-    for (Point at : shape) {
-      at.x += offsetX;
-      at.y += offsetY;
-    }
-  }
-  
 }
