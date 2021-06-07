@@ -195,12 +195,12 @@ public class GreedyRouter implements Router {
             stalled.manipulating[i] = forwardedDroplet;
           }
           
-          // @TOOD: move
           if (stalled.name.equals(OperationType.heating))  {
             float temperature = (float) stalled.attributes.get(Tags.temperature);
-            stalledExtra.module = moduleAllocator.allocate(OperationType.heating, new Tag(Tags.temperature, temperature));
             
-            // @TODO: make sure the shape fits into the module. (get width, height, otherwise) if this does not help, terminate.
+            Droplet droplet = stalled.manipulating[0];
+            BoundingBox boundingBox = droplet.getBoundingBox();
+            stalledExtra.module = moduleAllocator.allocate(OperationType.heating, boundingBox.width, boundingBox.height, new Tag(Tags.temperature, temperature));
             
             /*
             Droplet droplet = stalled.manipulating[0];
@@ -610,13 +610,9 @@ public class GreedyRouter implements Router {
 
     validMoves.sort((move1, move2) -> {
       next.set(at).add(move1.x, move1.y);
-      // int distance1 = (int) MathUtils.distance(next.x - target.x, next.y -
-      // target.y);
       int distance1 = (int) MathUtils.getManhattanDistance(next.x, next.y, target.x, target.y);
 
       next.set(at).add(move2.x, move2.y);
-      // int distance2 = (int) MathUtils.distance(next.x - target.x, next.y -
-      // target.y);
       int distance2 = (int) MathUtils.getManhattanDistance(next.x, next.y, target.x, target.y);
 
       return distance1 - distance2;
@@ -800,13 +796,9 @@ List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
 
     validMoves.sort((move1, move2) -> {
       next.set(at).add(move1.x, move1.y);
-      // int distance1 = (int) MathUtils.distance(next.x - target.x, next.y -
-      // target.y);
       int distance1 = (int) MathUtils.getManhattanDistance(next.x, next.y, target.x, target.y);
 
       next.set(at).add(move2.x, move2.y);
-      // int distance2 = (int) MathUtils.distance(next.x - target.x, next.y -
-      // target.y);
       int distance2 = (int) MathUtils.getManhattanDistance(next.x, next.y, target.x, target.y);
 
       return distance1 - distance2;

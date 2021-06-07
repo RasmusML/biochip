@@ -7,6 +7,8 @@ public class Droplet {
   
   public int id;
   public float area;
+
+  public BoundingBox boundingBox;
   
   public List<DropletUnit> units;
   public Operation operation;
@@ -15,6 +17,7 @@ public class Droplet {
   
   public Droplet() {
     units = new ArrayList<>();
+    boundingBox = new BoundingBox();
   }
   
   // we assume for now that all no other droplet unit of another droplet move in between droplet units of the same droplet.
@@ -68,5 +71,27 @@ public class Droplet {
     }
 
     return new Point(x, y);
+  }
+
+  public BoundingBox getBoundingBox() {
+    int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+    int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+    
+    for (DropletUnit unit : units) {
+      Point at = unit.route.getPosition();
+      
+      if (at.x < minX) minX = at.x;
+      if (at.y < minY) minY = at.y;
+      if (at.x > maxX) maxX = at.x;
+      if (at.y > maxY) maxY = at.y;
+    }
+
+    int width = maxX - minX;
+    int height = maxY - minY;
+    
+    boundingBox.width = width;
+    boundingBox.height = height;
+    
+    return boundingBox;
   }
 }

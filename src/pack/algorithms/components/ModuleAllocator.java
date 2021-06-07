@@ -36,6 +36,16 @@ public class ModuleAllocator {
 
     return module;
   }
+  
+  public Module allocate(String operation, int minWidth, int minHeight, Tag... tags) {
+    List<Module> modules = getModulesOfOperationType(operation, minWidth, minHeight, tags);
+    Assert.that(modules.size() > 0);
+
+    Module module = modules.get(0); // @TODO: better policy
+    allocate(module);
+
+    return module;
+  }
 
   public void allocate(Module module) {
     ModuleAllocation allocation = moduleToModuleAllocation.get(module);
@@ -65,16 +75,36 @@ public class ModuleAllocator {
     return allocation.count > 0;
   }
 
-  public List<Module> getModulesOfOperationType(String operation, Tag... tags) {
+  public List<Module> getModulesOfOperationType(String operation, Tag... attributes) {
     List<Module> matches = new ArrayList<>();
 
     outer: for (Module module : catalog.modules) {
       if (module.operation.equals(operation)) {
 
-        for (Tag tag : tags) {
-          Object value = module.attributes.get(tag.key);
+        for (Tag attribute : attributes) {
+          Object value = module.attributes.get(attribute.key);
           if (value == null) continue outer;
-          if (!value.equals(tag.value)) continue outer;
+          if (!value.equals(attribute.value)) continue outer;
+        }
+        
+        matches.add(module);
+      }
+    }
+    
+    return matches;
+  }
+  
+  public List<Module> getModulesOfOperationType(String operation, int minWidth, int minHeight, Tag... attributes) {
+    List<Module> matches = new ArrayList<>();
+
+    outer: for (Module module : catalog.modules) {
+      if (module.width < minWidth || module.height < minHeight) continue;
+      
+      if (module.operation.equals(operation)) {
+        for (Tag attribute : attributes) {
+          Object value = module.attributes.get(attribute.key);
+          if (value == null) continue outer;
+          if (!value.equals(attribute.value)) continue outer;
         }
         
         matches.add(module);

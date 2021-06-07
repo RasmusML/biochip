@@ -202,12 +202,12 @@ public class DropletSizeAwareGreedyRouter implements Router {
             stalled.manipulating[i] = forwardedDroplet;
           }
           
-          // @TOOD: move
           if (stalled.name.equals(OperationType.heating))  {
             float temperature = (float) stalled.attributes.get(Tags.temperature);
-            stalledExtra.module = moduleAllocator.allocate(OperationType.heating, new Tag(Tags.temperature, temperature));
             
-            // @TODO: make sure the shape fits into the module. (get width, height, otherwise) if this does not help, terminate.
+            Droplet droplet = stalled.manipulating[0];
+            BoundingBox boundingBox = droplet.getBoundingBox();
+            stalledExtra.module = moduleAllocator.allocate(OperationType.heating, boundingBox.width, boundingBox.height, new Tag(Tags.temperature, temperature));
             
             /*
             Droplet droplet = stalled.manipulating[0];

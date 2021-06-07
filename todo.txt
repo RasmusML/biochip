@@ -1,5 +1,3 @@
-// @TODO: make sure the shape fits into the module. (get width, height, otherwise) if this does not help, terminate.
-
 waste operation (variable droplet size)
             
 kig mere p� deadlock (prevention)
