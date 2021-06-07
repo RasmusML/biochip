@@ -198,7 +198,7 @@ public class DropletReshaper {
         continue;
       }
       
-      Move move = getNonFillingMove(unit, droplet, droplets, new ArrayList<>(), timestamp); // @cleanup use modules against
+      Move move = getNonFillingMove(unit, droplet, droplets, new ArrayList<>(), timestamp);
       Point to = at.copy().add(move.x, move.y);
       unit.route.path.add(to);
     }

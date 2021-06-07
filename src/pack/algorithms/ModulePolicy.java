@@ -1,7 +1,7 @@
 package pack.algorithms;
 
 public enum ModulePolicy {
-  alwaysOpen, // @TODO
+  alwaysOpen,
   lockedOnOperation,
   alwaysLocked;
 }
