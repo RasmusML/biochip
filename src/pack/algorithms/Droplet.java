@@ -86,8 +86,8 @@ public class Droplet {
       if (at.y > maxY) maxY = at.y;
     }
 
-    int width = maxX - minX;
-    int height = maxY - minY;
+    int width = maxX - minX + 1;
+    int height = maxY - minY + 1;
     
     boundingBox.width = width;
     boundingBox.height = height;

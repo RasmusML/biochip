@@ -728,7 +728,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
       to.set(at).add(move2.x, move2.y);
       int distance2 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
 
-      return distance1 - distance2;
+      return -(distance1 - distance2);
     });
 
     float[] allWeights = { 50f, 33.3f, 16.6f };

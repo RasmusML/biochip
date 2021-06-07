@@ -60,7 +60,7 @@ public class ModuleAllocator {
 
   public List<Module> getInUseOrAlwaysLockedModules() {
     List<Module> inUse = new ArrayList<>();
-
+    int i = 1;
     for (Module module : catalog.modules) {
       if (module.policy == ModulePolicy.alwaysLocked || (module.policy == ModulePolicy.lockedOnOperation && isInUse(module))) {
         inUse.add(module);

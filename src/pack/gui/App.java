@@ -20,6 +20,7 @@ import pack.algorithms.Droplet;
 import pack.algorithms.DropletSizeAwareGreedyRouter;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.ElectrodeActivations;
+import pack.algorithms.GreedyRouter;
 import pack.algorithms.Module;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
@@ -39,8 +40,8 @@ import pack.testbench.tests.BlockingDispenserTestBioArray;
 import pack.testbench.tests.BlockingDispenserTestBioAssay;
 import pack.testbench.tests.CrowdedModuleBioArray;
 import pack.testbench.tests.CrowdedModuleBioAssay;
-import pack.testbench.tests.ModuleBioArray4;
-import pack.testbench.tests.ModuleBioAssay4;
+import pack.testbench.tests.ModuleBioArray3;
+import pack.testbench.tests.ModuleBioAssay3;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
 import pack.testbench.tests.PlatformArray4;
@@ -130,8 +131,6 @@ public class App extends ApplicationAdapter {
     assay = new BlockingDispenserTestBioAssay();
     array = new BlockingDispenserTestBioArray();
     
-    assay = new ModuleBioAssay4();
-    array = new ModuleBioArray4();
 
     assay = new Test3BioAssay();
     array = new Test3BioArray();
@@ -145,6 +144,9 @@ public class App extends ApplicationAdapter {
     assay = new PlatformAssay4();
     array = new PlatformArray4();
 
+    assay = new ModuleBioAssay3();
+    array = new ModuleBioArray3();
+
     selected = new Selected();
     
     timeline = new Timeline();
@@ -157,7 +159,7 @@ public class App extends ApplicationAdapter {
     timeline.offsetX = viewport.getVirtualWidth() / 5f;
     
     Router router = new DropletSizeAwareGreedyRouter();
-		//router = new GreedyRouter();
+		router = new GreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
 		ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator();

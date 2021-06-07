@@ -375,6 +375,7 @@ public class GreedyRouter implements Router {
           Droplet droplet = operation.manipulating[0];
           Module module = extra.module;
           
+          int k = 1;
           boolean dropletInside = true;
           for (DropletUnit unit : droplet.units) {
             Point at = unit.route.getPosition(timestamp - 1);
@@ -469,6 +470,10 @@ public class GreedyRouter implements Router {
       
       iteration += 1;
       timestamp += 1;
+      
+      if (iteration == 300) {
+        int k = 44;
+      }
       
       // early terminate.
       if (iteration > maxIterationsPerOperation) {
@@ -630,10 +635,8 @@ public class GreedyRouter implements Router {
     return validMoves.get(bestMoveIndex);
   }
 
-  private Move getDetourMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
-    
-    
-List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
+  private Move getDetourMove(Droplet droplet, List<Droplet> droplets, BioArray array) {    
+    List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
     // we could be within multiple modules; a dispenser within a heater or a sensor within a heater.
     List<Module> inside = new ArrayList<>();  
     for (Module other : inUseModules) {
@@ -653,8 +656,8 @@ List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
     inUseModules.removeAll(inside);
 
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, inUseModules, array);
-    if (validMoves.size() == 0) return null;
     
+    if (validMoves.size() == 0) return null;
     Collections.shuffle(validMoves, RandomUtil.get());
     
     Point at = droplet.getCenterPosition();
@@ -672,7 +675,7 @@ List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
       to.set(at).add(move2.x, move2.y);
       int distance2 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
 
-      return distance1 - distance2;
+      return -(distance1 - distance2);
     });
 
     float[] allWeights = { 50f, 33.3f, 16.6f };
@@ -821,8 +824,14 @@ List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
  // move the center of the droplet to the center of the module.
     List<Move> validMoves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
-    
+
     /*
+    Point at = droplet.getCenterPosition();
+    Point to = new Point();
+    
+    int mcx = module.position.x + module.width / 2;
+    int mcy = module.position.y + module.height / 2;
+    
     Move bestMove = null;
     float bestMoveDistance = Float.MAX_VALUE;
 
@@ -837,7 +846,7 @@ List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
     }
 
     return bestMove;
-     */
+    */
 
     Collections.shuffle(validMoves, RandomUtil.get());
     
@@ -845,7 +854,7 @@ List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
     Point to = new Point();
     
     int mcx = module.position.x + module.width / 2;
-    int mcy = module.position.y + module.height/ 2;
+    int mcy = module.position.y + module.height / 2;
     
     validMoves.sort((move1, move2) -> {
       to.set(at).add(move1.x, move1.y);
