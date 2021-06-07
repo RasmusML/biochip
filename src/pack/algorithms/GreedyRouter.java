@@ -375,7 +375,6 @@ public class GreedyRouter implements Router {
           Droplet droplet = operation.manipulating[0];
           Module module = extra.module;
           
-          int k = 1;
           boolean dropletInside = true;
           for (DropletUnit unit : droplet.units) {
             Point at = unit.route.getPosition(timestamp - 1);
@@ -470,10 +469,6 @@ public class GreedyRouter implements Router {
       
       iteration += 1;
       timestamp += 1;
-      
-      if (iteration == 300) {
-        int k = 44;
-      }
       
       // early terminate.
       if (iteration > maxIterationsPerOperation) {
@@ -656,8 +651,6 @@ public class GreedyRouter implements Router {
     inUseModules.removeAll(inside);
 
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, inUseModules, array);
-    
-    if (validMoves.size() == 0) return null;
     Collections.shuffle(validMoves, RandomUtil.get());
     
     Point at = droplet.getCenterPosition();
@@ -824,6 +817,8 @@ public class GreedyRouter implements Router {
  // move the center of the droplet to the center of the module.
     List<Move> validMoves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
+    
+    Collections.shuffle(validMoves, RandomUtil.get());
 
     /*
     Point at = droplet.getCenterPosition();
@@ -848,35 +843,56 @@ public class GreedyRouter implements Router {
     return bestMove;
     */
 
-    Collections.shuffle(validMoves, RandomUtil.get());
-    
-    Point at = droplet.getCenterPosition();
     Point to = new Point();
     
-    int mcx = module.position.x + module.width / 2;
-    int mcy = module.position.y + module.height / 2;
+    {
+      Point at = droplet.getCenterPosition();
+      
+      int mcx = module.position.x + module.width / 2;
+      int mcy = module.position.y + module.height/ 2;
+      
+      validMoves.sort((move1, move2) -> {
+        to.set(at).add(move1.x, move1.y);
+        int distance1 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
+  
+        to.set(at).add(move2.x, move2.y);
+        int distance2 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
+  
+        return distance1 - distance2;
+      });
+    }
     
-    validMoves.sort((move1, move2) -> {
-      to.set(at).add(move1.x, move1.y);
-      int distance1 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
+    List<Move> selectedMoves = new ArrayList<>();
+    for (Move move : validMoves) {
+      
+      boolean dropletInside = true;
+      for (DropletUnit unit : droplet.units) {
+        Point at = unit.route.getPosition(timestamp - 1);
+        to.set(at).add(move.x, move.y);
+        
+        if (!GeometryUtil.inside(to.x, to.y, module.position.x, module.position.y, module.width, module.height)) {
+          dropletInside = false;
+          break;
+        }
+      }
 
-      to.set(at).add(move2.x, move2.y);
-      int distance2 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
-
-      return distance1 - distance2;
-    });
-
+      if (dropletInside) selectedMoves.add(move);
+    }
+    
+    if (selectedMoves.size() == 0) {
+      selectedMoves.addAll(validMoves);
+    }
     
     float[] allWeights = { 50f, 33.3f, 16.6f };
 
-    int candidateSize = (int) MathUtils.clamp(1, 3, validMoves.size());
+    int candidateSize = (int) MathUtils.clamp(1, 3, selectedMoves.size());
 
     float[] weights = new float[candidateSize];
     System.arraycopy(allWeights, 0, weights, 0, candidateSize);
 
     int bestMoveIndex = indexSelector.select(weights);
 
-    return validMoves.get(bestMoveIndex);
+    return selectedMoves.get(bestMoveIndex);
   }
   
   

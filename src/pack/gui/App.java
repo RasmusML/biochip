@@ -159,7 +159,7 @@ public class App extends ApplicationAdapter {
     timeline.offsetX = viewport.getVirtualWidth() / 5f;
     
     Router router = new DropletSizeAwareGreedyRouter();
-		router = new GreedyRouter();
+		//router = new GreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
 		ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator();
