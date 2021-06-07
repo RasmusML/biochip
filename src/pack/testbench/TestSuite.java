@@ -5,8 +5,8 @@ import java.util.List;
 
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
-import pack.algorithms.DropletAwareGreedyRouter;
-import pack.algorithms.NotDropletAwareGreedyRouter;
+import pack.algorithms.DropletSizeAwareGreedyRouter;
+import pack.algorithms.GreedyRouter;
 import pack.algorithms.Router;
 import pack.algorithms.RoutingResult;
 import pack.algorithms.components.DefaultMixingPercentages;
@@ -70,8 +70,8 @@ public class TestSuite {
     
     Logger.mode = LogMode.Silent;
 
-    register(new NotDropletAwareGreedyRouter());
-    register(new DropletAwareGreedyRouter());
+    register(new GreedyRouter());
+    register(new DropletSizeAwareGreedyRouter());
     
     registerAllTests();
   }

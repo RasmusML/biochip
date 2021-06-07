@@ -21,7 +21,7 @@ import pack.helpers.GeometryUtil;
 import pack.helpers.Logger;
 import pack.helpers.RandomUtil;
 
-public class NotDropletAwareGreedyRouter implements Router {
+public class GreedyRouter implements Router {
 
   private ConstraintsChecker checker;
   private RandomIndexSelector indexSelector;
@@ -791,17 +791,14 @@ public class NotDropletAwareGreedyRouter implements Router {
   }
   
   private Move getModuleMove(Droplet droplet, List<Droplet> droplets, Module module, BioArray array) {
+ // move the center of the droplet to the center of the module.
+    List<Move> validMoves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
+    if (validMoves.size() == 0) return null;
+    
+    /*
     Move bestMove = null;
     float bestMoveDistance = Float.MAX_VALUE;
-    
-    List<Move> validMoves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
-    DropletUnit unit = droplet.units.get(0);
-    Point at = unit.route.getPosition(timestamp - 1);
-    
-    int mcx = module.position.x + module.width / 2;
-    int mcy = module.position.y + module.height/ 2;
-    
-    Point to = new Point();
+
     for (Move move : validMoves) {
       to.set(at).add(move.x, move.y);
       
@@ -811,8 +808,39 @@ public class NotDropletAwareGreedyRouter implements Router {
         bestMove = move;
       }
     }
-    
+
     return bestMove;
+     */
+
+    Collections.shuffle(validMoves, RandomUtil.get());
+    
+    Point at = droplet.getCenterPosition();
+    Point to = new Point();
+    
+    int mcx = module.position.x + module.width / 2;
+    int mcy = module.position.y + module.height/ 2;
+    
+    validMoves.sort((move1, move2) -> {
+      to.set(at).add(move1.x, move1.y);
+      int distance1 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
+
+      to.set(at).add(move2.x, move2.y);
+      int distance2 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
+
+      return distance1 - distance2;
+    });
+
+    
+    float[] allWeights = { 50f, 33.3f, 16.6f };
+
+    int candidateSize = (int) MathUtils.clamp(1, 3, validMoves.size());
+
+    float[] weights = new float[candidateSize];
+    System.arraycopy(allWeights, 0, weights, 0, candidateSize);
+
+    int bestMoveIndex = indexSelector.select(weights);
+
+    return validMoves.get(bestMoveIndex);
   }
   
   

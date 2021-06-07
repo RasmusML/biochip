@@ -25,11 +25,11 @@ public class MultiCellMoveFinder extends MoveFinder {
   @Override
   public List<Move> getValidMoves(DropletUnit dropletUnit, Droplet droplet, Module targetModule, int timestamp, List<Droplet> droplets, List<Module> modules, BioArray array) {
     List<Move> validMoves = new ArrayList<>();
-    
+    int i = 11;
     for (Move move : Move.values()) {
       if (!isWithinArray(move, dropletUnit, timestamp, array)) continue;
       if (isWithinModule(move, dropletUnit, targetModule, modules, timestamp)) continue;
-      if (!satifiesSpacingConstraints(dropletUnit, droplet, timestamp, move)) continue;
+      if (!satifiesDropletDropletConstraints(move, dropletUnit, droplet, droplets, timestamp)) continue;
       if (!satisfiesInterDropletUnitConstraints(move, dropletUnit, droplet, timestamp)) continue;
       
       validMoves.add(move);
@@ -45,9 +45,14 @@ public class MultiCellMoveFinder extends MoveFinder {
     // droplet units within the same droplet.
     for (DropletUnit brotherUnit : droplet.units) {
       if (brotherUnit == dropletUnit) continue;
-      Point brotherAt = brotherUnit.route.getPosition(timestamp - 1);
       
-      if (to.x == brotherAt.x && to.y == brotherAt.y) return false;
+      Point brotherTo = brotherUnit.route.getPosition(timestamp);
+      if (brotherTo != null) {
+        if (to.x == brotherTo.x && to.y == brotherTo.y) return false;
+      } else {
+        Point brotherAt = brotherUnit.route.getPosition(timestamp - 1);
+        if (to.x == brotherAt.x && to.y == brotherAt.y) return false;
+      }
     }
     
     return true;
@@ -89,6 +94,17 @@ public class MultiCellMoveFinder extends MoveFinder {
       if (mergeSibling != null && other.id == mergeSibling.id) continue;
       
       if (!satifiesSpacingConstraints(droplet, other, timestamp, move)) return false;
+    }
+    
+    return true;
+  }
+  
+  private boolean satifiesDropletDropletConstraints(Move move, DropletUnit dropletUnit, Droplet droplet,
+      List<Droplet> droplets, int timestamp) {
+    
+    for (Droplet other : droplets) {
+      if (other.id == droplet.id) continue;
+      if (!satifiesSpacingConstraints(dropletUnit, other, timestamp, move)) return false;
     }
     
     return true;
@@ -146,15 +162,7 @@ public class MultiCellMoveFinder extends MoveFinder {
 
   private boolean satifiesSpacingConstraints(Droplet droplet, Droplet other, int timestamp, Move move) {
     for (DropletUnit unit : droplet.units) {
-      Point at = unit.route.getPosition(timestamp - 1);
-      Point to = at.copy().add(move.x, move.y);
-
-      for (DropletUnit otherUnits : other.units) {
-        Point otherAt = otherUnits.route.getPosition(timestamp - 1);
-        Point otherTo = otherUnits.route.getPosition(timestamp);
-        
-        if (!checker.satifiesConstraints(at, to, otherAt, otherTo)) return false;
-      }
+      if (!satifiesSpacingConstraints(unit, other, timestamp, move)) return false;
     }
 
     return true;

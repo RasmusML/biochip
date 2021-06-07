@@ -2,7 +2,6 @@ package pack.gui;
 
 import java.awt.Canvas;
 import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.Image;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +17,7 @@ import engine.math.Vector2;
 import pack.algorithms.BioArray;
 import pack.algorithms.BioAssay;
 import pack.algorithms.Droplet;
-import pack.algorithms.DropletAwareGreedyRouter;
+import pack.algorithms.DropletSizeAwareGreedyRouter;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.ElectrodeActivations;
 import pack.algorithms.Module;
@@ -44,8 +43,8 @@ import pack.testbench.tests.ModuleBioArray4;
 import pack.testbench.tests.ModuleBioAssay4;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
-import pack.testbench.tests.PlatformArray4;
-import pack.testbench.tests.PlatformAssay4;
+import pack.testbench.tests.PlatformArray2;
+import pack.testbench.tests.PlatformAssay2;
 import pack.testbench.tests.Test3BioArray;
 import pack.testbench.tests.Test3BioAssay;
 import pack.testbench.tests.functionality.DisposeArray1;
@@ -143,8 +142,8 @@ public class App extends ApplicationAdapter {
     assay = new PCRMixingTreeAssay();
     array = new PCRMixingTreeArray();
 
-    assay = new PlatformAssay4();
-    array = new PlatformArray4();
+    assay = new PlatformAssay2();
+    array = new PlatformArray2();
 
     selected = new Selected();
     
@@ -157,8 +156,8 @@ public class App extends ApplicationAdapter {
     timeline.bufferX = 25;
     timeline.offsetX = viewport.getVirtualWidth() / 5f;
     
-    Router router = new DropletAwareGreedyRouter();
-		//router = new NotDropletAwareGreedyRouter();
+    Router router = new DropletSizeAwareGreedyRouter();
+		//router = new GreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
 		ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator();
@@ -338,6 +337,15 @@ public class App extends ApplicationAdapter {
 		}
 		
     { // global
+      
+      int stepSize = 10;
+      if (input.isKeyJustPressed(Keys.K)) {
+        timestamp = (int) MathUtils.clamp(0, result.executionTime - 1, timestamp - stepSize);
+      }
+      
+      if (input.isKeyJustPressed(Keys.L)) {
+        timestamp = (int) MathUtils.clamp(0, result.executionTime - 1, timestamp + stepSize);
+      }
       
       if (input.isKeyJustPressed(Keys.E)) {
         timestamp = result.executionTime - 1;

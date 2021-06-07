@@ -30,6 +30,7 @@ public class DropletReshaper {
   
   public DropletReshaper(MoveFinder moveFinder, BioArray array) {
     this.moveFinder = moveFinder;
+    this.array = array;
     
     targetShape = new int[array.width][array.height];
 
@@ -123,6 +124,7 @@ public class DropletReshaper {
       }
     }
     
+    int i = 1;
     boolean anyMove = true;
     while (anyMove) {
       
@@ -154,7 +156,7 @@ public class DropletReshaper {
       anyMove = false;
       for (DropletUnit unit : left) {
         Point at = unit.route.getPosition();
-        Move move = getFillingMove(unit, droplet, droplets, modules, timestamp);
+        Move move = getFillingMove(unit, droplet, droplets, new ArrayList<>(), timestamp);
         
         if (move != null) {
           left.remove(unit);
@@ -182,9 +184,13 @@ public class DropletReshaper {
     for (DropletUnit unit : left) {
       Point at = unit.route.getPosition();
       
-      if (targetShape[at.x][at.y] == task.id) continue;
+      if (targetShape[at.x][at.y] == task.id) {
+        Point to = at.copy();
+        unit.route.path.add(to);
+        continue;
+      }
       
-      Move move = getNonFillingMove(unit, droplet, droplets, modules, timestamp);
+      Move move = getNonFillingMove(unit, droplet, droplets, new ArrayList<>(), timestamp); // @cleanup use modules against
       Point to = at.copy().add(move.x, move.y);
       unit.route.path.add(to);
     }
@@ -208,7 +214,8 @@ public class DropletReshaper {
   }
 
   private boolean doneReshaping() {
-    for (Point at : task.shape) {
+    for (DropletUnit unit : task.droplet.units) {
+      Point at = unit.route.getPosition();
       if (targetShape[at.x][at.y] != task.id) return false;
     }
     
@@ -227,6 +234,8 @@ public class DropletReshaper {
   private Move getFillingMove(DropletUnit unit, Droplet droplet, List<Droplet> droplets, List<Module> modules, int timestamp) {
     Point at = unit.route.getPosition();
     Point to = new Point();
+    
+    int i = 1;
     
     List<Move> moves = moveFinder.getValidMoves(unit, droplet, timestamp, droplets, modules, array);
     for (Move move : moves) {
