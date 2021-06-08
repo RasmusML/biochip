@@ -13,6 +13,7 @@ import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.MixingPercentages;
 import pack.helpers.LogMode;
 import pack.helpers.Logger;
+import pack.helpers.RandomUtil;
 import pack.testbench.tests.BlockingDispenserTestBioArray;
 import pack.testbench.tests.BlockingDispenserTestBioAssay;
 import pack.testbench.tests.CrowdedModuleBioArray;
@@ -50,16 +51,26 @@ import pack.testbench.tests.functionality.MixAssay1;
 
 public class TestSuite {
   
+  private boolean verbose = false;  // verbose or recap mode
+
+  private int runs = 2;
+  private int recapSeedPrintInterval = runs / 10;
+
+  private int seed;
+
   private List<BioArray> arrays;
   private List<BioAssay> assays;
   
   private MixingPercentages percentages;
+  
+  private List<Statistics> statistics;
   
   private List<Router> routers;
   private List<TestResult> testResults;
   
   public TestSuite() {
     testResults = new ArrayList<>();
+    statistics = new ArrayList<>();
     
     arrays = new ArrayList<>();
     assays = new ArrayList<>();
@@ -68,21 +79,43 @@ public class TestSuite {
     
     percentages = new DefaultMixingPercentages();
     
+    
     Logger.mode = LogMode.Silent;
 
-    register(new GreedyRouter());
-    register(new DropletSizeAwareGreedyRouter());
-    
     registerAllTests();
   }
 
-  public void run() {
+  public void runAllRouters() {
+    register(new GreedyRouter());
+    register(new DropletSizeAwareGreedyRouter());
+    
     for (Router router : routers) {
+      seed = 0;
+      
       printHeader(router);
-      runTests(router);
+
+      for (int i = 0; i < runs; i++) {
+        printSeed();
+        
+        run(router);
+        
+        seed += 1;
+      }
+
       printSummary();
 
+      // @TODO: write the content to a file and create some graphs with python
       testResults.clear();
+    }
+  }
+
+  private void printSeed() {
+    if (verbose) {
+      System.out.printf("seed %d\n", seed);
+    } else {
+      if (recapSeedPrintInterval > 0 && seed % recapSeedPrintInterval == 0) {
+        System.out.printf("seed %d\n", seed);
+      }
     }
   }
 
@@ -91,73 +124,115 @@ public class TestSuite {
     System.out.printf("=== %s ===\n", routerName);
   }
   
-  private void runTests(Router router) {
+  private void run(Router router) {
 
     for (int i = 0; i < arrays.size(); i++) {
+      RandomUtil.init(seed);  // reset the seed after each tests, so we can reproduce the result of the test in the gui.
+      
       BioArray array = arrays.get(i);
       BioAssay assay = assays.get(i);
       
       String assayName = assay.getClass().getSimpleName();
       String testName = assayName.replaceAll("(BioAssay)|(Assay)", "");
       
-      System.out.printf("running %s", testName);
+      if (verbose) System.out.printf("running %s ... ", testName);
       
       long start = System.currentTimeMillis();
       RoutingResult result = router.compute(assay, array, percentages);
       long msElapsed = System.currentTimeMillis() - start;
       
-      System.out.printf(" ... ");
-
-      if (result.completed) {
-        System.out.printf("ok");
+      if (verbose) {
+        if (result.completed) System.out.printf("ok\n");
+        else System.out.printf("failed\n");
       } else {
-        System.out.printf("failed");
+        if (!result.completed) System.out.printf("%s using seed %d failed\n", testName, seed);
       }
-      
-      System.out.printf("\n");
 
-      int id = i + 1;
-      
       TestResult testResult = new TestResult();
       testResult.name = testName;
+      testResult.id = i;
       testResult.completed = result.completed;
-      testResult.id = id;
       testResult.executionTime = result.executionTime;
       testResult.runningTime = msElapsed / 1000f;
+      testResult.seed = seed;
       
       testResults.add(testResult);
     }
     
-    System.out.printf("completed all tests.\n\n");
+    if (verbose) System.out.printf("completed all tests.\n");
   }
   
   public void printSummary() {
-    for (int i = 0; i < testResults.size(); i++) {
-      TestResult result = testResults.get(i);
-     
-      String message;
-      if (result.completed) {
-        message = String.format("%s found a solution with %d steps and took %.3f secs to compute.\n", result.name, result.executionTime, result.runningTime);
-      } else {
-        message = String.format("%s failed.\n", result.name);
+    
+    System.out.printf("\n");
+    
+    if (verbose) {
+      for (int i = 0; i < testResults.size(); i++) {
+        TestResult result = testResults.get(i);
+       
+        String message;
+        if (result.completed) {
+          message = String.format("%s found a solution with %d steps and took %.3f secs to compute.\n", result.name, result.executionTime, result.runningTime);
+        } else {
+          message = String.format("%s failed.\n", result.name);
+        }
+        
+        System.out.printf(message);
+        
       }
       
-      System.out.printf(message);
+      System.out.printf("\n");
     }
     
-    int completedCount = 0;
-    int avgStepSize = 0;
+    Statistics cumulated = new Statistics();
+    cumulated.name = "cumulated";
+
+    for (int i = 0; i < arrays.size(); i++) {
+      TestResult result = testResults.get(i);
+
+      Statistics stat = new Statistics();
+      stat.name = result.name;
+      statistics.add(stat);
+    }
     
     for (int i = 0; i < testResults.size(); i++) {
       TestResult result = testResults.get(i);
+      
+      int id = result.id;
+      Statistics stat = statistics.get(id);
+      
       if (result.completed) {
-        completedCount += 1;
-        avgStepSize += result.executionTime;
+        stat.completedCount += 1;
+        stat.executionTime += result.executionTime;
+        stat.runningTime += result.runningTime;
+      } else {
+        stat.failedCount += 1;
       }
     }
     
-    System.out.printf("\n%d/%d routes succeeded!\n", completedCount, testResults.size());
-    System.out.printf("avg. steps: %d\n", avgStepSize / completedCount);
+    for (Statistics stat : statistics) {
+      cumulated.executionTime += stat.executionTime;
+      cumulated.completedCount += stat.completedCount;
+      cumulated.failedCount += stat.failedCount;
+      cumulated.runningTime += stat.runningTime;
+    }
+    
+    for (Statistics stat : statistics) {
+      System.out.printf("%s - ", stat.name);
+      System.out.printf("%d/%d routes succeeded!", stat.completedCount, runs);
+      System.out.printf(" avg. steps: %d", stat.executionTime / stat.completedCount);
+      System.out.printf(", took %.3f secs to compute.", stat.runningTime / stat.completedCount);
+      System.out.printf("\n");
+    }
+    
+    statistics.clear();
+
+    System.out.printf("\n");
+    
+    System.out.printf("%s - ", cumulated.name);
+    System.out.printf("%d/%d routes succeeded!", cumulated.completedCount, testResults.size());
+    System.out.printf(" avg. steps: %d, ", cumulated.executionTime / cumulated.completedCount);
+    System.out.printf("took %.3f secs to compute.", cumulated.runningTime / cumulated.completedCount);
     System.out.printf("\n");
   }
 
@@ -194,9 +269,18 @@ public class TestSuite {
   }
 
   static private class TestResult {
-    public int id;
     public String name;
+    public int id;
+    public int seed;
     public boolean completed;
+    public int executionTime;
+    public float runningTime;
+  }
+  
+  static private class Statistics {
+    public String name;
+    public int completedCount;
+    public int failedCount;
     public int executionTime;
     public float runningTime;
   }

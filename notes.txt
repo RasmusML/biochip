@@ -1,3 +1,4 @@
+using seed 522 with uniform or count chain prioritizer makes ModuleBioAssay2 fail!
 
 dropelt aware merge droplet may need to merge vertically or horizontally. It may not be possible to make one droplet move up and the other left due to tension. Test on platform
 for now we assume we can.

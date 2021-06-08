@@ -6,6 +6,6 @@ public class RunMeTestSuite {
   
   public static void main(String[] args) {
     TestSuite testSuite = new TestSuite();
-    testSuite.run();
+    testSuite.runAllRouters();
   }
 }

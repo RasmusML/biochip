@@ -20,7 +20,6 @@ import pack.algorithms.Droplet;
 import pack.algorithms.DropletSizeAwareGreedyRouter;
 import pack.algorithms.DropletUnit;
 import pack.algorithms.ElectrodeActivations;
-import pack.algorithms.GreedyRouter;
 import pack.algorithms.Module;
 import pack.algorithms.Operation;
 import pack.algorithms.OperationType;
@@ -40,8 +39,8 @@ import pack.testbench.tests.BlockingDispenserTestBioArray;
 import pack.testbench.tests.BlockingDispenserTestBioAssay;
 import pack.testbench.tests.CrowdedModuleBioArray;
 import pack.testbench.tests.CrowdedModuleBioAssay;
-import pack.testbench.tests.ModuleBioArray3;
-import pack.testbench.tests.ModuleBioAssay3;
+import pack.testbench.tests.ModuleBioArray2;
+import pack.testbench.tests.ModuleBioAssay2;
 import pack.testbench.tests.PCRMixingTreeArray;
 import pack.testbench.tests.PCRMixingTreeAssay;
 import pack.testbench.tests.PlatformArray4;
@@ -66,7 +65,7 @@ public class App extends ApplicationAdapter {
 	
 	Selected selected;
 	
-	boolean debug = false;
+	boolean debug = true;
 
 	// mouse
 	float oldX, oldY;
@@ -130,7 +129,6 @@ public class App extends ApplicationAdapter {
     
     assay = new BlockingDispenserTestBioAssay();
     array = new BlockingDispenserTestBioArray();
-    
 
     assay = new Test3BioAssay();
     array = new Test3BioArray();
@@ -144,8 +142,8 @@ public class App extends ApplicationAdapter {
     assay = new PlatformAssay4();
     array = new PlatformArray4();
 
-    assay = new ModuleBioAssay3();
-    array = new ModuleBioArray3();
+    assay = new ModuleBioAssay2();
+    array = new ModuleBioArray2();
 
     selected = new Selected();
     
