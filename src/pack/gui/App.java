@@ -65,7 +65,7 @@ public class App extends ApplicationAdapter {
 	
 	Selected selected;
 	
-	boolean debug = true;
+	boolean debug = false;
 
 	// mouse
 	float oldX, oldY;
@@ -139,11 +139,11 @@ public class App extends ApplicationAdapter {
     assay = new PCRMixingTreeAssay();
     array = new PCRMixingTreeArray();
 
-    assay = new PlatformAssay4();
-    array = new PlatformArray4();
-
     assay = new ModuleBioAssay2();
     array = new ModuleBioArray2();
+
+    assay = new PlatformAssay4();
+    array = new PlatformArray4();
 
     selected = new Selected();
     

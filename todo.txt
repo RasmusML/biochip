@@ -1,8 +1,7 @@
-prepare reshape test on the physical platform + behavoir of merge (droplet-aware)
+prepare reshape test on the physical platform + behavoir of merge (droplet-aware), use the droplet reshape gui and send the command each step.
 
-run test suite with different seeds to ensure we find a solution + get better estimates for execution times.
 
-kig mere pï¿½ deadlock (prevention)
+kig mere på deadlock (prevention)
 
 greedy router change probabilities on deadlock (droplet moving to module can deadlock atm, if another modules blocks, because the droplet selects the best move, aka. Move.None, adding probabilities will fix this deadlock)
 probabilities for all moves (greedy router) (also move to module operation)

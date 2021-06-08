@@ -53,7 +53,7 @@ public class TestSuite {
   
   private boolean verbose = false;  // verbose or recap mode
 
-  private int runs = 2;
+  private int runs = 20;
   private int recapSeedPrintInterval = runs / 10;
 
   private int seed;
@@ -78,7 +78,6 @@ public class TestSuite {
     routers = new ArrayList<>();
     
     percentages = new DefaultMixingPercentages();
-    
     
     Logger.mode = LogMode.Silent;
 
@@ -159,12 +158,10 @@ public class TestSuite {
       testResults.add(testResult);
     }
     
-    if (verbose) System.out.printf("completed all tests.\n");
+    if (verbose) System.out.printf("completed all tests.\n\n");
   }
   
   public void printSummary() {
-    
-    System.out.printf("\n");
     
     if (verbose) {
       for (int i = 0; i < testResults.size(); i++) {
