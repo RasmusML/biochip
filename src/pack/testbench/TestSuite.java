@@ -44,10 +44,26 @@ import pack.testbench.tests.Test3BioArray;
 import pack.testbench.tests.Test3BioAssay;
 import pack.testbench.tests.Test4BioArray;
 import pack.testbench.tests.Test4BioAssay;
+import pack.testbench.tests.Test5BioArray;
+import pack.testbench.tests.Test5BioAssay;
+import pack.testbench.tests.Test6BioArray;
+import pack.testbench.tests.Test6BioAssay;
+import pack.testbench.tests.functionality.DetectorArray1;
+import pack.testbench.tests.functionality.DetectorAssay1;
+import pack.testbench.tests.functionality.DispenseArray1;
+import pack.testbench.tests.functionality.DispenseAssay1;
 import pack.testbench.tests.functionality.DisposeArray1;
 import pack.testbench.tests.functionality.DisposeAssay1;
+import pack.testbench.tests.functionality.MergeArray1;
+import pack.testbench.tests.functionality.MergeArray2;
+import pack.testbench.tests.functionality.MergeArray3;
+import pack.testbench.tests.functionality.MergeAssay1;
+import pack.testbench.tests.functionality.MergeAssay2;
+import pack.testbench.tests.functionality.MergeAssay3;
 import pack.testbench.tests.functionality.MixArray1;
+import pack.testbench.tests.functionality.MixArray2;
 import pack.testbench.tests.functionality.MixAssay1;
+import pack.testbench.tests.functionality.MixAssay2;
 
 public class TestSuite {
   
@@ -58,8 +74,7 @@ public class TestSuite {
 
   private int seed;
 
-  private List<BioArray> arrays;
-  private List<BioAssay> assays;
+  private List<Test> tests;
   
   private MixingPercentages percentages;
   
@@ -69,15 +84,13 @@ public class TestSuite {
   private List<TestResult> testResults;
   
   public TestSuite() {
+    percentages = new DefaultMixingPercentages();
+
     testResults = new ArrayList<>();
     statistics = new ArrayList<>();
     
-    arrays = new ArrayList<>();
-    assays = new ArrayList<>();
-
+    tests = new ArrayList<>();
     routers = new ArrayList<>();
-    
-    percentages = new DefaultMixingPercentages();
     
     Logger.mode = LogMode.Silent;
 
@@ -125,11 +138,13 @@ public class TestSuite {
   
   private void run(Router router) {
 
-    for (int i = 0; i < arrays.size(); i++) {
+    for (int i = 0; i < tests.size(); i++) {
       RandomUtil.init(seed);  // reset the seed after each tests, so we can reproduce the result of the test in the gui.
       
-      BioArray array = arrays.get(i);
-      BioAssay assay = assays.get(i);
+      Test test = tests.get(i);
+      
+      BioArray array = test.array;
+      BioAssay assay = test.assay;
       
       String assayName = assay.getClass().getSimpleName();
       String testName = assayName.replaceAll("(BioAssay)|(Assay)", "");
@@ -184,7 +199,7 @@ public class TestSuite {
     Statistics cumulated = new Statistics();
     cumulated.name = "cumulated";
 
-    for (int i = 0; i < arrays.size(); i++) {
+    for (int i = 0; i < tests.size(); i++) {
       TestResult result = testResults.get(i);
 
       Statistics stat = new Statistics();
@@ -234,15 +249,26 @@ public class TestSuite {
   }
 
   private void registerAllTests() {
+    
+    // @TODO: dont use the functional tests for statistics.
+    
     // functional tests
+    register(new DetectorAssay1(), new DetectorArray1());
+    register(new DispenseAssay1(), new DispenseArray1());
     register(new DisposeAssay1(), new DisposeArray1());
+    register(new MergeAssay1(), new MergeArray1());
+    register(new MergeAssay2(), new MergeArray2());
+    register(new MergeAssay3(), new MergeArray3());
     register(new MixAssay1(), new MixArray1());
+    register(new MixAssay2(), new MixArray2());
     
     // tests
     register(new Test1BioAssay(), new Test1BioArray());
     register(new Test2BioAssay(), new Test2BioArray());
     register(new Test3BioAssay(), new Test3BioArray());
     register(new Test4BioAssay(), new Test4BioArray());
+    register(new Test5BioAssay(), new Test5BioArray());
+    register(new Test6BioAssay(), new Test6BioArray());
     register(new PCRMixingTreeAssay(), new PCRMixingTreeArray());
     register(new BlockingDispenserTestBioAssay(), new BlockingDispenserTestBioArray());
     register(new ModuleBioAssay1(), new ModuleBioArray1());
@@ -257,12 +283,19 @@ public class TestSuite {
   }
   
   private void register(BioAssay assay, BioArray array) {
-    arrays.add(array);
-    assays.add(assay);
+    Test test = new Test();
+    test.array = array;
+    test.assay = assay;
+    tests.add(test);
   }
   
   private void register(Router router) {
     routers.add(router);
+  }
+  
+  static private class Test {
+    public BioArray array;
+    public BioAssay assay;
   }
 
   static private class TestResult {

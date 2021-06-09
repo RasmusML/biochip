@@ -19,31 +19,40 @@ public class SimpleTimelineLayout implements TimelineLayout {
       int start, end;
       if (operation.name.equals(OperationType.mix)) {
         Droplet droplet = operation.manipulating[0];
-        
         start = droplet.getStartTimestamp();
         end = droplet.getEndTimestamp();
+        
       } else if (operation.name.equals(OperationType.merge)) {
         Droplet droplet0 = operation.manipulating[0];
         Droplet droplet1 = operation.manipulating[1];
-        
         start = Math.max(droplet0.getStartTimestamp(), droplet1.getStartTimestamp());
         end = Math.min(droplet0.getEndTimestamp(), droplet1.getEndTimestamp());
+
       } else if (operation.name.equals(OperationType.split)) {
         Droplet droplet = operation.manipulating[0];
         start = droplet.getStartTimestamp();
         end = droplet.getEndTimestamp();
+
       } else if (operation.name.equals(OperationType.dispense)) {
         Droplet droplet = operation.manipulating[0];
         start = droplet.getStartTimestamp();
         end = droplet.getEndTimestamp();
+
       } else if (operation.name.equals(OperationType.heating)) {
         Droplet droplet = operation.manipulating[0];
         start = droplet.getStartTimestamp();
         end = droplet.getEndTimestamp();
+
       } else if (operation.name.equals(OperationType.dispose)) {
         Droplet droplet = operation.manipulating[0];
         start = droplet.getStartTimestamp();
         end = droplet.getEndTimestamp();
+        
+      } else if (operation.name.equals(OperationType.detection)) {
+        Droplet droplet = operation.manipulating[0];
+        start = droplet.getStartTimestamp();
+        end = droplet.getEndTimestamp();
+
       } else {
         throw new IllegalStateException("broken! " + operation.name);
       }

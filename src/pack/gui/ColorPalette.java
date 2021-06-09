@@ -23,5 +23,7 @@ public class ColorPalette {
   
   public static final Color red = Color.red;
   public static final Color pink = Color.pink;
+  public static final Color magenta = Color.magenta;
+  
   
 }

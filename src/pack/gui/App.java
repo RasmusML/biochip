@@ -30,6 +30,7 @@ import pack.algorithms.components.DefaultMixingPercentages;
 import pack.algorithms.components.ElectrodeActivationTranslator;
 import pack.algorithms.components.MixingPercentages;
 import pack.gui.timeline.CompactTimelineLayout;
+import pack.gui.timeline.SimpleTimelineLayout;
 import pack.gui.timeline.Timeline;
 import pack.gui.timeline.TimelineLayout;
 import pack.gui.timeline.TimelineUnit;
@@ -47,8 +48,14 @@ import pack.testbench.tests.PlatformArray4;
 import pack.testbench.tests.PlatformAssay4;
 import pack.testbench.tests.Test3BioArray;
 import pack.testbench.tests.Test3BioAssay;
+import pack.testbench.tests.Test6BioArray;
+import pack.testbench.tests.Test6BioAssay;
+import pack.testbench.tests.functionality.DetectorArray1;
+import pack.testbench.tests.functionality.DetectorAssay1;
 import pack.testbench.tests.functionality.DisposeArray1;
 import pack.testbench.tests.functionality.DisposeAssay1;
+import pack.testbench.tests.functionality.MergeArray3;
+import pack.testbench.tests.functionality.MergeAssay3;
 
 public class App extends ApplicationAdapter {
 
@@ -145,6 +152,15 @@ public class App extends ApplicationAdapter {
     assay = new PlatformAssay4();
     array = new PlatformArray4();
 
+    assay = new MergeAssay3();
+    array = new MergeArray3();
+    
+    assay = new DetectorAssay1();
+    array = new DetectorArray1();
+    
+    assay = new Test6BioAssay();
+    array = new Test6BioArray();
+    
     selected = new Selected();
     
     timeline = new Timeline();
@@ -195,8 +211,8 @@ public class App extends ApplicationAdapter {
 		}
 		
 		if (!debug) {
+		  timelineLayout = new CompactTimelineLayout();
   		//timelineLayout = new SimpleTimelineLayout();
-  		timelineLayout = new CompactTimelineLayout();
   		timelineUnits = timelineLayout.pack(assay.getOperations());
   		
   		for (TimelineUnit unit : timelineUnits) {
@@ -708,7 +724,9 @@ public class App extends ApplicationAdapter {
       return ColorPalette.orange;
     } else if (module.operation.equals(OperationType.heating)) {
       return ColorPalette.seeThroughRed;
-    } 
+    } else if (module.operation.equals(OperationType.detection)) {
+      return ColorPalette.magenta;
+    }
     
     throw new IllegalStateException("unknown module operation");
   }
@@ -773,6 +791,8 @@ public class App extends ApplicationAdapter {
       return ColorPalette.red;
     case OperationType.dispose:
       return ColorPalette.pink;
+    case OperationType.detection:
+      return ColorPalette.magenta;
     default:
       throw new IllegalStateException("broken!");
     }

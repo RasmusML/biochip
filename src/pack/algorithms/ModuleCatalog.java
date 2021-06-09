@@ -39,4 +39,8 @@ public class ModuleCatalog {
   public void registerHeater(int x, int y, int width, int height, int duration, float temperature) {
     register(OperationType.heating, x, y, width, height, duration, ModulePolicy.lockedOnOperation, new Tag(Tags.temperature, temperature));
   }
+  
+  public void registerDetector(int x, int y, int width, int height, int duration, String sensor) {
+    register(OperationType.detection, x, y, width, height, duration, ModulePolicy.alwaysOpen, new Tag(Tags.sensor, sensor));
+  }
 }

@@ -10,7 +10,7 @@ public class Test4BioAssay extends BioAssay {
 	}
 
 	private void build() {
-BioAssayBuilder builder = new BioAssayBuilder();
+	  BioAssayBuilder builder = new BioAssayBuilder();
     
     int input1 = builder.createDispenseOperation("A");
     int input2 = builder.createDispenseOperation("B");

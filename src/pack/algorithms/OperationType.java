@@ -7,4 +7,5 @@ public class OperationType {
   public static final String split = "split";
   public static final String heating = "heat";
   public static final String dispose = "dispose";
+  public static final String detection = "detection";
 }

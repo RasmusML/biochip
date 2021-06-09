@@ -88,6 +88,8 @@ public class ChainPrioritizer implements Prioritizer {
       return 30;
     } else if (operation.name.equals(OperationType.heating)) {
       return 100;
+    } else if (operation.name.equals(OperationType.detection)) {
+      return 20;
     } else {
       throw new IllegalStateException("unknown operation type.");
     }

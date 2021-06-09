@@ -213,6 +213,24 @@ public class GreedyRouter implements Router {
               System.out.printf(">>%s\n", point.toString());
             }
             */
+          } else if (stalled.name.equals(OperationType.detection))  {
+            String sensor = (String) stalled.attributes.get(Tags.sensor);
+            
+            Droplet droplet = stalled.manipulating[0];
+            BoundingBox boundingBox = droplet.getBoundingBox();
+            stalledExtra.module = moduleAllocator.allocate(OperationType.detection, boundingBox.width, boundingBox.height, new Tag(Tags.sensor, sensor));
+            
+            /*
+            Droplet droplet = stalled.manipulating[0];
+            
+            Point target = stalledExtra.module.position;
+            List<Point> path = pathFinder.search(droplet, target, stalledExtra.module, runningDroplets, array, moveFinder, moduleAllocator.getInUseOrAlwaysLockedModules(), timestamp - 1, 30);
+            droplet.route.path.addAll(path);
+            
+            for (Point point : path) {
+              System.out.printf(">>%s\n", point.toString());
+            }
+            */
           }
           
         }

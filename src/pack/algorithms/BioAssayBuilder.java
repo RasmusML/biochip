@@ -120,6 +120,25 @@ public class BioAssayBuilder {
     return id;
   }
   
+  public int createDetectionOperation(String sensor) {
+    int id = generator.getId();
+
+    Operation operation = new Operation();
+    operation.id = id;
+    operation.name = OperationType.detection;
+    operation.inputs = new Operation[1];
+    operation.outputs = new Operation[1];
+    operation.manipulating = new Droplet[1];
+    operation.forwarding = new Droplet[1];
+    
+    Map<String, Object> attributes = operation.attributes;
+    attributes.put(Tags.sensor, sensor);
+    
+    idToOperation.put(id, operation);
+    
+    return id;
+  }
+  
   public void connect(int fromId, int toId) {
     Operation from = idToOperation.get(fromId);
     Operation to = idToOperation.get(toId);

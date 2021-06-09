@@ -52,6 +52,11 @@ public class CompactTimelineLayout implements TimelineLayout {
         Droplet droplet = operation.manipulating[0];
         start = droplet.getStartTimestamp();
         end = droplet.getEndTimestamp();
+        
+      } else if (operation.name.equals(OperationType.detection)) {
+        Droplet droplet = operation.manipulating[0];
+        start = droplet.getStartTimestamp();
+        end = droplet.getEndTimestamp();
 
       } else {
         throw new IllegalStateException("broken! " + operation.name);
