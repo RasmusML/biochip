@@ -17,15 +17,19 @@ import pack.helpers.IOUtils;
 public class PlatformInterface {
   
   private Map<Integer, ElectrodeMapping> idToMapping;
-  private SerialTransmitter transmitter;
+  private Transmitter transmitter;
   private PlatformMessenger messenger;
   private Platform platform;
+  
+  private int commandDelay;
   
   public PlatformInterface() {
     platform = new Platform();
     
-    transmitter = new SerialTransmitter();
+    transmitter = new TerminalTransmitter();
     messenger = new PlatformMessenger();
+    
+    commandDelay = 50;
     
     List<ElectrodePlatformDefinition> electrodes = loadDefinitions();
     setupElectrodeMappings(electrodes);
@@ -42,18 +46,22 @@ public class PlatformInterface {
 
   public void turnHighVoltageOnForElectrodes() {
     Assert.that(!platform.highVoltageOn, "High voltage is already on!");
-    platform.highVoltageOn = true;
     
     String message = messenger.turnHighVoltageOnForElectrodesMessage();
     transmitter.send(message);
+    commandWait();
+
+    platform.highVoltageOn = true;
   }
   
   public void turnHighVoltageOffForElectrodes() {
     Assert.that(platform.highVoltageOn, "High voltage is not on, so you can't turn high voltage off!");
-    platform.highVoltageOn = false;
     
     String message = messenger.turnHighVoltageOffForElectrodesMessage();
     transmitter.send(message);
+    commandWait();
+
+    platform.highVoltageOn = false;
   }
   
   public void setHighVoltageValue(int value) {
@@ -61,6 +69,7 @@ public class PlatformInterface {
     
     String message = messenger.setHighVoltageValueMessage(value);
     transmitter.send(message);
+    commandWait();
   }
   
   public void clearAllElectrodes() {
@@ -70,25 +79,32 @@ public class PlatformInterface {
     String message2 = messenger.clearAllElectrodesMessage(1);
     
     transmitter.send(message1);
+    commandWait();
+    
     transmitter.send(message2);
+    commandWait();
   }
   
   public void setElectrode(int x, int y) {
     Assert.that(!platform.isElectrodeOnByXY(x, y), String.format("electrode (x,y)=(%d,%d) is already on!", x, y));
-    platform.flipElectrodeStateByXY(x, y);
     
     ElectrodeMapping mapping = getElectrodeMappingByXY(x, y);
     String message = messenger.setElectrodeMessage(mapping.driverId, mapping.electrodeId);
     transmitter.send(message);
+    platform.flipElectrodeStateByXY(x, y);
+
+    commandWait();
   }
   
   public void clearElectrode(int x, int y) {
     Assert.that(platform.isElectrodeOnByXY(x, y), String.format("electrode (x,y)=(%d,%d) is not on and cannot be cleared!", x, y));
-    platform.flipElectrodeStateByXY(x, y);
     
     ElectrodeMapping mapping = getElectrodeMappingByXY(x, y);
     String message = messenger.clearElectrodeMessage(mapping.driverId, mapping.electrodeId);
     transmitter.send(message);
+    platform.flipElectrodeStateByXY(x, y);
+
+    commandWait();
   }
   
   private int getElectrodeIdByRowAndColumn(int row, int column) {
@@ -103,6 +119,44 @@ public class PlatformInterface {
     return idToMapping.get(id);
   }
   */
+  
+  private void commandWait() {
+    sleepByMinimum(commandDelay);
+  }
+  
+  // just because we ask to sleep for X ms, doesn't mean we actually do. It is up to the OS to decide, how long we actually sleep.
+  private void sleepByMinimum(long ms) {
+    long start = System.currentTimeMillis();
+    
+    sleep(ms);
+    
+    long prev = start;
+    long now = System.currentTimeMillis();
+    
+    long dt = now - prev;
+    long left = ms - dt;
+    
+    while (left > 0) {
+      sleep(left);
+      
+      prev = now;
+      now = System.currentTimeMillis();
+      dt = now - prev;
+      
+      left -= dt;
+      
+      System.out.println(left);
+    }
+    
+  }
+  
+  private void sleep(long ms) {
+    try {
+      Thread.sleep(ms);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
   
   private ElectrodeMapping getElectrodeMappingByXY(int x, int y) {
     int id = getElectrodeIdByRowAndColumn(platform.rows - 1 - y, x);
@@ -149,10 +203,32 @@ public class PlatformInterface {
   }
 }
 
-class SerialTransmitter {
+interface Transmitter {
+  public void open(String port);
+  public void send(String message);
+  public void close();
+}
+
+class TerminalTransmitter implements Transmitter {
+
+  @Override
+  public void open(String port) {}
+
+  @Override
+  public void send(String message) {
+    System.out.print(message);
+  }
+
+  @Override
+  public void close() {}
+  
+}
+
+class SerialTransmitter implements Transmitter {
   
   private SerialPort serialPort;
   
+  @Override
   public void open(String port) {
     serialPort = SerialPort.getCommPort(port);
     
@@ -165,11 +241,13 @@ class SerialTransmitter {
     serialPort.openPort();
   }
   
+  @Override
   public void send(String message) {
     byte[] buffer = message.getBytes();
     serialPort.writeBytes(buffer, buffer.length);
   }
   
+  @Override
   public void close() {
     serialPort.closePort();
   }
@@ -234,7 +312,7 @@ class PlatformMessenger {
   public String turnHighVoltageOnForElectrodesMessage() {
     return String.format("hvpoe 1 1 \r");
   }
-  
+
   public String turnHighVoltageOffForElectrodesMessage() {
     return String.format("hvpoe 1 0 \r");
   }

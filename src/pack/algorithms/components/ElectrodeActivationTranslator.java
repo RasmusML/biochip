@@ -11,27 +11,40 @@ import pack.algorithms.Point;
 
 public class ElectrodeActivationTranslator {
   
+  // droplet units may cause an electrode first to de-actuate (unit move away), then actuate (unit move onto the electrode) during the same timestep. So instead of storing both actuation and de-actuation state (which would be wrong), only store the actuation state.
+  
+  private int width, height;
+  
+  private ElectrodeState[][] previousPlatformState;
+  private ElectrodeState[][] currentPlatformState;
+  
+  public ElectrodeActivationTranslator(int width, int height) {
+    this.width = width;
+    this.height = height;
+    
+    previousPlatformState = new ElectrodeState[width][height];
+    currentPlatformState = new ElectrodeState[width][height];
+  }
+  
   public ElectrodeActivations[] translateStateless(List<Droplet> droplets, int timesteps) {
     ElectrodeActivations[] sections = new ElectrodeActivations[timesteps];
     
-    for (int i = 0; i < sections.length; i++) {
-      sections[i] = new ElectrodeActivations();
-    }
-    
-    for (Droplet droplet : droplets) {
-      for (DropletUnit unit : droplet.units) {
-        for (int i = 0; i < unit.route.path.size(); i++) {
-          int time = unit.route.start + i;
+    clear(currentPlatformState);
+  
+    for (int time = 0; time < timesteps; time++) {
+      for (Droplet droplet : droplets) {
+        for (DropletUnit unit : droplet.units) {
           Point tile = unit.route.getPosition(time);
+          if (tile == null) continue;
           
-          ElectrodeActuation actuation = new ElectrodeActuation();
-          actuation.tile = tile.copy();
-          actuation.state = ElectrodeState.On;
-          
-          ElectrodeActivations section = sections[time];
-          section.activations.add(actuation);
+          currentPlatformState[tile.x][tile.y] = ElectrodeState.On;
         }
       }
+      
+      ElectrodeActivations section = buildStatelessSection();
+      sections[time] = section;
+      
+      clear(currentPlatformState);
     }
 
     return sections;
@@ -40,50 +53,85 @@ public class ElectrodeActivationTranslator {
   public ElectrodeActivations[] translateStateful(List<Droplet> droplets, int timesteps) {
     ElectrodeActivations[] sections = new ElectrodeActivations[timesteps];
     
-    for (int i = 0; i < sections.length; i++) {
-      sections[i] = new ElectrodeActivations();
-    }
-    
-    for (Droplet droplet : droplets) {
-      
-      for (DropletUnit unit : droplet.units) {
-        int time = unit.route.start;
-        Point tile = unit.route.getPosition(time);
-        
-        ElectrodeActuation actuation = new ElectrodeActuation();
-        actuation.tile = tile.copy();
-        actuation.state = ElectrodeState.On;
-        
-        ElectrodeActivations section = sections[time];
-        section.activations.add(actuation);
-      }
-      
-      for (DropletUnit unit : droplet.units) {
-        for (int i = 1; i < unit.route.path.size(); i++) {
-          int prevTime = unit.route.start + i - 1;
-          Point prevTile = unit.route.getPosition(prevTime);
-          
-          int time = unit.route.start + i;
+    clear(previousPlatformState);
+    clear(currentPlatformState);
+  
+    for (int time = 0; time < timesteps; time++) {
+      for (Droplet droplet : droplets) {
+        for (DropletUnit unit : droplet.units) {
           Point tile = unit.route.getPosition(time);
+          if (tile == null) continue;
           
-          if (tile.x != prevTile.y || tile.y != prevTile.y) {
-            ElectrodeActivations section = sections[time];
-            
-            ElectrodeActuation onActivation = new ElectrodeActuation();
-            onActivation.tile = tile.copy();
-            onActivation.state = ElectrodeState.On;
-            section.activations.add(onActivation);
-            
-            ElectrodeActuation offActivation = new ElectrodeActuation();
-            offActivation.tile = prevTile.copy();
-            offActivation.state = ElectrodeState.Off;
-            section.activations.add(offActivation);
-          }
+          currentPlatformState[tile.x][tile.y] = ElectrodeState.On;
         }
       }
+      
+      ElectrodeActivations section = buildStatefulSection();
+      sections[time] = section;
+      
+      transfer(currentPlatformState, previousPlatformState);
+      clear(currentPlatformState);
     }
 
     return sections;
+  }
+  
+  private void clear(ElectrodeState[][] platformState) {
+    fill(platformState, ElectrodeState.Off);
+  }
+  
+  private void fill(ElectrodeState[][] platformState, ElectrodeState state) {
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        platformState[x][y] = state;
+      }
+    }
+  }
+  
+  private void transfer(ElectrodeState[][] source, ElectrodeState[][] target) {
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        target[x][y] = source[x][y];
+      }
+    }
+  }
+  
+  private ElectrodeActivations buildStatelessSection() {
+    ElectrodeActivations section = new ElectrodeActivations();
+    
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        
+        // only store changes.
+        if (currentPlatformState[x][y] == ElectrodeState.On) {
+          ElectrodeActuation activation = new ElectrodeActuation();
+          activation.tile = new Point(x, y);
+          activation.state = ElectrodeState.On;
+          section.activations.add(activation);
+        }
+      }
+    }
+    
+    return section;
+  }
+  
+  private ElectrodeActivations buildStatefulSection() {
+    ElectrodeActivations section = new ElectrodeActivations();
+    
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        
+        // only store changes.
+        if (currentPlatformState[x][y] != previousPlatformState[x][y]) {
+          ElectrodeActuation activation = new ElectrodeActuation();
+          activation.tile = new Point(x, y);
+          activation.state = currentPlatformState[x][y];
+          section.activations.add(activation);
+        }
+      }
+    }
+    
+    return section;
   }
 }
 

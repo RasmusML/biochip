@@ -176,7 +176,7 @@ public class App extends ApplicationAdapter {
 		//router = new GreedyRouter();
 		result = router.compute(assay, array, percentages);
 		
-		ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator();
+		ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator(array.width, array.height);
 		ElectrodeActivations[] sections = translator.translateStateful(result.droplets, result.executionTime);
 
 		/*
