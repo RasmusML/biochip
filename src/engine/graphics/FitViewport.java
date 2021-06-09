@@ -44,8 +44,8 @@ public class FitViewport implements Viewport {
 	private final Vector2 tmp;
 	
 	public Vector2 worldToScreen(float x, float y) {
-		float centerX = virtualWidth / 2.0f;
-		float centerY = virtualHeight / 2.0f;
+		float centerX = virtualWidth / 2f;
+		float centerY = virtualHeight / 2f;
 		
 		float windowWidth = virtualWidth * scale;
 		float windowHeight = virtualHeight * scale;
@@ -66,21 +66,24 @@ public class FitViewport implements Viewport {
 	}
 
 	public Vector2 screenToWorld(int x, int y) {
-		float centerX = virtualWidth / 2.0f;
-		float centerY = virtualHeight / 2.0f;
+		float centerX = virtualWidth / 2f;
+		float centerY = virtualHeight / 2f;
 		
-		float bboxX = virtualWidth * scale;
-    float bboxY = virtualHeight * scale;
+		float windowWidth = virtualWidth * scale;
+    float windowHeight = virtualHeight * scale;
     
-    float offsetX = (screenWidth - bboxX) / 2f;
-    float offsetY = (screenHeight - bboxY) / 2f;
+    float offsetX = (screenWidth - windowWidth) / 2f;
+    float offsetY = (screenHeight - windowHeight) / 2f;
     
-    float screenX = x - offsetX;
-    float screenY = y - offsetY;
+    float screenX = x;
+    float screenY = y;
     
     if (flipped) screenY = screenHeight - screenY;
 
-		float worldX = (screenX / scale - centerX) / camera.zoom + camera.x;
+    screenX -= offsetX;
+    screenY -= offsetY;
+    
+    float worldX = (screenX / scale - centerX) / camera.zoom + camera.x;
 		float worldY = (screenY / scale - centerY) / camera.zoom + camera.y;
 
 		return tmp.set(worldX, worldY);

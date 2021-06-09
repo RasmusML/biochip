@@ -53,7 +53,7 @@ public class TestSuite {
   
   private boolean verbose = false;  // verbose or recap mode
 
-  private int runs = 20;
+  private int runs = 200;
   private int recapSeedPrintInterval = runs / 10;
 
   private int seed;
@@ -229,7 +229,7 @@ public class TestSuite {
     System.out.printf("%s - ", cumulated.name);
     System.out.printf("%d/%d routes succeeded!", cumulated.completedCount, testResults.size());
     System.out.printf(" avg. steps: %d, ", cumulated.executionTime / cumulated.completedCount);
-    System.out.printf("took %.3f secs to compute.", cumulated.runningTime / cumulated.completedCount);
+    System.out.printf("took on avg %.3f secs to compute.", cumulated.runningTime / cumulated.completedCount);
     System.out.printf("\n");
   }
 
