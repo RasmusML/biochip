@@ -133,12 +133,11 @@ public class BioAssay {
         operationAttributes = String.format("\t%d [label = \"mix\", fillcolor = green, style = filled];\n", operation.id);
       } else if (operation.name.equals(OperationType.heating)) {
         float temperature = (float) operation.attributes.get(Tags.temperature);
-        operationAttributes = String.format("\t%d [label = \" %.2fï¿½C\", fillcolor = \"#FFA591\", style = filled];\n", operation.id, temperature);
+        operationAttributes = String.format("\t%d [label = \" %.2f°C\", fillcolor = \"#FFA591\", style = filled];\n", operation.id, temperature);
       } else if (operation.name.equals(OperationType.dispose)) {
         operationAttributes = String.format("\t%d [label = \"dispose\", fillcolor = pink, style = filled];\n", operation.id);
       } else if (operation.name.equals(OperationType.detection)) {
         String sensor = (String) operation.attributes.get(Tags.sensor);
-        // @test magenta may not be known.
         operationAttributes = String.format("\t%d [label = \"detector - %s \", fillcolor = magenta, style = filled];\n", operation.id, sensor);
       } else {
         throw new IllegalStateException("unsupported type: " + operation.name);
