@@ -78,7 +78,15 @@ public class AopApp extends ApplicationAdapter {
     agent0 = new Agent(memory, 0, new Point(0, 4));
     agent1 = new Agent(memory, 1, new Point(0, 0));
     
-    /*
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    
+    okTest();
+    
+    //failingTest();
+  }
+
+  private void okTest() {
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 1));
     path.add(new Point(0, 2));
@@ -95,8 +103,9 @@ public class AopApp extends ApplicationAdapter {
     pack.receiver = agent0;
     pack.request = Request.resolveDeadlock;
     agent1.request(pack);
-    */
-    
+  }
+
+  private void failingTest() {
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
