@@ -115,3 +115,41 @@ snap():
 compute():
 	findNextActions()
 	snap()
+
+	
+	
+	
+    for (Agent agent : memory.agents) {
+  Point at;
+  
+  int lastCommittedIndex = agent.path.size() - 1;
+  if (timestep <= lastCommittedIndex) {
+    at = agent.path.get(timestep);  // current committed move
+  } else {
+    // @TODO: agents can have more than 1 plan if they are extensions. 
+    Plan plan = memory.getPlan(agent);
+    if (plan == null) {
+      //at = agent.path.get(lastCommittedIndex); // no plan? use the last known committed move
+
+      // Agents without any committed move at this time-step or any plan, we can request to move. 
+      // These are the "conflicting agents" which will try to resolve the newer deadlock.
+      continue; 
+
+    } else {  // planned moves
+      int offset = lastCommittedIndex;
+      int index = timestep - offset;
+      
+      int lastPlannedIndex = plan.path.size() - 1;
+      if (index <= lastPlannedIndex) {
+        at = plan.path.get(index);  // current plan move
+      } else {
+        // @TODO: shouldn't past planning also be the guys which can move?
+        //at = plan.path.get(lastPlannedIndex); // past final move in plan? use the last known planned move.
+        continue;
+      }
+    }
+  }
+  
+  int id = agent.getId();
+  occupied[at.x][at.y] = id;
+}

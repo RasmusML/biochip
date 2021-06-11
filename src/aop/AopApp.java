@@ -81,9 +81,9 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent0);
     memory.agents.add(agent1);
     
-    okTest();
+    //okTest();
     
-    //failingTest();
+    failingTest();
   }
 
   private void okTest() {
@@ -96,13 +96,12 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = new Plan();
     plan.agent = agent1;
     plan.path = path;
-    agent1.addPlan(plan);
     
     RequestPackage pack = new RequestPackage();
     pack.sender = agent1;
     pack.receiver = agent0;
-    pack.request = Request.resolveDeadlock;
-    agent1.request(pack);
+    pack.request = Request.pathing;
+    agent1.request(pack, plan);
   }
 
   private void failingTest() {
@@ -115,13 +114,12 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = new Plan();
     plan.agent = agent0;
     plan.path = path;
-    agent0.addPlan(plan);
     
     RequestPackage pack = new RequestPackage();
     pack.sender = agent0;
     pack.receiver = agent1;
-    pack.request = Request.resolveDeadlock;
-    agent0.request(pack);
+    pack.request = Request.pathing;
+    agent0.request(pack, plan);
   }
 
   @Override

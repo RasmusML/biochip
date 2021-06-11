@@ -1,4 +1,4 @@
-package dmb.algorithms.components;
+package aop;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,46 +8,35 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.function.BiFunction;
 
-import dmb.algorithms.BioArray;
-import dmb.algorithms.Droplet;
-import dmb.algorithms.DropletUnit;
-import dmb.algorithms.Module;
-import dmb.algorithms.Move;
 import dmb.algorithms.Point;
-import dmb.helpers.Assert;
 import engine.math.MathUtils;
 
-public class ModifiedAStarPathFinder {
+public class AStarPathFinder {
 
   private BiFunction<Point, Point, Float> stepCostFunction;
   private BiFunction<Point, Point, Float> minimumCostFunction;
   
-  public ModifiedAStarPathFinder() {
-    BiFunction<Point, Point, Float> costFunction = (p1, p2) -> MathUtils.distance(p1.x, p1.y, p2.x, p2.y);
-    stepCostFunction = costFunction;
-    minimumCostFunction = costFunction;
+  public AStarPathFinder() {
+    stepCostFunction = (p1, p2) -> p1.x == p2.x && p1.y == p2.y ? 1f : 2f;
+    minimumCostFunction = (p1, p2) -> MathUtils.getManhattanDistance(p1.x, p1.y, p2.x, p2.y);
   }
 
   /**
    * A* search
    * 
-   * Finds the path from {@code droplet} to {@code target}, if it exists. The shortest
+   * Finds the path from {@code from} to {@code to}, if it exists. The shortest
    * path is only guaranteed if {@code minimumCostFunction} is admissible and
    * consistent.
    * 
-   * @param droplet
-   * @param target
-   * @param module
-   * @param droplets
-   * @param array
-   * @param moveFinder
-   * @param modules
+   * @param from
+   * @param to
    * @param timestamp
+   * @param maxSteps
    * 
-   * @return the path from {@code droplet} to {@code target}, if no path exist return an empty list.
+   * @return the path from {@code from} to {@code to}, if no path exist return an empty list.
    * 
    */
-  public List<Point> search(Droplet droplet, Point target, Module module, List<Droplet> droplets, BioArray array, SingleCellMoveFinder moveFinder, List<Module> modules, int timestamp, int maxSteps) {
+  public List<Point> search(Point from, Point to, int timestamp, int maxSteps) {
     Map<PositionInTime, Node<PositionInTime>> positionInTimeToNode = new HashMap<>();
     List<PositionInTime> explored = new ArrayList<>();
 
@@ -59,14 +48,10 @@ public class ModifiedAStarPathFinder {
       float c2 = n2.traveled + n2.minimumCost;
       return (int) (c1 - c2);
     });
-
-    Assert.that(droplet.units.size() == 1);
-    DropletUnit unit = droplet.units.get(0);
     
-    Point sourcePosition = unit.route.getPosition(timestamp);
-    PositionInTime source = new PositionInTime(sourcePosition, timestamp);
+    PositionInTime source = new PositionInTime(from, timestamp);
 
-    Node<PositionInTime> sourceNode = Node.root(minimumCostFunction.apply(source.position, target));
+    Node<PositionInTime> sourceNode = Node.root(minimumCostFunction.apply(source.position, to));
     
     positionInTimeToNode.put(source, sourceNode);
     frontier.add(source);
@@ -76,8 +61,11 @@ public class ModifiedAStarPathFinder {
     while (frontier.size() > 0) {
       PositionInTime current = frontier.remove();
 
-      if (current.position.x == target.x && current.position.y == target.y) {
+      if (current.position.x == to.x && current.position.y == to.y) {
         arrivalToTarget = current.timestep;
+        
+        System.out.printf("checked %d nodes\n", current.timestep - timestamp);
+        
         break;
       }
 
@@ -90,12 +78,8 @@ public class ModifiedAStarPathFinder {
       
       List<PositionInTime> children = new ArrayList<>();
       
-      Assert.that(false, "not implemented yet.");
-      
-      // @TODO: updated getValidMoves, because we have to figure out what to do when another droplet does have a next position yet. Do we keep the previous or assume it is invisible?
-      //List<Move> moves = moveFinder.getValidMoves(unit, droplet, current.position, null, module, current.timestep, droplets, modules, array, true);
-      List<Move> moves = null; // @TODO
-      for (Move move : moves) {
+      List<Point> moves = getMoves(current.position, current.timestep);
+      for (Point move : moves) {
         Point position = new Point(current.position).add(move.x, move.y);
         PositionInTime positionInTime = new PositionInTime(position, current.timestep + 1);
         children.add(positionInTime);
@@ -118,7 +102,7 @@ public class ModifiedAStarPathFinder {
             frontier.add(child);
           }
         } else {
-          float minimumCost = minimumCostFunction.apply(child.position, target);
+          float minimumCost = minimumCostFunction.apply(child.position, to);
           Node<PositionInTime> childNode = Node.child(newTraveled, minimumCost, current);
           positionInTimeToNode.put(child, childNode);
           frontier.add(child);
@@ -130,9 +114,9 @@ public class ModifiedAStarPathFinder {
     List<Point> path = new ArrayList<>();
 
     if (arrivalToTarget == -1) return path;
-    path.add(target);
+    path.add(to);
 
-    PositionInTime targetInTime = new PositionInTime(target, arrivalToTarget);
+    PositionInTime targetInTime = new PositionInTime(to, arrivalToTarget);
     Node<PositionInTime> current = positionInTimeToNode.get(targetInTime);
 
     while (current.parent != null) {
@@ -146,6 +130,10 @@ public class ModifiedAStarPathFinder {
 
   }
   
+  public List<Point> getMoves(Point at, int timestep) {
+    throw new IllegalStateException("override me!");
+  }
+
   private static class Node<T> {
 
     public T parent;
