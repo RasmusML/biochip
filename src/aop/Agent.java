@@ -14,13 +14,10 @@ public class Agent {
   private SharedAgentMemory memory;
   
   private List<Point> path;
-  private List<Plan> plans;
   
   public Agent(SharedAgentMemory memory, int id, Point spawn) {
     this.id = id;
     this.memory = memory;
-    
-    plans = new ArrayList<>();
     
     path = new ArrayList<>();
     path.add(spawn.copy());
@@ -36,32 +33,47 @@ public class Agent {
     return path.get(path.size() - 1);
   }
   
-  public ResolveResult request(RequestPackage pack, Plan plan) {
+  public ResolveResult request(Request request, Plan plan) {
     memory.root = plan;
-    //memory.timestep = path.size();
-    
-    ResolveResult result = pack.receiver.resolve(pack, plan);
     memory.tryCount = 0;
     
-    if (result == ResolveResult.ok) {
+    if (request == Request.pathing) {
       
-      List<Plan> committablePlans = new ArrayList<>();
-      committablePlans.add(plan);
+      List<Agent> conflicting = getConflictingAgents(plan.path);
       
-      while (committablePlans.size() > 0) {
-        Plan committable = committablePlans.remove(0);
-
-        Agent agent = committable.agent;
-        agent.path.addAll(committable.path);
+      boolean ok = true;
+      for (Agent agent : conflicting) {
+        ResolveResult result = agent.resolve(request, plan);
         
-        committablePlans.addAll(committable.dependencies);
+        if (result == ResolveResult.failed) {
+          ok = false;
+          break;
+        }
       }
+      
+      if (ok) {
+        
+        List<Plan> committablePlans = new ArrayList<>();
+        committablePlans.add(plan);
+        
+        while (committablePlans.size() > 0) {
+          Plan committable = committablePlans.remove(0);
+          
+          Agent agent = committable.agent;
+          agent.path.addAll(committable.path);
+          
+          committablePlans.addAll(committable.dependencies);
+        }
+      }
+      
+      memory.root = null;
+      memory.failedPlans.clear();
+      
+      return ok ? ResolveResult.ok : ResolveResult.failed;
     }
-
-    memory.root = null;
-    memory.failedPlans.clear();
     
-    return result;  // @TODO: use a dedicated enum: success, failure (or just bool)
+    throw new IllegalStateException("broken?");
+    
   }
   
   public int getId() {
@@ -69,9 +81,9 @@ public class Agent {
   }
 
   // tries to commit to a rule which satisfies the request. Rules are explicit contained here.
-  public ResolveResult resolve(RequestPackage pack, Plan parentPlan) {
+  public ResolveResult resolve(Request request, Plan parentPlan) {
     
-    if (pack.request == Request.pathing) {
+    if (request == Request.pathing) {
       
       List<Plan> plans = memory.getPlans();
       List<Agent> agents = memory.agents;
@@ -86,6 +98,8 @@ public class Agent {
         List<Point> resolvedPath = getDeadlockResolvingPath(failedPlans, distanceGrid);
   
         if (resolvedPath == null) {
+          //Assert.that(false); // @remove
+          
           Plan oldParentPlan = parentPlan.copy();
           
           parentPlan.path.clear();
@@ -112,12 +126,8 @@ public class Agent {
           
           boolean ok = true;
           for (Agent agent : conflictingAgents) {
-            RequestPackage newPack = new RequestPackage();
-            newPack.sender = this;
-            newPack.receiver = agent;
-            newPack.request = Request.pathing;
             
-            ResolveResult result = agent.resolve(newPack, plan);
+            ResolveResult result = agent.resolve(request, plan);
             if (result == ResolveResult.failed) {
               ok = false;
               break;
@@ -147,18 +157,12 @@ public class Agent {
                 parentPlan.path.addAll(path);
                 
                 conflictingAgents = parentAgent.getConflictingAgents(path);
-
-                //Assert.that(!conflictingAgents.contains(this));
+                Assert.that(conflictingAgents.contains(this));
                 //conflictingAgents.add(this);
                 
                 ok = true;
                 for (Agent agent : conflictingAgents) {
-                  RequestPackage newPack = new RequestPackage();
-                  newPack.sender = this;
-                  newPack.receiver = agent;
-                  newPack.request = Request.pathing;
-                  
-                  ResolveResult result = agent.resolve(newPack, plan);
+                  ResolveResult result = agent.resolve(request, plan);
                   if (result == ResolveResult.failed) {
                     ok = false;
                     break;
@@ -192,7 +196,6 @@ public class Agent {
         } else {
 
           List<Agent> conflictingAgents = getConflictingAgents(resolvedPath);
-          Assert.that(conflictingAgents.size() == 0, "not ready to test conflicting agents yet.");
           
           Plan plan = new Plan();
           plan.agent = this;
@@ -203,12 +206,7 @@ public class Agent {
           
           boolean ok = true;
           for (Agent agent : conflictingAgents) {
-            RequestPackage newPack = new RequestPackage();
-            newPack.sender = this;
-            newPack.receiver = agent;
-            newPack.request = Request.pathing;
-            
-            ResolveResult result = agent.resolve(newPack, plan);
+            ResolveResult result = agent.resolve(request, plan);
             if (result == ResolveResult.failed) {
               ok = false;
               break;
@@ -271,7 +269,6 @@ public class Agent {
         parentAgent.updateOccupiedTiles(prevOccupied, timestep, plans, memory.agents);
         parentAgent.updateOccupiedTiles(occupied, timestep + 1, plans, memory.agents);
         
-        System.out.printf("\n");
         print(occupied);
         
         List<Point> validMoves = new ArrayList<>();
@@ -454,8 +451,17 @@ public class Agent {
     
     List<Plan> plans = memory.getPlans();
     for (Plan plan : plans) {
-      for (Point point : plan.path) {
-        overlay[point.x][point.y] = -1;
+      
+      if (plan.agent.equals(memory.root.agent)) {
+        for (int i = 0; i <= plan.path.size() - 1; i++) {
+          Point point = plan.path.get(i);
+          overlay[point.x][point.y] = -1;
+        }
+      } else {
+        for (int i = 0; i <= plan.path.size() - 2; i++) { // the last position is skipped, because the agent can push the other agent.
+          Point point = plan.path.get(i);
+          overlay[point.x][point.y] = -1;
+        }
       }
     }
     
@@ -468,6 +474,7 @@ public class Agent {
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
         if (overlay[x][y] == -1) continue;
+        if (overlay[x][y] == 0) continue; // if agent1 moves to agent2 (this agent) and stops, then agent2 can't push agent1 again. 
         
         Point endpoint = new Point(x, y);
         endPoints.add(endpoint);
@@ -496,7 +503,7 @@ public class Agent {
     for (Point point : longPath) {
       path.add(point);
       
-      if (overlay[point.x][point.y] >= 0) break;  // the first safe spot has been found. Lets stop.
+      if (overlay[point.x][point.y] >= 1) break;  // the first safe spot has been found. Lets stop.
     }
     
     return path;
@@ -508,13 +515,43 @@ public class Agent {
     
     Point current = goal;
     while (distanceGrid[current.x][current.y] > 0) {
+      Board board = memory.board;
       
-      Point backtrackMove = backtrack(current, distanceGrid, overlay);
-      if (backtrackMove == null) return null;
+      List<Point> moves = new ArrayList<>();
+      moves.add(new Point(-1, 0));
+      moves.add(new Point(1, 0));
+      moves.add(new Point(0, 1));
+      moves.add(new Point(0, -1));
       
-      Point to = current.copy().add(backtrackMove.x, backtrackMove.y);
-      longPath.add(to);
-      current = to;
+      int cost = distanceGrid[current.x][current.y];
+      
+      int nextCost = cost;
+      Point selectedMove = null;
+      
+      for (Point move : moves) {
+        int tx = current.x + move.x;
+        int ty = current.y + move.y;
+        
+        if (!board.isTileOpen(tx, ty)) continue;  // wall or outside the board
+        if (distanceGrid[tx][ty] == -1) continue;
+        
+        int newCost = distanceGrid[tx][ty];
+        if (newCost < nextCost) {
+          nextCost = newCost;
+          selectedMove = move;
+        }
+      }
+      
+      if (selectedMove == null) return null;
+      
+      Point next = current.copy().add(selectedMove);
+
+      int repeats = cost - nextCost;
+      for (int i = 0; i < repeats; i++) {
+        longPath.add(next.copy());
+      }
+      
+      current = next;
     }
     
     Collections.reverse(longPath);
@@ -523,30 +560,6 @@ public class Agent {
   }
 
 
-  private Point backtrack(Point current, int[][] distanceGrid, int[][] overlay) {
-    Board board = memory.board;
-    
-    List<Point> moves = new ArrayList<>();
-    moves.add(new Point(-1, 0));
-    moves.add(new Point(1, 0));
-    moves.add(new Point(0, 1));
-    moves.add(new Point(0, -1));
-    
-    int cost = distanceGrid[current.x][current.y];
-
-    for (Point move : moves) {
-      int tx = current.x + move.x;
-      int ty = current.y + move.y;
-      
-      if (!board.isTileOpen(tx, ty)) continue;  // wall or outside the board
-      
-      int newCost = distanceGrid[tx][ty];
-      if (newCost == cost - 1) return move;
-    }
-    
-    return null;
-  }
-  
   private int[][] getDistanceGrid(List<Plan> plans, List<Agent> agents) {
     Board board = memory.board;
     
@@ -566,7 +579,7 @@ public class Agent {
     moves.add(new Point(1, 0));
     moves.add(new Point(0, 1));
     moves.add(new Point(0, -1));
-
+    
     int timestep = path.size();
 
     Point at;
@@ -584,47 +597,76 @@ public class Agent {
     List<Point> pending = new ArrayList<>();
     pending.add(at);
     
-    updateOccupiedTiles(occupied, prevOccupied, timestep, plans, agents);
+    updateOccupiedTiles(prevOccupied, timestep, plans, agents);
+    updateOccupiedTiles(occupied, timestep + 1, plans, agents);
+    
+    print(occupied);
 
+    int left = 1;
+    int childrenLeft = 0;
+    
     int minDistance = 0;
     distanceGrid[at.x][at.y] = minDistance;
     
+    minDistance += 1;
+    
+    int maxIterations = 1000;
+    int iteration = 0;
+    
     // flood-fill algorithm
     while (pending.size() > 0) {
-      Point current = pending.remove(0);
+      iteration += 1;
+      if (iteration >= maxIterations) break;
       
-      int cellDistance = distanceGrid[current.x][current.y];
-      if (cellDistance > minDistance) {
-        minDistance = cellDistance;
-        timestep += 1;
+      Point current = pending.remove(0);
 
-        updateOccupiedTiles(occupied, prevOccupied, timestep, plans, agents);
-      }
+      int neighboursNotEncountered = 0;
       
       for (Point move : moves) {
         int tx = current.x + move.x;
         int ty = current.y + move.y;
         
         if (!board.isTileOpen(tx, ty)) continue;  // wall or outside the board
-        if (distanceGrid[tx][ty] >= 0) continue;  // already visited
+        if (distanceGrid[tx][ty] != -1) continue;  // already visited
         
-        if (occupied[tx][ty] != -1) continue; // already occupied
+        if (occupied[tx][ty] != -1) { // already occupied by another agent
+          neighboursNotEncountered += 1;
+          continue; 
+        }
+        
         if (prevOccupied[tx][ty] != -1 && prevOccupied[tx][ty] == occupied[current.x][current.y]) continue;  // the agents would jump through each other. Not possible.
 
-        distanceGrid[tx][ty] = minDistance + 1;
+        distanceGrid[tx][ty] = minDistance;
+        
+        childrenLeft += 1;
         
         Point child = new Point(tx, ty);
         pending.add(child);
-        
       }
+      
+      // an agent may need to stall for some time before a tile becomes available.
+      if (occupied[current.x][current.y] == -1 && neighboursNotEncountered > 0) {
+        childrenLeft += 1;
+        pending.add(current);
+      }
+
+      left -= 1;
+      if (left == 0) {
+        minDistance += 1;
+        timestep += 1;
+        
+        left = childrenLeft;
+        childrenLeft = 0;
+        
+        updateOccupiedTiles(prevOccupied, timestep, plans, agents);
+        updateOccupiedTiles(occupied, timestep + 1, plans, agents);
+        
+        print(occupied);
+      }
+      
     }
     
     return distanceGrid;
-  }
-  
-  private void updateOccupiedTiles(int[][] occupied, int[][] prevOccupied, int timestep, List<Plan> plans, List<Agent> agents) {
-    copy(occupied, prevOccupied);
-    updateOccupiedTiles(occupied, timestep, plans, agents);
   }
   
   // free: -1, id: x (>= 0)
@@ -688,6 +730,9 @@ public class Agent {
       
       System.out.printf("\n");
     }
+    
+    System.out.printf("\n");
+    
   }
 }
 
@@ -800,13 +845,6 @@ class SharedAgentMemory {
     
     return failed;
   }
-}
-
-class RequestPackage {
-  public Agent sender;  // unused
-  public Agent receiver;
-  
-  public Request request;
 }
 
 enum ResolveResult {

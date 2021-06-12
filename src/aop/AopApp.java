@@ -45,7 +45,7 @@ public class AopApp extends ApplicationAdapter {
   float stopTime;
   float movementTime;
 
-  Agent agent0, agent1;
+  List<Agent> agents;
   SharedAgentMemory memory;
   
   @Override
@@ -56,8 +56,9 @@ public class AopApp extends ApplicationAdapter {
     
     movementTime = 0.12f;
     stopTime = 0.45f;
-
     
+    agents = new ArrayList<>();
+
     canvas.createBufferStrategy(3);
     canvas.setIgnoreRepaint(true);
 
@@ -75,18 +76,21 @@ public class AopApp extends ApplicationAdapter {
 
     memory = new SharedAgentMemory(board);
     
-    agent0 = new Agent(memory, 0, new Point(0, 4));
-    agent1 = new Agent(memory, 1, new Point(0, 0));
+    //okTest();
+    //reverseTest();
+    normalTest2();
+  }
+
+  private void okTest() {
+    Agent agent0 = new Agent(memory, 0, new Point(0, 4));
+    Agent agent1 = new Agent(memory, 1, new Point(0, 0));
+    
+    agents.add(agent0);
+    agents.add(agent1);
     
     memory.agents.add(agent0);
     memory.agents.add(agent1);
     
-    //okTest();
-    
-    failingTest();
-  }
-
-  private void okTest() {
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 1));
     path.add(new Point(0, 2));
@@ -98,14 +102,46 @@ public class AopApp extends ApplicationAdapter {
     plan.path = path;
     plan.start = 1;
     
-    RequestPackage pack = new RequestPackage();
-    pack.sender = agent1;
-    pack.receiver = agent0;
-    pack.request = Request.pathing;
-    agent1.request(pack, plan);
+    agent1.request(Request.pathing, plan);
+  }
+  
+  private void normalTest2() {
+    Agent agent0 = new Agent(memory, 0, new Point(0, 4));
+    Agent agent1 = new Agent(memory, 1, new Point(0, 0));
+    Agent agent2 = new Agent(memory, 2, new Point(0, 2));
+    
+    agents.add(agent0);
+    agents.add(agent1);
+    agents.add(agent2);
+    
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    memory.agents.add(agent2);
+    
+    List<Point> path = new ArrayList<>();
+    path.add(new Point(0, 1));
+    path.add(new Point(0, 2));
+    path.add(new Point(0, 3));
+    path.add(new Point(0, 4));
+    
+    Plan plan = new Plan();
+    plan.agent = agent1;
+    plan.path = path;
+    plan.start = 1;
+    
+    agent1.request(Request.pathing, plan);
   }
 
-  private void failingTest() {
+  private void reverseTest() {
+    Agent agent0 = new Agent(memory, 0, new Point(0, 4));
+    Agent agent1 = new Agent(memory, 1, new Point(0, 0));
+    
+    agents.add(agent0);
+    agents.add(agent1);
+    
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
@@ -117,11 +153,7 @@ public class AopApp extends ApplicationAdapter {
     plan.path = path;
     plan.start = 1;
     
-    RequestPackage pack = new RequestPackage();
-    pack.sender = agent0;
-    pack.receiver = agent1;
-    pack.request = Request.pathing;
-    agent0.request(pack, plan);
+    agent0.request(Request.pathing, plan);
   }
 
   @Override
@@ -281,8 +313,9 @@ public class AopApp extends ApplicationAdapter {
     
     { // agents
       
-      drawAgent(agent0, Color.green);
-      drawAgent(agent1, Color.red);
+      for (Agent agent : agents) {
+        drawAgent(agent, Color.green);
+      }
     }
   }
 
