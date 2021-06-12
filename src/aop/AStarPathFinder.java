@@ -110,10 +110,10 @@ public class AStarPathFinder {
       }
     }
 
+    if (arrivalToTarget == -1) return null;
+
     // backtrack from goal to source.
     List<Point> path = new ArrayList<>();
-
-    if (arrivalToTarget == -1) return path;
     path.add(to);
 
     PositionInTime targetInTime = new PositionInTime(to, arrivalToTarget);

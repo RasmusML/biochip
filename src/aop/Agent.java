@@ -38,7 +38,7 @@ public class Agent {
   
   public ResolveResult request(RequestPackage pack, Plan plan) {
     memory.root = plan;
-    memory.timestep = path.size();
+    //memory.timestep = path.size();
     
     ResolveResult result = pack.receiver.resolve(pack, plan);
     memory.tryCount = 0;
@@ -77,7 +77,7 @@ public class Agent {
       List<Agent> agents = memory.agents;
       
       int[][] distanceGrid = getDistanceGrid(plans, agents);
-      //print(distanceGrid);
+      print(distanceGrid);
 
       while (memory.tryCount < memory.totalTries) {
         memory.tryCount += 1;
@@ -93,7 +93,7 @@ public class Agent {
           parentPlan.dependencies.clear();
           
           int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
-          //print(outpostDistanceGrid);
+          print(outpostDistanceGrid);
           
           List<Point> outposts = getOutposts(outpostDistanceGrid);
           
@@ -102,7 +102,6 @@ public class Agent {
           List<Point> outpostPath = getOutpostPath(outposts, failedPlans, outpostDistanceGrid);
           
           List<Agent> conflictingAgents = getConflictingAgents(outpostPath);
-          Assert.that(conflictingAgents.size() == 0, "not ready to test conflicting agents yet.");
 
           Plan plan = new Plan();
           plan.agent = this;
@@ -139,34 +138,45 @@ public class Agent {
               tiles.add(parentAgent.getPosition()); // current position
               
               List<Point> path = findPath(parentAgent, parentTarget, tiles);
-              Assert.that(path != null, "todo!");
-
-              // @incomplete: below here
-
-              parentPlan.path.addAll(path);
               
-              conflictingAgents = getConflictingAgents(outpostPath);
-              
-              ok = true;
-              for (Agent agent : conflictingAgents) {
-                RequestPackage newPack = new RequestPackage();
-                newPack.sender = this;
-                newPack.receiver = agent;
-                newPack.request = Request.pathing;
+              if (path == null) {
+                // undo/fail
+                Assert.that(path != null, "todo!");
+              } else {
                 
-                ResolveResult result = agent.resolve(newPack, plan);
-                if (result == ResolveResult.failed) {
-                  ok = false;
-                  break;
+                parentPlan.path.addAll(path);
+                
+                conflictingAgents = parentAgent.getConflictingAgents(path);
+
+                //Assert.that(!conflictingAgents.contains(this));
+                //conflictingAgents.add(this);
+                
+                ok = true;
+                for (Agent agent : conflictingAgents) {
+                  RequestPackage newPack = new RequestPackage();
+                  newPack.sender = this;
+                  newPack.receiver = agent;
+                  newPack.request = Request.pathing;
+                  
+                  ResolveResult result = agent.resolve(newPack, plan);
+                  if (result == ResolveResult.failed) {
+                    ok = false;
+                    break;
+                  }
+                }
+                
+                if (ok) {
+                  memory.failedPlans.removeAll(failedPlans);
+                  return ResolveResult.ok;
+                } else {
+                  // undo
+                  parentPlan.path.clear();
+                  parentPlan.path.addAll(oldParentPlan.path);
+                  return ResolveResult.failed;
                 }
               }
-
-              // ============================
             }
-            
-            memory.failedPlans.removeAll(failedPlans);
-            return ResolveResult.ok;
-            
+              
           } else {
             Assert.that(false, "@todo");
             
@@ -180,6 +190,7 @@ public class Agent {
           return ResolveResult.failed;
           
         } else {
+
           List<Agent> conflictingAgents = getConflictingAgents(resolvedPath);
           Assert.that(conflictingAgents.size() == 0, "not ready to test conflicting agents yet.");
           
@@ -243,6 +254,12 @@ public class Agent {
     moves.add(new Point(0, -1));
     moves.add(new Point(0, 0));
 
+    int[][] grid = createGrid(tiles);
+    
+    for (Point tile : tiles) {
+      grid[tile.x][tile.y] = 0;
+    }
+    
     int[][] occupied = createGrid(tiles);
     int[][] prevOccupied = createGrid(tiles);
     
@@ -251,35 +268,20 @@ public class Agent {
     AStarPathFinder pathfinder = new AStarPathFinder() {
       @Override
       public List<Point> getMoves(Point at, int timestep) {
+        parentAgent.updateOccupiedTiles(prevOccupied, timestep, plans, memory.agents);
+        parentAgent.updateOccupiedTiles(occupied, timestep + 1, plans, memory.agents);
         
-        copy(occupied, prevOccupied);
-        fill(occupied, -1);
-        
-        for (Point tile : tiles) {
-          occupied[tile.x][tile.y] = 0;
-        }
-        
-        for (Plan plan : plans) {
-          Agent agent = plan.agent;
-          int lastCommittedIndex = agent.path.size() - 1;
-          int offset = lastCommittedIndex;
-          int index = timestep - offset;
-          
-          int lastPlannedIndex = plan.path.size() - 1;
-          if (index > lastPlannedIndex) continue;
-          Point otherAt = plan.path.get(index);  // current plan move
-          
-          if (occupied[otherAt.x][otherAt.y] == -1) continue;
-          occupied[otherAt.x][otherAt.y] = -2;
-          
-        }
+        System.out.printf("\n");
+        print(occupied);
         
         List<Point> validMoves = new ArrayList<>();
         for (Point move : moves) {
           Point to = at.copy().add(move.x, move.y);
           if (to.x < 0 || to.x >= occupied.length || to.y < 0 || to.y >= occupied[0].length) continue;
-          if (occupied[to.x][to.y] < 0) continue;
-          if (prevOccupied[to.x][to.y] != 0 && prevOccupied[to.x][to.y] == occupied[at.x][at.y]) continue;  // the agents would jump through each other. Not possible.
+          if (grid[at.x][at.y] == -1) continue; // wall
+          
+          if (occupied[to.x][to.y] != -1) continue;
+          if (prevOccupied[to.x][to.y] != -1 && prevOccupied[to.x][to.y] == occupied[at.x][at.y]) continue;  // the agents would jump through each other. Not possible.
 
           validMoves.add(move);
         }
@@ -289,9 +291,14 @@ public class Agent {
     };
 
     Point from = parentAgent.getPosition();
-    int timestamp = memory.timestep;
+    int timestamp = parentAgent.path.size();
     
-    return pathfinder.search(from, target, timestamp, memory.numNodesToExploreInSearch);
+    List<Point> path = pathfinder.search(from, target, timestamp, memory.numNodesToExploreInSearch);
+    if (path == null) return null;
+
+    path.remove(0); // we already have the start position;
+    
+    return path;
   }
 
   // get all the outposts not on the parent path plan.
@@ -363,10 +370,49 @@ public class Agent {
     return openNeighbourTiles >= 3;
   }
 
-  private List<Agent> getConflictingAgents(List<Point> path) {
+  public List<Agent> getConflictingAgents(List<Point> path) {
     List<Agent> conflicting = new ArrayList<>();
+
+    int timestep = 1; // @TODO
     
-    // @TODO
+    List<Plan> plans = memory.getPlans();
+    for (int i = 0; i < path.size(); i++) {
+      Point at = path.get(i);
+      
+      List<Agent> pending = new ArrayList<>();
+      pending.addAll(memory.agents);
+      pending.remove(this);
+      
+      int endTime = timestep + i + 1;
+      
+      for (Plan plan : plans) {
+        if (equals(plan.agent)) continue;
+        if (conflicting.contains(plan.agent)) continue;
+        if (plan.path.size() == 0) continue;  // @note: this only happens for the parent when doing the reverse?
+
+        int otherEndTime = plan.start + plan.path.size();
+        if (otherEndTime > endTime) continue;
+        
+        pending.remove(plan.agent);
+
+        Point otherLastAt = plan.path.get(plan.path.size() - 1);
+        
+        if (at.x == otherLastAt.x && at.y == otherLastAt.y) {
+          conflicting.add(plan.agent);
+        }
+      }
+      
+      for (Agent other : pending) {
+        if (equals(other)) continue;
+        if (conflicting.contains(other)) continue;
+        
+        Point otherLastAt = other.getPosition();
+        
+        if (at.x == otherLastAt.x && at.y == otherLastAt.y) {
+          conflicting.add(other);
+        }
+      }
+    }
     
     return conflicting;
   }
@@ -388,10 +434,10 @@ public class Agent {
         }
       }
       
-      if (alreadyFailed) continue;
-
-      path.remove(0); // remove the first point, because the agent is already there.
-      return path;
+      if (!alreadyFailed) {
+        path.remove(0); // remove the first point, because the agent is already there.
+        return path;
+      }
     }
     
     return null;
@@ -502,8 +548,6 @@ public class Agent {
   }
   
   private int[][] getDistanceGrid(List<Plan> plans, List<Agent> agents) {
-    Assert.that(path.size() == memory.timestep);
-
     Board board = memory.board;
     
     int width = board.getWidth();
@@ -522,23 +566,38 @@ public class Agent {
     moves.add(new Point(1, 0));
     moves.add(new Point(0, 1));
     moves.add(new Point(0, -1));
-    
-    Point at = path.get(memory.timestep);
-    distanceGrid[at.x][at.y] = 0;
 
+    int timestep = path.size();
+
+    Point at;
+    
+    Plan plan = memory.getPlan(this);
+    if (plan == null) {
+      at = path.get(timestep - 1);
+    } else {
+      int planStep = plan.path.size();
+      
+      at = plan.path.get(planStep - 1);
+      timestep += planStep;
+    }
+    
     List<Point> pending = new ArrayList<>();
     pending.add(at);
     
-    int timestep = memory.timestep;
     updateOccupiedTiles(occupied, prevOccupied, timestep, plans, agents);
+
+    int minDistance = 0;
+    distanceGrid[at.x][at.y] = minDistance;
     
     // flood-fill algorithm
     while (pending.size() > 0) {
       Point current = pending.remove(0);
       
-      int time = distanceGrid[current.x][current.y];
-      if (time > timestep) {
-        timestep = time;
+      int cellDistance = distanceGrid[current.x][current.y];
+      if (cellDistance > minDistance) {
+        minDistance = cellDistance;
+        timestep += 1;
+
         updateOccupiedTiles(occupied, prevOccupied, timestep, plans, agents);
       }
       
@@ -552,7 +611,7 @@ public class Agent {
         if (occupied[tx][ty] != -1) continue; // already occupied
         if (prevOccupied[tx][ty] != -1 && prevOccupied[tx][ty] == occupied[current.x][current.y]) continue;  // the agents would jump through each other. Not possible.
 
-        distanceGrid[tx][ty] = timestep + 1;
+        distanceGrid[tx][ty] = minDistance + 1;
         
         Point child = new Point(tx, ty);
         pending.add(child);
@@ -565,31 +624,43 @@ public class Agent {
   
   private void updateOccupiedTiles(int[][] occupied, int[][] prevOccupied, int timestep, List<Plan> plans, List<Agent> agents) {
     copy(occupied, prevOccupied);
+    updateOccupiedTiles(occupied, timestep, plans, agents);
+  }
+  
+  // free: -1, id: x (>= 0)
+  private void updateOccupiedTiles(int[][] occupied, int timestep, List<Plan> plans, List<Agent> agents) {
     fill(occupied, -1);
 
-    // @TODO: handle multiple plans for the same agent.
     for (Plan plan : plans) {
       Agent agent = plan.agent;
-      int lastCommittedIndex = agent.path.size() - 1;
-      int offset = lastCommittedIndex;
-      int index = timestep - offset;
+      if (equals(agent)) continue;
       
-      int lastPlannedIndex = plan.path.size() - 1;
-      if (index > lastPlannedIndex) continue;
-      Point at = plan.path.get(index);  // current plan move
+      int stepsCommitted = agent.path.size();
+      int stepsPlanned = plan.path.size();
+      int steps = stepsCommitted + stepsPlanned;
+      
+      if (stepsCommitted >= timestep) continue;
+      if (timestep > steps) continue;
+      
+      int step = timestep - stepsCommitted;
+      int stepIndex = step - 1;
+      Point at = plan.path.get(stepIndex);  // current plan move
       
       int id = agent.getId();
       occupied[at.x][at.y] = id;
     }
     
     for (Agent agent : agents) {
-      int lastCommittedIndex = agent.path.size() - 1;
-      if (timestep > lastCommittedIndex) continue;
-      Point at = agent.path.get(timestep);  // current committed move
+      if (equals(agent)) continue;
+      
+      int stepsCommitted = agent.path.size();
+      if (timestep > stepsCommitted) continue;
+      
+      int index = timestep - 1;
+      Point at = agent.path.get(index);  // current committed move
       
       int id = agent.getId();
       occupied[at.x][at.y] = id;
-      
     }
   }
 
@@ -628,7 +699,7 @@ class TimePoint {
 class Plan {
   public Agent agent;
 
-  //public int start; // @TODO: needed when using multiple plans
+  public int start; // @TODO
   public List<Point> path;
   public List<Agent> conflictingAgents;
   
@@ -655,7 +726,7 @@ class SharedAgentMemory {
   public int maxDepth;  // @TODO: max planning depth.
   public int numNodesToExploreInSearch;
   
-  public int timestep;  // starts at 0.
+  //public int timestep;  // starts at 1.
   
   public int totalTries;
   public int tryCount;  // share the tryCount between the agents so tries doesn't explode when agents request recursively.

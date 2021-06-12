@@ -96,6 +96,7 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = new Plan();
     plan.agent = agent1;
     plan.path = path;
+    plan.start = 1;
     
     RequestPackage pack = new RequestPackage();
     pack.sender = agent1;
@@ -114,6 +115,7 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = new Plan();
     plan.agent = agent0;
     plan.path = path;
+    plan.start = 1;
     
     RequestPackage pack = new RequestPackage();
     pack.sender = agent0;
