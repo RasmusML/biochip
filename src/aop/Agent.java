@@ -36,13 +36,9 @@ public class Agent {
     return path.get(path.size() - 1);
   }
   
-  // @hack
-  public int getTimestep() {
-    return path.size() - 1;
-  }
-  
   public ResolveResult request(RequestPackage pack, Plan plan) {
     memory.root = plan;
+    memory.timestep = path.size();
     
     ResolveResult result = pack.receiver.resolve(pack, plan);
     memory.tryCount = 0;
@@ -293,8 +289,7 @@ public class Agent {
     };
 
     Point from = parentAgent.getPosition();
-    //int timestamp = getTimestep();
-    int timestamp = 1;  // @hack
+    int timestamp = memory.timestep;
     
     return pathfinder.search(from, target, timestamp, memory.numNodesToExploreInSearch);
   }
@@ -507,7 +502,7 @@ public class Agent {
   }
   
   private int[][] getDistanceGrid(List<Plan> plans, List<Agent> agents) {
-    Assert.that(path.size() - 1 == memory.timestep);
+    Assert.that(path.size() == memory.timestep);
 
     Board board = memory.board;
     
@@ -671,13 +666,11 @@ class SharedAgentMemory {
   
   public List<Plan> failedPlans;
   
-  // @cleanup
   public Plan root;
   
   public SharedAgentMemory(Board board) {
     this.board = board;
     
-    timestep = 0;
     totalTries = 4;
     numNodesToExploreInSearch = 1000;
     

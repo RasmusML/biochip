@@ -13,7 +13,7 @@ public class RunMeGraphCreator {
   public static String graphvizPath = "C:\\Program Files (x86)\\Graphviz";
 
   public static String dir = "./src";
-  public static String pack = "pack/testbench/tests";
+  public static String pack = "dmb/testbench/tests";
   
   public static boolean recreateAllGraphs = true;
 
@@ -50,6 +50,7 @@ public class RunMeGraphCreator {
   		String assayName = assay.getClass().getSimpleName();
   		String pngName = assayName.replaceAll("(BioAssay)|(Assay)", "");
 
+  		
   		String pngPath = String.format("./assays/%s.png", pngName);
   		if (!recreateAllGraphs && new File(pngPath).exists()) continue;
   		
