@@ -78,7 +78,9 @@ public class AopApp extends ApplicationAdapter {
     
     //okTest();
     //reverseTest();
-    normalTest2();
+    //normalTest2();
+    reverseTest2();
+    
   }
 
   private void okTest() {
@@ -91,16 +93,16 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent0);
     memory.agents.add(agent1);
     
+    memory.start();
+
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 1));
     path.add(new Point(0, 2));
     path.add(new Point(0, 3));
     path.add(new Point(0, 4));
     
-    Plan plan = new Plan();
-    plan.agent = agent1;
-    plan.path = path;
-    plan.start = 1;
+    Plan plan = memory.getPlan(agent1);
+    plan.addToPlan(path);
     
     agent1.request(Request.pathing, plan);
   }
@@ -118,16 +120,16 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent1);
     memory.agents.add(agent2);
     
+    memory.start();
+
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 1));
     path.add(new Point(0, 2));
     path.add(new Point(0, 3));
     path.add(new Point(0, 4));
     
-    Plan plan = new Plan();
-    plan.agent = agent1;
-    plan.path = path;
-    plan.start = 1;
+    Plan plan = memory.getPlan(agent1);
+    plan.addToPlan(path);
     
     agent1.request(Request.pathing, plan);
   }
@@ -142,19 +144,47 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent0);
     memory.agents.add(agent1);
     
+    memory.start();
+
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
     path.add(new Point(0, 1));
     path.add(new Point(0, 0));
     
-    Plan plan = new Plan();
-    plan.agent = agent0;
-    plan.path = path;
-    plan.start = 1;
+    Plan plan = memory.getPlan(agent0);
+    plan.addToPlan(path);
     
     agent0.request(Request.pathing, plan);
   }
+  
+  private void reverseTest2() {
+    Agent agent0 = new Agent(memory, 0, new Point(0, 4));
+    Agent agent1 = new Agent(memory, 1, new Point(0, 0));
+    Agent agent2 = new Agent(memory, 2, new Point(0, 2));
+    
+    agents.add(agent0);
+    agents.add(agent1);
+    agents.add(agent2);
+    
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    memory.agents.add(agent2);
+    
+    memory.start();
+
+    List<Point> path = new ArrayList<>();
+    path.add(new Point(0, 3));
+    path.add(new Point(0, 2));
+    path.add(new Point(0, 1));
+    path.add(new Point(0, 0));
+    
+    Plan plan = memory.getPlan(agent0);
+    plan.addToPlan(path);
+    
+    agent0.request(Request.pathing, plan);
+  }
+
 
   @Override
   public void update() {

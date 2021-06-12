@@ -61,6 +61,7 @@ public class Agent {
           
           Agent agent = committable.agent;
           agent.path.addAll(committable.path);
+          committable.path.clear();
           
           committablePlans.addAll(committable.dependencies);
         }
@@ -84,11 +85,11 @@ public class Agent {
   public ResolveResult resolve(Request request, Plan parentPlan) {
     
     if (request == Request.pathing) {
+      if (isResolved()) return ResolveResult.ok;
       
-      List<Plan> plans = memory.getPlans();
       List<Agent> agents = memory.agents;
       
-      int[][] distanceGrid = getDistanceGrid(plans, agents);
+      int[][] distanceGrid = getDistanceGrid(memory.plans, agents);
       print(distanceGrid);
 
       while (memory.tryCount < memory.totalTries) {
@@ -100,11 +101,7 @@ public class Agent {
         if (resolvedPath == null) {
           //Assert.that(false); // @remove
           
-          Plan oldParentPlan = parentPlan.copy();
-          
-          parentPlan.path.clear();
-          parentPlan.conflictingAgents.clear();
-          parentPlan.dependencies.clear();
+          List<Point> oldPlanPath = parentPlan.undo();
           
           int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
           print(outpostDistanceGrid);
@@ -117,11 +114,8 @@ public class Agent {
           
           List<Agent> conflictingAgents = getConflictingAgents(outpostPath);
 
-          Plan plan = new Plan();
-          plan.agent = this;
-          plan.path = outpostPath;
-          plan.conflictingAgents = conflictingAgents;
-          
+          Plan plan = memory.getPlan(this);
+          plan.addToPlan(outpostPath);
           parentPlan.dependencies.add(plan);
           
           boolean ok = true;
@@ -137,14 +131,14 @@ public class Agent {
           Assert.that(ok, ":outpost: testFail should work on the first first outpost.");
           
           if (ok) {
-            Agent parentAgent = oldParentPlan.agent;
+            Agent parentAgent = parentPlan.agent;
             Agent requestingAgent = memory.root.agent;
             if (parentAgent.equals(requestingAgent)) {  // the agent doing the request should get to get where he wants to. The rest of the agents don't care. They only move to resolve the deadlock.
-              Point parentTarget = oldParentPlan.path.get(oldParentPlan.path.size() - 1);
+              Point parentTarget = oldPlanPath.get(oldPlanPath.size() - 1);
               
               List<Point> tiles = new ArrayList<>();
               tiles.addAll(parentPlan.path);  // detouring moves
-              tiles.addAll(oldParentPlan.path); // original plan
+              tiles.addAll(oldPlanPath); // original plan
               tiles.add(parentAgent.getPosition()); // current position
               
               List<Point> path = findPath(parentAgent, parentTarget, tiles);
@@ -154,7 +148,7 @@ public class Agent {
                 Assert.that(path != null, "todo!");
               } else {
                 
-                parentPlan.path.addAll(path);
+                parentPlan.addToPlan(path);
                 
                 conflictingAgents = parentAgent.getConflictingAgents(path);
                 Assert.that(conflictingAgents.contains(this));
@@ -162,7 +156,7 @@ public class Agent {
                 
                 ok = true;
                 for (Agent agent : conflictingAgents) {
-                  ResolveResult result = agent.resolve(request, plan);
+                  ResolveResult result = agent.resolve(request, parentPlan);
                   if (result == ResolveResult.failed) {
                     ok = false;
                     break;
@@ -174,8 +168,9 @@ public class Agent {
                   return ResolveResult.ok;
                 } else {
                   // undo
-                  parentPlan.path.clear();
-                  parentPlan.path.addAll(oldParentPlan.path);
+                  parentPlan.undo();
+                  parentPlan.addToPlan(oldPlanPath);
+                  
                   return ResolveResult.failed;
                 }
               }
@@ -188,6 +183,10 @@ public class Agent {
             //parentPlan = oldParentPlan; // this will not work, because we just change the pointer of the object, actually change the pointer of the attributes.
             
             memory.failedPlans.add(plan);
+            
+            for (Plan dependency : plan.dependencies) {
+              dependency.undo();
+            }
             plan.dependencies.clear();
           }
           
@@ -197,11 +196,8 @@ public class Agent {
 
           List<Agent> conflictingAgents = getConflictingAgents(resolvedPath);
           
-          Plan plan = new Plan();
-          plan.agent = this;
-          plan.path = resolvedPath;
-          plan.conflictingAgents = conflictingAgents;
-          
+          Plan plan = memory.getPlan(this);
+          plan.addToPlan(resolvedPath);
           parentPlan.dependencies.add(plan);
           
           boolean ok = true;
@@ -232,6 +228,19 @@ public class Agent {
   }
   
 
+  private boolean isResolved() {
+    
+    for (Plan plan : memory.plans) {
+      Agent agent = plan.agent;
+      int i = 1;
+      List<Point> path = plan.path;
+      List<Agent> conflicting = agent.getConflictingAgents(path);
+      if (conflicting.size() > 0) return false;
+    }
+    
+    return true;
+  }
+
   // @todo: we can do this smarter (use less space).
   private int[][] createGrid(List<Point> possibleTiles) {
     Board board = memory.board;
@@ -261,7 +270,7 @@ public class Agent {
     int[][] occupied = createGrid(tiles);
     int[][] prevOccupied = createGrid(tiles);
     
-    List<Plan> plans = memory.getPlans();
+    List<Plan> plans = memory.plans;
     
     AStarPathFinder pathfinder = new AStarPathFinder() {
       @Override
@@ -319,7 +328,7 @@ public class Agent {
   }
   
   private int[][] getOutpostDistanceGrid(Plan parentPlane) {
-    List<Plan> allPlans = memory.getPlans();
+    List<Plan> allPlans = memory.plans;
     List<Agent> allAgents = memory.agents;
     
     List<Plan> plans = new ArrayList<>();
@@ -370,9 +379,11 @@ public class Agent {
   public List<Agent> getConflictingAgents(List<Point> path) {
     List<Agent> conflicting = new ArrayList<>();
 
-    int timestep = 1; // @TODO
+    Plan p = memory.getPlan(this);
+    int planSize = p.path.size();
+    int timestep = 1 + planSize; // @TODO
     
-    List<Plan> plans = memory.getPlans();
+    List<Plan> plans = memory.plans;
     for (int i = 0; i < path.size(); i++) {
       Point at = path.get(i);
       
@@ -439,7 +450,7 @@ public class Agent {
     
     return null;
   }
-
+  
   private List<Point> getDeadlockResolvingPath(List<Plan> failedPlans, int[][] distanceGrid) {
     Board board = memory.board;
     
@@ -449,11 +460,11 @@ public class Agent {
     int[][] overlay = new int[width][height]; // no path found (yet): -1, failedEndPoint: -2, distance: x (>= 0)
     copy(distanceGrid, overlay);
     
-    List<Plan> plans = memory.getPlans();
+    List<Plan> plans = memory.plans;
     for (Plan plan : plans) {
       
       if (plan.agent.equals(memory.root.agent)) {
-        for (int i = 0; i <= plan.path.size() - 1; i++) {
+        for (int i = 0; i <= plan.path.size() - 1; i++) { // we can't push the "root"/requester
           Point point = plan.path.get(i);
           overlay[point.x][point.y] = -1;
         }
@@ -479,6 +490,11 @@ public class Agent {
         Point endpoint = new Point(x, y);
         endPoints.add(endpoint);
       }
+    }
+    
+    System.out.println("endpoints:");
+    for (Point endpoint : endPoints) {
+      System.out.println(">" + endpoint);
     }
 
     while (endPoints.size() > 0) {
@@ -585,7 +601,7 @@ public class Agent {
     Point at;
     
     Plan plan = memory.getPlan(this);
-    if (plan == null) {
+    if (plan.path.size() == 0) {
       at = path.get(timestep - 1);
     } else {
       int planStep = plan.path.size();
@@ -746,21 +762,34 @@ class Plan {
 
   public int start; // @TODO
   public List<Point> path;
-  public List<Agent> conflictingAgents;
+  public List<Integer> checkpoints;
   
   public List<Plan> dependencies;  // plans created due to this plan.
   
   public Plan() {
     path = new ArrayList<>();
-    conflictingAgents = new ArrayList<>();
     dependencies = new ArrayList<>();
+    checkpoints = new ArrayList<>();
+  }
+  
+  public void addToPlan(List<Point> addition) {
+    int checkpoint = path.size();
+    
+    checkpoints.add(checkpoint);
+    path.addAll(addition);
+  }
+  
+  public List<Point> undo() {
+    int checkpoint = checkpoints.remove(checkpoints.size() - 1);
+    List<Point> removed = new ArrayList<>(path.subList(checkpoint, path.size()));
+    path = new ArrayList<>(path.subList(0, checkpoint));
+    return removed;
   }
   
   public Plan copy() {
     Plan copy = new Plan();
     copy.agent = agent;
     copy.path.addAll(path);
-    copy.conflictingAgents.addAll(conflictingAgents);
     copy.dependencies.addAll(dependencies);
     return copy;
   }
@@ -781,18 +810,29 @@ class SharedAgentMemory {
   public Board board;
   
   public List<Plan> failedPlans;
+  public List<Plan> plans;
   
   public Plan root;
   
   public SharedAgentMemory(Board board) {
     this.board = board;
     
-    totalTries = 4;
+    totalTries = 10;
     numNodesToExploreInSearch = 1000;
     
     agents = new ArrayList<>();
     
     failedPlans = new ArrayList<>();
+    plans = new ArrayList<>();
+  }
+  
+  public void start() {
+    for (Agent agent : agents) {
+      Plan plan = new Plan();
+      plan.agent = agent;
+      plan.start = 1; // @TODO
+      plans.add(plan);
+    }
   }
   
   public List<Plan> getPlans(Plan root) {
@@ -811,29 +851,11 @@ class SharedAgentMemory {
     return plans;
   }
   
-  public List<Plan> getPlans() {
-    Assert.that(root != null);
-    return getPlans(root);
-  }
-  
-  public void planCountSanityCheck(Agent agent) {
-    List<Plan> plans = getPlans();
-    int count = 0;
-    for (Plan plan : plans) {
-      if (plan.agent.equals(agent)) count += 1;
-    }
-    
-    Assert.that(count <= 1, "@todo: support multiple plans (plans extending).");
-  }
-  
   public Plan getPlan(Agent agent) {
-    planCountSanityCheck(agent);
-    
-    List<Plan> plans = getPlans();
     for (Plan plan : plans) {
       if (plan.agent.equals(agent)) return plan;
     }
-    return null;
+    throw new IllegalStateException("broken!");
   }
   
   public List<Plan> getFailedPlans(Agent agent) {
