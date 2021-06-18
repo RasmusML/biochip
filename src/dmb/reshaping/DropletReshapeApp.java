@@ -2,6 +2,7 @@ package dmb.reshaping;
 
 import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,6 +70,7 @@ public class DropletReshapeApp extends ApplicationAdapter {
     
     renderer = new Renderer(viewport);
     renderer.setCanvas(canvas);
+    
     
     array = new Test1BioArray();
     
@@ -287,8 +289,23 @@ public class DropletReshapeApp extends ApplicationAdapter {
     for (int i = 0; i < reshape.size(); i++) {
       Point at = reshape.get(i);
       
-      drawSingleDroplet(i + 1, at, Color.blue, tilesize / 2);
+      drawReshapeDroplet(i + 1, at, tilesize / 2);
     }
+  }
+  
+  private void drawReshapeDroplet(int id, Point at, float size) {
+    float offset = (tilesize - size) / 2f;
+    
+    float x = at.x * tilesize + gap + offset;
+    float y = at.y * tilesize + gap + offset;
+    
+    float width = size - gap * 2f;
+    float height = size - gap * 2f;
+    
+    renderer.setColor(new Color(0, 0, 255, 100));
+    
+    renderer.fillOval(x, y, width, height);    
+    renderer.drawOval(x, y, width, height);
   }
   
   private void drawSingleDroplet(int id, Point at, Color color, float size) {

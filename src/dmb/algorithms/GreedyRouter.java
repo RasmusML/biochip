@@ -38,7 +38,6 @@ public class GreedyRouter implements Router {
 
   private List<Droplet> runningDroplets;
   private List<Droplet> retiredDroplets;
-  private List<Droplet> detouringDroplets;
 
   private Map<Integer, OperationExtra> operationIdToExtra;
 
@@ -104,7 +103,6 @@ public class GreedyRouter implements Router {
 
     runningDroplets = new ArrayList<>();
     retiredDroplets = new ArrayList<>();
-    detouringDroplets = new ArrayList<>();
 
     List<Operation> dispenseOperations = assay.getOperations(OperationType.dispense);
     readyOperations.addAll(dispenseOperations);
