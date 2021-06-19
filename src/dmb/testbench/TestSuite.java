@@ -110,10 +110,11 @@ public class TestSuite {
     register(greedyRouter);
     register(dropletSizeAwareGreedyRouter);
 
-    registerAllTests();
   }
 
-  public void runAllRouters() {
+  public void runAllRoutersWithRealTests() {
+    registerAllTests();
+    
     for (Router router : routers) {
       seed = 0;
       
@@ -134,6 +135,31 @@ public class TestSuite {
     }
     
     if (writeToFile) writer.writeAll(allTestResults);
+    tests.clear();
+  }
+  
+  public void runAllRoutersWithOperationalTests() {
+    registerAllFunctionalTests();
+    
+    for (Router router : routers) {
+      seed = 0;
+      
+      printHeader(router);
+
+      for (int i = 0; i < runs; i++) {
+        printSeed();
+        
+        run(router);
+        
+        seed += 1;
+      }
+
+      printSummary();
+
+      routeTestResults.clear();
+    }
+    
+    tests.clear();
   }
 
   private void printSeed() {
@@ -264,11 +290,7 @@ public class TestSuite {
     System.out.printf("\n");
   }
 
-  private void registerAllTests() {
-    
-    // @TODO: dont use the functional tests for statistics.
-    
-    // functional tests
+  private void registerAllFunctionalTests() {
     register(new DetectorAssay1(), new DetectorArray1());
     register(new DispenseAssay1(), new DispenseArray1());
     register(new DisposeAssay1(), new DisposeArray1());
@@ -277,8 +299,9 @@ public class TestSuite {
     register(new MergeAssay3(), new MergeArray3());
     register(new MixAssay1(), new MixArray1());
     register(new MixAssay2(), new MixArray2());
-    
-    // tests
+  }
+  
+ private void registerAllTests() {
     register(new Test1BioAssay(), new Test1BioArray());
     register(new Test2BioAssay(), new Test2BioArray());
     register(new Test3BioAssay(), new Test3BioArray());
