@@ -1,4 +1,5 @@
 
+
 class Router:
     GREEDY_ROUTER = "GreedyRouter"
     DROPLET_SIZE_ROUTER = "DropletSizeAwareGreedyRouter"
@@ -12,15 +13,15 @@ def read_file(filename):
     import re
 
     f = open(filename, "r")
-    content = f.read()
+    content = f.read().rstrip() # remove trailling white spaces
     
-    return content
-
-def get_test_name(router, test):
-    return "{}-{}.txt".format(router, test)
+    return content.replace(",", ".") # some systems use ',' for floating point in Java. However, Python expects '.', e.g. 3.1415
+    
+def get_full_test_name(router, test_name):
+    return "{}-{}.txt".format(router, test_name)
     
 def read_test_file(router, test):
-    name = get_test_name(router, test)
+    name = get_full_test_name(router, test)
     return read_file(name)
 
 def get_test_files():
@@ -28,33 +29,60 @@ def get_test_files():
     extension = ".txt"
     return [file for file in files if file.endswith(extension)]
     
+def plot_combined_tests():  # @incomplete
+    test_files = get_test_files()
+    print(test_files)
 
-def plot_single_test_distribution(test_name="Test1"):
-    greedy_router_test = read_test_file(Router.GREEDY_ROUTER, test_name)
-    droplet_size_router_test = read_test_file(Router.DROPLET_SIZE_ROUTER, test_name)
+    for file in test_files:
+        content = read_file(file)
+
+        print(file)
+        print(content)
+
+def extract_test(test_content):
+    lines = test_content.split("\n")
+    raw_content = [line.split(" ") for line in lines]
+    return [(int(seed), bool(completed), int(execution_time), float(running_time)) for (seed, completed, execution_time, running_time) in raw_content]
+
+def get_test(router, test):
+    content = read_test_file(router, test)
+    return extract_test(content)
+
+def extract_attribute_from_test(attribute_index, test_content):
+    return [test[attribute_index] for test in test_content]
+
+def plot_single_test_distribution(test_name):
+    greedy_router_test = get_test(Router.GREEDY_ROUTER, test_name)
+    droplet_size_router_test = get_test(Router.DROPLET_SIZE_ROUTER, test_name)
     
+    import numpy as np
     import matplotlib.pyplot as plt
 
-    fig = plt.figure()
-    ax = fig.add_axes([0,0,1,1])
+    ax = plt.subplot(111)
     
-    seeds = [1, 2]
-    execution_times = [10, 14]
-    ax.bar(seeds, execution_times)
+    greedy_seeds = extract_attribute_from_test(0, greedy_router_test)
+    droplet_size_seeds = extract_attribute_from_test(0, droplet_size_router_test)
+    assert(greedy_seeds == droplet_size_seeds)
+
+    greedy_execution_times = extract_attribute_from_test(2, greedy_router_test)
+    droplet_size_execution_times = extract_attribute_from_test(2, droplet_size_router_test)
     
-    plt.show()
-
-#test_name = get_test_name(Router.GREEDY_ROUTER, "Test1")
-#file = read_file(test_name)
-
-test_files = get_test_files()
-print(test_files)
-
-for file in test_files:
-    content = read_file(file)
-
-    print(file)
-    print(content)
-
+    colors = ['C0', 'C1']
     
-plot_single_test_distribution()
+    #w = 0.4
+    #ax.bar(np.array(greedy_seeds) - w / 2, greedy_execution_times, width=w, align='center')
+    #ax.bar(np.array(droplet_size_seeds) + w / 2, droplet_size_execution_times, width=w, align='center')
+
+    for x, ha, hb in zip(greedy_seeds, greedy_execution_times, droplet_size_execution_times):
+        for i, (h, c) in enumerate(sorted(zip([ha, hb], colors))):
+            ax.bar(x, h, color=c, zorder=-i)
+
+
+    plt.xlabel("Seed")
+    plt.ylabel("Execution Time (steps)")  
+    plt.title("{} distribution".format(test_name))
+    
+    plt.show()    
+
+
+plot_single_test_distribution("Test1")
