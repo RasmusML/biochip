@@ -2,23 +2,30 @@ package dmb.reshaping;
 
 import java.awt.Canvas;
 import java.awt.Color;
-import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
 
+import dmb.actuation.ElectrodeActivationTranslator;
+import dmb.actuation.ElectrodeActivations;
+import dmb.actuation.ElectrodeActuation;
+import dmb.actuation.ElectrodeState;
+import dmb.actuation.PlatformInterface;
 import dmb.algorithms.Point;
-import dmb.components.input.BioArray;
-import dmb.testbench.tests.Test1BioArray;
 import framework.ApplicationAdapter;
 import framework.graphics.Alignment;
 import framework.graphics.Camera;
 import framework.graphics.FitViewport;
 import framework.graphics.Renderer;
 import framework.input.Button;
+import framework.input.Droplet;
+import framework.input.DropletUnit;
 import framework.input.Keys;
 import framework.math.Vector2;
 
 public class DropletReshapeApp extends ApplicationAdapter {
+  
+  boolean sendCommandsToPlatform = true;
+  boolean firstCommandSend = false;
 
   // graphics
   Renderer renderer;
@@ -34,7 +41,6 @@ public class DropletReshapeApp extends ApplicationAdapter {
   float tilesize = 32f;
   float gap = 1f;
 
-  BioArray array;
   int timestamp;
   
   float dt;
@@ -46,10 +52,15 @@ public class DropletReshapeApp extends ApplicationAdapter {
   float stopTime;
   float movementTime;
   
+  int gridWidth = 32;
+  int gridHeight = 20;
+  
   DropletReshapeSimulator reshaper;
-  ShapedDroplet droplet;
+  Droplet droplet;
   
   List<Point> reshape;
+  
+  PlatformInterface pi;
   
   @Override
   public void init() {
@@ -72,16 +83,19 @@ public class DropletReshapeApp extends ApplicationAdapter {
     renderer.setCanvas(canvas);
     
     
-    array = new Test1BioArray();
+    if (sendCommandsToPlatform) {
+      pi = new PlatformInterface();
+      pi.connect();
+      //pi.setHighVoltageValue(100);  // ?
+    }
     
-    float cx = array.width * tilesize / 2f;
-    float cy = array.height * tilesize / 2f;
+    float cx = gridWidth * tilesize / 2f;
+    float cy = gridHeight * tilesize / 2f;
     boardCamera.lookAtNow(cx, cy);
     
-    reshaper = new DropletReshapeSimulator();
+    reshaper = new DropletReshapeSimulator(gridWidth, gridHeight);
     
-    droplet = new ShapedDroplet();
-    droplet.points = new ArrayList<>();
+    droplet = new Droplet();
   }
 
   @Override
@@ -110,6 +124,12 @@ public class DropletReshapeApp extends ApplicationAdapter {
     }
     */
     
+    if (input.isKeyJustPressed(Keys.Q)) {
+      if (sendCommandsToPlatform) {
+        pi.disconnect();
+      }
+    }
+    
     String title = String.format("@%d", app.getFps());
     app.setTitle(title);
 
@@ -123,31 +143,31 @@ public class DropletReshapeApp extends ApplicationAdapter {
     
     if (input.isKeyJustPressed(Keys.SPACE)) {
       reshaper.step();
-      
-      /*
-      if (running) {
-        if (!moving) {  // if the droplets are not in the moving state, then just stop immediately. Otherwise, let them finish the move. Yielding a smooth animation
-          step = false;
-          dt = 0;
-        }
-      } else {
-        // start at move-state, so they move instantly.
-        moving = true;
+
+      if (sendCommandsToPlatform) {
+        sendCommandsOfCurrentPositions();
       }
-      
-      running = !running;
-      */
-      
     }
     
     if (input.isKeyJustPressed(Keys.R)) {
+      //pi.clearAllElectrodes();
+      //droplet.units.clear();
+      
+      reshape.clear();
+      
       running = false;
       step = false;
       timestamp = 0;
       dt = 0;
     }
-
+    
     if (input.isMouseJustReleased(Button.LEFT)) {
+      
+      if (reshape.size() > 0) {
+        throw new IllegalStateException("first select droplet shape then target-shape");
+      }
+
+      
       int mx = input.getX();
       int my = input.getY();
       
@@ -156,16 +176,21 @@ public class DropletReshapeApp extends ApplicationAdapter {
       int x = (int) (world.x / tilesize);
       int y = (int) (world.y / tilesize);
       
-      Point point = new Point(x, y);
-      
-      if (droplet.points.contains(point)) {
-        droplet.points.remove(point);
-      } else {
-        droplet.points.add(point);
+      boolean match = false;
+      for (DropletUnit unit : droplet.units) {
+        Point at = unit.route.getPosition();
+        
+        if (x == at.x && y == at.y) {
+          droplet.units.remove(unit);
+          match = true;
+          break;
+        }
       }
       
-      if (reshape.size() == droplet.points.size()) {
-        reshaper.reshape(droplet, reshape);
+      if (!match) {
+        DropletUnit unit = new DropletUnit();
+        unit.route.path.add(new Point(x, y));
+        droplet.units.add(unit);
       }
     }
 
@@ -188,8 +213,13 @@ public class DropletReshapeApp extends ApplicationAdapter {
         reshape.add(point);
       }
       
-      if (reshape.size() == droplet.points.size()) {
+      if (reshape.size() == droplet.units.size()) {
         reshaper.reshape(droplet, reshape);
+        
+        if (!firstCommandSend) {
+          sendCommandsOfCurrentPositions();
+          firstCommandSend = true;
+        }
       }
     }
 
@@ -229,6 +259,31 @@ public class DropletReshapeApp extends ApplicationAdapter {
     boardCamera.update();
   }
 
+  private void sendCommandsOfCurrentPositions() {
+    List<Droplet> droplets = new ArrayList<>();
+    droplets.add(droplet);
+    
+    DropletUnit unit = droplet.units.get(0);
+    int executionTime = unit.route.path.size();
+    
+    ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator(gridWidth, gridHeight);
+    ElectrodeActivations[] sections = translator.translateStateful(droplets, executionTime);
+    
+    int last = sections.length - 1;
+      
+    ElectrodeActivations section = sections[last];
+    for (ElectrodeActuation actuation : section.activations) {
+
+      Point tile = actuation.tile;
+      
+      if (actuation.state == ElectrodeState.On) {
+        pi.setElectrode(tile.x, tile.y);
+      } else {
+        pi.clearElectrode(tile.x, tile.y);
+      }
+    }
+  }
+
   @Override
   public void draw() {
     renderer.begin();
@@ -247,16 +302,16 @@ public class DropletReshapeApp extends ApplicationAdapter {
 
       float xx = -gap;
       float yy = -gap;
-      float width = array.width * tilesize + gap * 2f;
-      float height = array.height * tilesize + gap * 2f;
+      float width = gridWidth * tilesize + gap * 2f;
+      float height = gridHeight * tilesize + gap * 2f;
 
       renderer.fillRect(xx, yy, width, height);
     }
 
     { // grid tiles
       renderer.setColor(Color.WHITE);
-      for (int x = 0; x < array.width; x++) {
-        for (int y = 0; y < array.height; y++) {
+      for (int x = 0; x < gridWidth; x++) {
+        for (int y = 0; y < gridHeight; y++) {
 
           float xx = x * tilesize + gap;
           float yy = y * tilesize + gap;
@@ -276,10 +331,10 @@ public class DropletReshapeApp extends ApplicationAdapter {
     }
   }
 
-  private void drawDroplet(ShapedDroplet droplet) {
-    List<Point> points = droplet.points;
-    for (int i = 0; i < points.size(); i++) {
-      Point at = points.get(i);
+  private void drawDroplet(Droplet droplet) {
+    for (int i = 0; i < droplet.units.size(); i++) {
+      DropletUnit unit = droplet.units.get(i);
+      Point at = unit.route.getPosition();
       
       drawSingleDroplet(i + 1, at, Color.green, tilesize);
     }

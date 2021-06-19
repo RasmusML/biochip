@@ -9,6 +9,8 @@ import java.util.Map;
 import dmb.algorithms.Point;
 import dmb.components.moves.Move;
 import dmb.helpers.GeometryUtil;
+import framework.input.Droplet;
+import framework.input.DropletUnit;
 import framework.math.MathUtils;
 
 public class DropletReshapeSimulator {
@@ -18,27 +20,30 @@ public class DropletReshapeSimulator {
   private boolean[][] targetShape;
   private int[][] currentShape; // ids
   
-  private ShapedDroplet droplet;
+  private Droplet droplet;
   private List<Point> shape;
   
-  private Comparator<Point> firstIterationSorter;
-  private Comparator<Point> secondIterationSorter;
+  private Comparator<DropletUnit> firstIterationSorter;
+  private Comparator<DropletUnit> secondIterationSorter;
   
-  private Map<Point, Point> pointToTarget;
-  private Map<Point, Integer> pointToMinOutsidePointDistance;
+  private Map<DropletUnit, Point> pointToTarget;
+  private Map<DropletUnit, Integer> pointToMinOutsidePointDistance;
   
-  public DropletReshapeSimulator() {
+  public DropletReshapeSimulator(int width, int height) {
+    this.width = width;
+    this.height = height;
     
     firstIterationSorter = (p1, p2) -> {
-      // @report if both droplets are within the target shape, select the droplet closest to a droplet outside the target shape, to move.
-      // This prevents selecting a droplet within the target shape which does not get closer to the final target shape (filling all tiles of the target shape)
-      if (targetShape[p1.x][p1.y] && targetShape[p2.x][p2.y]) {
+      Point p1At = p1.route.getPosition();
+      Point p2At = p2.route.getPosition();
+      
+      if (targetShape[p1At.x][p1At.y] && targetShape[p2At.x][p2At.y]) {
         int d1 = pointToMinOutsidePointDistance.get(p1);
         int d2 = pointToMinOutsidePointDistance.get(p2);
         return d1 - d2;
       } else {
-        int v1 = targetShape[p1.x][p1.y] ? 1 : -1;
-        int v2 = targetShape[p2.x][p2.y] ? 1 : -1;
+        int v1 = targetShape[p1At.x][p1At.y] ? 1 : -1;
+        int v2 = targetShape[p2At.x][p2At.y] ? 1 : -1;
         return v1 - v2;
       }
     };
@@ -47,25 +52,27 @@ public class DropletReshapeSimulator {
       Point t1 = pointToTarget.get(p1);
       Point t2 = pointToTarget.get(p2);
       
-      int d1 = (int) MathUtils.getManhattanDistance(p1.x, p1.y, t1.x, t1.y);
-      int d2 = (int) MathUtils.getManhattanDistance(p2.x, p2.y, t2.x, t2.y);
+      Point p1At = p1.route.getPosition();
+      Point p2At = p2.route.getPosition();
+      
+      int d1 = (int) MathUtils.getManhattanDistance(p1At.x, p1At.y, t1.x, t1.y);
+      int d2 = (int) MathUtils.getManhattanDistance(p2At.x, p2At.y, t2.x, t2.y);
       
       return d1 - d2;
     };
   }
   
-  public void reshape(ShapedDroplet droplet, List<Point> shape) {
+  public void reshape(Droplet droplet, List<Point> shape) {
     this.droplet = droplet;
     this.shape = shape;
-    
-    width = 8;
-    height = 8;
     
     currentShape = new int[width][height];
     targetShape = new boolean[width][height];
     
-    for (int i = 0; i < droplet.points.size(); i++) {
-      Point tile = droplet.points.get(i);
+    for (int i = 0; i < droplet.units.size(); i++) {
+      DropletUnit unit = droplet.units.get(i);
+      
+      Point tile = unit.route.getPosition();
       int id = i + 1;
       
       currentShape[tile.x][tile.y] = id;
@@ -80,12 +87,14 @@ public class DropletReshapeSimulator {
     pointToTarget = new HashMap<>();
     pointToMinOutsidePointDistance = new HashMap<>();
     
-    for (Point point : droplet.points) {
+    for (DropletUnit unit : droplet.units) {
+      Point at = unit.route.getPosition();
+      
       int minDistance = Integer.MAX_VALUE;
       Point closestTarget = null;
       
       for (Point target : shape) {
-        int distance = (int) MathUtils.getManhattanDistance(point.x, point.y, target.x, target.y);
+        int distance = (int) MathUtils.getManhattanDistance(at.x, at.y, target.x, target.y);
         
         if (distance < minDistance) {
           minDistance = distance;
@@ -93,20 +102,21 @@ public class DropletReshapeSimulator {
         }
       }
       
-      pointToTarget.put(point, closestTarget);
+      pointToTarget.put(unit, closestTarget);
     }
     
-    List<Point> left = new ArrayList<>(droplet.points);
+    List<DropletUnit> left = new ArrayList<>(droplet.units);
 
-    List<Point> inside = new ArrayList<>();
-    List<Point> outside = new ArrayList<>();
+    List<DropletUnit> inside = new ArrayList<>();
+    List<DropletUnit> outside = new ArrayList<>();
     
-    // @report see dropletResizeIssue for why inside/outside is necessary.
-    for (Point droplet : left) {
-      if (targetShape[droplet.x][droplet.y]) {
-        inside.add(droplet);
+    for (DropletUnit unit : left) {
+      Point at = unit.route.getPosition();
+      
+      if (targetShape[at.x][at.y]) {
+        inside.add(unit);
       } else {
-        outside.add(droplet);
+        outside.add(unit);
       }
     }
     
@@ -115,10 +125,14 @@ public class DropletReshapeSimulator {
       
       pointToMinOutsidePointDistance.clear();
 
-      for (Point insider : inside) {
+      for (DropletUnit insider : inside) {
+        Point insiderAt = insider.route.getPosition();
+        
         int minDistance = Integer.MAX_VALUE;
-        for (Point outsider : outside) {
-          int distance = (int) MathUtils.getManhattanDistance(insider.x, insider.y, outsider.x, outsider.y);
+        for (DropletUnit outsider : outside) {
+          Point outsiderAt = outsider.route.getPosition();
+          
+          int distance = (int) MathUtils.getManhattanDistance(insiderAt.x, insiderAt.y, outsiderAt.x, outsiderAt.y);
           
           if (distance < minDistance) {
             minDistance = distance;
@@ -131,16 +145,18 @@ public class DropletReshapeSimulator {
       left.sort(firstIterationSorter);
 
       anyMove = false;
-      for (Point droplet : left) {
-        Move move = getFillingMove(droplet);
+      for (DropletUnit unit: left) {
+        Point at = unit.route.getPosition();
+        
+        Move move = getFillingMove(at);
         
         if (move != null) {
-          left.remove(droplet);
-          updatePosition(droplet, move);
+          left.remove(unit);
+          updatePosition(unit, move);
           
-          if (targetShape[droplet.x][droplet.y]) {
-            inside.add(droplet);
-            outside.remove(droplet);
+          if (targetShape[at.x][at.y]) {
+            inside.add(unit);
+            outside.remove(unit);
           }
 
           anyMove = true;
@@ -155,21 +171,24 @@ public class DropletReshapeSimulator {
     
     left.sort(secondIterationSorter);
 
-    for (Point droplet : left) {
-      if (targetShape[droplet.x][droplet.y]) continue;
+    for (DropletUnit unit : left) {
+      Point at = unit.route.getPosition();
       
-      Move move = getNonFillingMove(droplet);
+      Move move = Move.None;
+      if (!targetShape[at.x][at.y]) move = getNonFillingMove(unit);
       
-      updatePosition(droplet, move);
+      updatePosition(unit, move);
     }
   }
 
-  private void updatePosition(Point candidate, Move move) {
-    int id = currentShape[candidate.x][candidate.y];
-    currentShape[candidate.x][candidate.y] = 0;
+  private void updatePosition(DropletUnit unit, Move move) {
+    Point at = unit.route.getPosition();
+    Point to = at.copy().add(move.x, move.y);
+    unit.route.path.add(to);
     
-    candidate.add(move.x, move.y);
-    currentShape[candidate.x][candidate.y] = id;
+    int id = currentShape[at.x][at.y];
+    currentShape[at.x][at.y] = 0;
+    currentShape[to.x][to.y] = id;
   }
 
   private Move getFillingMove(Point point) {
@@ -191,8 +210,10 @@ public class DropletReshapeSimulator {
     return null;
   }
 
-  private Move getNonFillingMove(Point point) {
-    Point target = pointToTarget.get(point);
+  private Move getNonFillingMove(DropletUnit unit) {
+    Point at = unit.route.getPosition();
+    
+    Point target = pointToTarget.get(unit);
     Point to = new Point();
     
     int minDistance = Integer.MAX_VALUE;
@@ -200,7 +221,7 @@ public class DropletReshapeSimulator {
     
     Move[] moves = Move.values();
     for (Move move : moves) {
-      to.set(point).add(move.x, move.y);
+      to.set(at).add(move.x, move.y);
       
       if (!GeometryUtil.inside(to.x, to.y, 0, 0, width, height)) continue;
       if (move != Move.None && currentShape[to.x][to.y] != 0) continue;
