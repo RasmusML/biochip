@@ -69,38 +69,50 @@ public class TestSuite {
   
   private boolean verbose = false;  // verbose or recap mode
 
-  private int runs = 200;
+  private int runs = 30;
   private int recapSeedPrintInterval = runs / 10;
 
   private int seed;
 
   private List<Test> tests;
   
+  private TestResultFileWriter writer;
+  
   private MixingPercentages percentages;
+  private Router greedyRouter;
+  private Router dropletSizeAwareGreedyRouter;
   
   private List<Statistics> statistics;
   
   private List<Router> routers;
-  private List<TestResult> testResults;
+  private List<TestResult> routeTestResults;
+  private List<TestResult> allTestResults;
   
   public TestSuite() {
     percentages = new DefaultMixingPercentages();
 
-    testResults = new ArrayList<>();
+    routeTestResults = new ArrayList<>();
+    allTestResults = new ArrayList<>();
+    
     statistics = new ArrayList<>();
+    
+    writer = new TestResultFileWriter();
     
     tests = new ArrayList<>();
     routers = new ArrayList<>();
     
     Logger.mode = LogMode.Silent;
 
+    greedyRouter = new GreedyRouter();
+    dropletSizeAwareGreedyRouter = new DropletSizeAwareGreedyRouter();
+    
+    register(greedyRouter);
+    register(dropletSizeAwareGreedyRouter);
+
     registerAllTests();
   }
 
   public void runAllRouters() {
-    register(new GreedyRouter());
-    register(new DropletSizeAwareGreedyRouter());
-    
     for (Router router : routers) {
       seed = 0;
       
@@ -116,9 +128,11 @@ public class TestSuite {
 
       printSummary();
 
-      // @TODO: write the content to a file and create some graphs with python
-      testResults.clear();
+      routeTestResults.clear();
+      allTestResults.addAll(routeTestResults);
     }
+    
+    writer.writeAll(allTestResults);
   }
 
   private void printSeed() {
@@ -169,8 +183,9 @@ public class TestSuite {
       testResult.executionTime = result.executionTime;
       testResult.runningTime = msElapsed / 1000f;
       testResult.seed = seed;
+      testResult.router = router;
       
-      testResults.add(testResult);
+      routeTestResults.add(testResult);
     }
     
     if (verbose) System.out.printf("completed all tests.\n\n");
@@ -179,8 +194,8 @@ public class TestSuite {
   public void printSummary() {
     
     if (verbose) {
-      for (int i = 0; i < testResults.size(); i++) {
-        TestResult result = testResults.get(i);
+      for (int i = 0; i < routeTestResults.size(); i++) {
+        TestResult result = routeTestResults.get(i);
        
         String message;
         if (result.completed) {
@@ -200,15 +215,15 @@ public class TestSuite {
     cumulated.name = "cumulated";
 
     for (int i = 0; i < tests.size(); i++) {
-      TestResult result = testResults.get(i);
+      TestResult result = routeTestResults.get(i);
 
       Statistics stat = new Statistics();
       stat.name = result.name;
       statistics.add(stat);
     }
     
-    for (int i = 0; i < testResults.size(); i++) {
-      TestResult result = testResults.get(i);
+    for (int i = 0; i < routeTestResults.size(); i++) {
+      TestResult result = routeTestResults.get(i);
       
       int id = result.id;
       Statistics stat = statistics.get(id);
@@ -242,7 +257,7 @@ public class TestSuite {
     System.out.printf("\n");
     
     System.out.printf("%s - ", cumulated.name);
-    System.out.printf("%d/%d routes succeeded!", cumulated.completedCount, testResults.size());
+    System.out.printf("%d/%d routes succeeded!", cumulated.completedCount, routeTestResults.size());
     System.out.printf(" avg. steps: %d, ", cumulated.executionTime / cumulated.completedCount);
     System.out.printf("took on avg %.3f secs to compute.", cumulated.runningTime / cumulated.completedCount);
     System.out.printf("\n");
@@ -298,15 +313,6 @@ public class TestSuite {
     public BioAssay assay;
   }
 
-  static private class TestResult {
-    public String name;
-    public int id;
-    public int seed;
-    public boolean completed;
-    public int executionTime;
-    public float runningTime;
-  }
-  
   static private class Statistics {
     public String name;
     public int completedCount;
