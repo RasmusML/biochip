@@ -69,7 +69,7 @@ public class TestSuite {
   
   private boolean verbose = false;  // verbose or recap mode
 
-  private int runs = 30;
+  private int runs = 100;
   private int recapSeedPrintInterval = runs / 10;
 
   private int seed;
@@ -128,8 +128,8 @@ public class TestSuite {
 
       printSummary();
 
-      routeTestResults.clear();
       allTestResults.addAll(routeTestResults);
+      routeTestResults.clear();
     }
     
     writer.writeAll(allTestResults);
