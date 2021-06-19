@@ -17,8 +17,6 @@ public class Droplet {
   public List<DropletUnit> units;
   public Operation operation;
   
-  public boolean reshaping; // @hack @refactor
-  
   public Droplet() {
     units = new ArrayList<>();
     boundingBox = new BoundingBox();

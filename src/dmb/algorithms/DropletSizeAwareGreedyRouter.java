@@ -35,6 +35,7 @@ import dmb.helpers.GeometryUtil;
 import dmb.helpers.Logger;
 import dmb.helpers.RandomUtil;
 import dmb.helpers.UidGenerator;
+import dmb.helpers.Wrapper;
 import framework.input.Droplet;
 import framework.input.DropletUnit;
 import framework.math.MathUtils;
@@ -64,6 +65,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
   private List<Droplet> retiredDroplets;
 
   private Map<Integer, OperationExtra> operationIdToExtra;
+  private Map<Integer, DropletExtra> dropletIdToExtra;
 
   private UidGenerator dropletIdGenerator;
 
@@ -110,6 +112,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
     iteration = 0;
 
     operationIdToExtra = new HashMap<>();
+    dropletIdToExtra = new HashMap<>();
 
     List<Operation> operations = assay.getOperations();
     for (Operation operation : operations) {
@@ -485,11 +488,13 @@ public class DropletSizeAwareGreedyRouter implements Router {
         
         boolean allDone = true;
         for (Droplet droplet : operation.forwarding) {
-          if (!droplet.reshaping) continue;
+          DropletExtra dropletExtra = getDropletExtra(droplet.id);
+          
+          if (!dropletExtra.reshaping) continue;
 
           DropletReshapingResult result = reshaper.step(droplet, runningDroplets, moduleAllocator.getInUseOrAlwaysLockedModules(), timestamp);
           if (result.done) {
-            droplet.reshaping = false;
+            dropletExtra.reshaping = false;
           } else {
             allDone = false;
             
@@ -540,7 +545,9 @@ public class DropletSizeAwareGreedyRouter implements Router {
               reshapeOperations.add(operation);
               
               for (Droplet droplet : operation.forwarding) {
-                droplet.reshaping = true;
+                DropletExtra dropletExtra = getDropletExtra(droplet.id);
+                
+                dropletExtra.reshaping = true;
                 DropletShape shape = shapeSelector.select(droplet, array.width, array.height);
                 reshaper.reshape(droplet, shape);
               }
@@ -620,6 +627,17 @@ public class DropletSizeAwareGreedyRouter implements Router {
     result.modules.addAll(modulePlacements);
 
     return result;
+  }
+  
+  private DropletExtra getDropletExtra(int dropletId) {
+    DropletExtra extra = dropletIdToExtra.get(dropletId);
+    
+    if (extra == null) {
+      extra = new DropletExtra();
+      dropletIdToExtra.put(dropletId, extra);
+    }
+    
+    return extra;
   }
 
   private int countRunningDroplets() {
@@ -1073,6 +1091,10 @@ public class DropletSizeAwareGreedyRouter implements Router {
     }
 
     return bestMove;
+  }
+  
+  static private class DropletExtra {
+    public boolean reshaping;
   }
 // OperationAttachment/State/Temporary
   static private class OperationExtra {
