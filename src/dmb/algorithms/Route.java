@@ -3,6 +3,8 @@ package dmb.algorithms;
 import java.util.ArrayList;
 import java.util.List;
 
+import dmb.components.moves.Move;
+
 public class Route {
   
 	public int start;

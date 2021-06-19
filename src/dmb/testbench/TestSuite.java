@@ -3,14 +3,14 @@ package dmb.testbench;
 import java.util.ArrayList;
 import java.util.List;
 
-import dmb.algorithms.BioArray;
-import dmb.algorithms.BioAssay;
 import dmb.algorithms.DropletSizeAwareGreedyRouter;
 import dmb.algorithms.GreedyRouter;
 import dmb.algorithms.Router;
 import dmb.algorithms.RoutingResult;
-import dmb.algorithms.components.DefaultMixingPercentages;
-import dmb.algorithms.components.MixingPercentages;
+import dmb.components.input.BioArray;
+import dmb.components.input.BioAssay;
+import dmb.components.mixingpercentages.DefaultMixingPercentages;
+import dmb.components.mixingpercentages.MixingPercentages;
 import dmb.helpers.LogMode;
 import dmb.helpers.Logger;
 import dmb.helpers.RandomUtil;
@@ -68,6 +68,7 @@ import dmb.testbench.tests.functionality.MixAssay2;
 public class TestSuite {
   
   private boolean verbose = false;  // verbose or recap mode
+  private boolean writeToFile = false;
 
   private int runs = 100;
   private int recapSeedPrintInterval = runs / 10;
@@ -132,7 +133,7 @@ public class TestSuite {
       routeTestResults.clear();
     }
     
-    writer.writeAll(allTestResults);
+    if (writeToFile) writer.writeAll(allTestResults);
   }
 
   private void printSeed() {

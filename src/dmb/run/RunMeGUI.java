@@ -1,8 +1,8 @@
 package dmb.run;
 
 import dmb.gui.App;
-import engine.Application;
-import engine.ApplicationConfiguration;
+import framework.Application;
+import framework.ApplicationConfiguration;
 
 public class RunMeGUI {
 

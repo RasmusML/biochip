@@ -7,18 +7,37 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import dmb.algorithms.components.ConstraintsChecker;
-import dmb.algorithms.components.MixingPercentages;
-import dmb.algorithms.components.ModuleAllocator;
-import dmb.algorithms.components.RandomIndexSelector;
-import dmb.algorithms.components.ReservoirManager;
-import dmb.algorithms.components.SubstanceToReservoirAssigner;
-import dmb.algorithms.components.UidGenerator;
+import dmb.components.BoundingBox;
+import dmb.components.ConstraintsChecker;
+import dmb.components.RandomIndexSelector;
+import dmb.components.ReservoirManager;
+import dmb.components.SubstanceToReservoirAssigner;
+import dmb.components.input.AttributeTag;
+import dmb.components.input.AttributeTags;
+import dmb.components.input.BioArray;
+import dmb.components.input.BioAssay;
+import dmb.components.mixingpercentages.MixingPercentages;
+import dmb.components.module.FirstModuleAllocationStrategy;
+import dmb.components.module.Module;
+import dmb.components.module.ModuleAllocationStrategy;
+import dmb.components.module.ModuleAllocator;
+import dmb.components.moves.Move;
+import dmb.components.moves.MoveFinder;
+import dmb.components.moves.MultiCellMoveFinder;
+import dmb.components.prioritizer.ChainPrioritizer;
+import dmb.components.prioritizer.Prioritizer;
+import dmb.components.shaping.DropletReshaper;
+import dmb.components.shaping.DropletReshapingResult;
+import dmb.components.shaping.DropletShape;
+import dmb.components.shaping.DropletShapeSelector;
 import dmb.helpers.Assert;
 import dmb.helpers.GeometryUtil;
 import dmb.helpers.Logger;
 import dmb.helpers.RandomUtil;
-import engine.math.MathUtils;
+import dmb.helpers.UidGenerator;
+import framework.input.Droplet;
+import framework.input.DropletUnit;
+import framework.math.MathUtils;
 
 public class DropletSizeAwareGreedyRouter implements Router {
 
@@ -27,7 +46,6 @@ public class DropletSizeAwareGreedyRouter implements Router {
   private ConstraintsChecker checker;
   private RandomIndexSelector indexSelector;
   private MoveFinder moveFinder;
-  //private ModifiedAStarPathFinder pathFinder;
   private DropletReshaper reshaper;
   private DropletShapeSelector shapeSelector;
   
@@ -74,7 +92,9 @@ public class DropletSizeAwareGreedyRouter implements Router {
     moveFinder = new MultiCellMoveFinder(checker);
     reshaper = new DropletReshaper(moveFinder, array);
     shapeSelector = new DropletShapeSelector();
-    moduleAllocator = new ModuleAllocator(array.catalog);
+    
+    ModuleAllocationStrategy strategy = new FirstModuleAllocationStrategy();
+    moduleAllocator = new ModuleAllocator(array.catalog, strategy);
 
     SubstanceToReservoirAssigner s2rAssigner = new SubstanceToReservoirAssigner();
     s2rAssigner.assign(assay, array, moduleAllocator);
@@ -85,8 +105,6 @@ public class DropletSizeAwareGreedyRouter implements Router {
     probabilitiesC = new float[] {34f, 33f, 33f};
     
     prioritizer = new ChainPrioritizer();
-    
-    //pathFinder = new ModifiedAStarPathFinder();
     
     maxIterationsPerOperation = 500;  // if no operation terminates before iteration is this value, then we assume that no solution can be found.
     iteration = 0;
@@ -137,7 +155,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
         if (stalled.name.equals(OperationType.dispense)) {
           Operation successor = stalled.outputs[0];
 
-          String substance = (String) stalled.attributes.get(Tags.substance);
+          String substance = (String) stalled.attributes.get(AttributeTags.substance);
           Module reserved = reservoirManager.reserve(substance, runningDroplets, timestamp);
           
           if (reserved != null) {
@@ -148,7 +166,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
 
               Operation sibling = (predecessor0.id == stalled.id) ? predecessor1 : predecessor0;
               if (sibling.name.equals(OperationType.dispense)) {
-                String siblingSubstance = (String) sibling.attributes.get(Tags.substance);
+                String siblingSubstance = (String) sibling.attributes.get(AttributeTags.substance);
                 
                 Module siblingReservoir = reservoirManager.reserve(siblingSubstance, runningDroplets, timestamp);
 
@@ -203,11 +221,11 @@ public class DropletSizeAwareGreedyRouter implements Router {
           }
           
           if (stalled.name.equals(OperationType.heating))  {
-            float temperature = (float) stalled.attributes.get(Tags.temperature);
+            float temperature = (float) stalled.attributes.get(AttributeTags.temperature);
             
             Droplet droplet = stalled.manipulating[0];
             BoundingBox boundingBox = droplet.getBoundingBox();
-            stalledExtra.module = moduleAllocator.allocate(OperationType.heating, boundingBox.width, boundingBox.height, new Tag(Tags.temperature, temperature));
+            stalledExtra.module = moduleAllocator.allocate(OperationType.heating, boundingBox.width, boundingBox.height, new AttributeTag(AttributeTags.temperature, temperature));
             
             /*
             Droplet droplet = stalled.manipulating[0];
@@ -221,11 +239,11 @@ public class DropletSizeAwareGreedyRouter implements Router {
             }
             */
           } else if (stalled.name.equals(OperationType.detection))  {
-            String sensor = (String) stalled.attributes.get(Tags.sensor);
+            String sensor = (String) stalled.attributes.get(AttributeTags.sensor);
             
             Droplet droplet = stalled.manipulating[0];
             BoundingBox boundingBox = droplet.getBoundingBox();
-            stalledExtra.module = moduleAllocator.allocate(OperationType.detection, boundingBox.width, boundingBox.height, new Tag(Tags.sensor, sensor));
+            stalledExtra.module = moduleAllocator.allocate(OperationType.detection, boundingBox.width, boundingBox.height, new AttributeTag(AttributeTags.sensor, sensor));
             
             /*
             Droplet droplet = stalled.manipulating[0];
@@ -1077,15 +1095,3 @@ public class DropletSizeAwareGreedyRouter implements Router {
     public Module module;
   }
 }
-
-/*
-
- * class GreedyOperation extends Operation { public List<Integer> dropletId =
- * new ArrayList<>();
- * 
- * public int priority;
- * 
- * public boolean active; public boolean running; public boolean done;
- * 
- * public float mixingPercentage; // only used for mixing operations. }
- */

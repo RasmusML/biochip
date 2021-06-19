@@ -9,7 +9,7 @@ import java.util.PriorityQueue;
 import java.util.function.BiFunction;
 
 import dmb.algorithms.Point;
-import engine.math.MathUtils;
+import framework.math.MathUtils;
 
 public class AStarPathFinder {
 

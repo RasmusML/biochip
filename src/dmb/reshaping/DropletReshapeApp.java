@@ -6,17 +6,17 @@ import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
 
-import dmb.algorithms.BioArray;
 import dmb.algorithms.Point;
+import dmb.components.input.BioArray;
 import dmb.testbench.tests.Test1BioArray;
-import engine.ApplicationAdapter;
-import engine.graphics.Alignment;
-import engine.graphics.Camera;
-import engine.graphics.FitViewport;
-import engine.graphics.Renderer;
-import engine.input.Button;
-import engine.input.Keys;
-import engine.math.Vector2;
+import framework.ApplicationAdapter;
+import framework.graphics.Alignment;
+import framework.graphics.Camera;
+import framework.graphics.FitViewport;
+import framework.graphics.Renderer;
+import framework.input.Button;
+import framework.input.Keys;
+import framework.math.Vector2;
 
 public class DropletReshapeApp extends ApplicationAdapter {
 

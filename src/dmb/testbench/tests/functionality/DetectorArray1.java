@@ -1,7 +1,7 @@
 package dmb.testbench.tests.functionality;
 
-import dmb.algorithms.BioArray;
-import dmb.algorithms.ModuleCatalog;
+import dmb.components.input.BioArray;
+import dmb.components.module.ModuleCatalog;
 
 public class DetectorArray1 extends BioArray {
   

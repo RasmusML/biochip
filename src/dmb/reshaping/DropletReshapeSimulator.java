@@ -6,10 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import dmb.algorithms.Move;
 import dmb.algorithms.Point;
+import dmb.components.moves.Move;
 import dmb.helpers.GeometryUtil;
-import engine.math.MathUtils;
+import framework.math.MathUtils;
 
 public class DropletReshapeSimulator {
   

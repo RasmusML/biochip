@@ -7,6 +7,8 @@ Plots the test execution times for the routing algorithms.
 import numpy as np    
 import matplotlib.pyplot as plt
 
+save_figs = True # save figures or show figures
+
 
 #
 # Defintions
@@ -104,7 +106,11 @@ def plot_combined_tests():
     plt.ylabel("Execution Time (steps)")  
     plt.title("Average Execution times")
     
-    plt.show()   
+    if save_figs:
+        filename = "combined_tests"
+        plt.savefig(filename)
+    else:
+        plt.show()   
         
 
 def plot_single_test_distribution(test_name):
@@ -131,8 +137,12 @@ def plot_single_test_distribution(test_name):
     plt.ylabel("Execution Time (steps)")  
     plt.title("{} distribution".format(test_name))
     
-    plt.show()    
+    if save_figs:
+        filename = "single_test_dist"
+        plt.savefig(filename)
+    else:
+        plt.show()    
 
 
-#plot_single_test_distribution("Test1")
+plot_single_test_distribution("Test6")
 plot_combined_tests()

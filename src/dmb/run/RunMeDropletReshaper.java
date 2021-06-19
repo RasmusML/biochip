@@ -1,8 +1,8 @@
 package dmb.run;
 
 import dmb.reshaping.DropletReshapeApp;
-import engine.Application;
-import engine.ApplicationConfiguration;
+import framework.Application;
+import framework.ApplicationConfiguration;
 
 public class RunMeDropletReshaper {
 

@@ -1,6 +1,6 @@
 package dmb.testbench.tests;
 
-import dmb.algorithms.BioArray;
+import dmb.components.input.BioArray;
 import dmb.testbench.catalogs.LargeStrictPolicyModuleCatalog;
 
 public class ModuleBioArray3 extends BioArray {

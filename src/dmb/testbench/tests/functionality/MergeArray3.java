@@ -1,7 +1,7 @@
 package dmb.testbench.tests.functionality;
 
-import dmb.algorithms.BioArray;
-import dmb.algorithms.ModuleCatalog;
+import dmb.components.input.BioArray;
+import dmb.components.module.ModuleCatalog;
 
 public class MergeArray3 extends BioArray {
   

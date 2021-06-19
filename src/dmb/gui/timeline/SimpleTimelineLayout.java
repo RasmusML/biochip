@@ -3,9 +3,9 @@ package dmb.gui.timeline;
 import java.util.ArrayList;
 import java.util.List;
 
-import dmb.algorithms.Droplet;
 import dmb.algorithms.Operation;
 import dmb.algorithms.OperationType;
+import framework.input.Droplet;
 
 public class SimpleTimelineLayout implements TimelineLayout {
 

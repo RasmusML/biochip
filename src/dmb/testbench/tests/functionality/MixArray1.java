@@ -1,6 +1,6 @@
 package dmb.testbench.tests.functionality;
 
-import dmb.algorithms.BioArray;
+import dmb.components.input.BioArray;
 import dmb.testbench.catalogs.EmptyModuleCatalog;
 
 public class MixArray1 extends BioArray {

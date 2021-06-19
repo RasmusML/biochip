@@ -3,11 +3,13 @@ package dmb.algorithms;
 import java.util.ArrayList;
 import java.util.List;
 
-import dmb.algorithms.components.ConstraintsChecker;
-import dmb.algorithms.components.MixingPercentages;
-import dmb.algorithms.components.ReservoirManager;
-import dmb.algorithms.components.SingleCellMoveFinder;
-import dmb.algorithms.components.SubstanceToReservoirAssigner;
+import dmb.components.ConstraintsChecker;
+import dmb.components.ReservoirManager;
+import dmb.components.SubstanceToReservoirAssigner;
+import dmb.components.input.BioArray;
+import dmb.components.input.BioAssay;
+import dmb.components.mixingpercentages.MixingPercentages;
+import dmb.components.moves.SingleCellMoveFinder;
 
 public class TrafficRouter implements Router {
 
