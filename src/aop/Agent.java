@@ -33,6 +33,10 @@ public class Agent {
     return path.get(path.size() - 1);
   }
   
+  public List<Point> getPath() {
+    return path;
+  }
+  
   public ResolveResult request(Plan plan) {
     memory.root = plan;
     memory.tryCount = 0;
@@ -83,6 +87,7 @@ public class Agent {
     List<Agent> agents = memory.agents;
     
     int[][] distanceGrid = getDistanceGrid(memory.plans, agents);
+    System.out.println("distance-grid");
     print(distanceGrid);
 
     while (memory.tryCount < memory.totalTries) {
@@ -95,6 +100,7 @@ public class Agent {
         List<Point> oldPlanPath = parentPlan.undo();
         
         int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
+        System.out.println("outpost-grid");
         print(outpostDistanceGrid);
         
         List<Point> outposts = getOutposts(outpostDistanceGrid);
@@ -132,6 +138,7 @@ public class Agent {
             tiles.addAll(oldPlanPath); // original plan
             tiles.add(parentAgent.getPosition()); // current position
             
+            // @TODO: Request.pathing, Request.moveOthers
             List<Point> path = findPath(parentAgent, parentTarget, tiles);
             
             if (path == null) {
@@ -158,6 +165,7 @@ public class Agent {
                 memory.failedPlans.removeAll(failedPlans);
                 return ResolveResult.ok;
               } else {
+                Assert.that(false, "@todo");
                 // undo
                 parentPlan.undo();
                 parentPlan.addToPlan(oldPlanPath);
@@ -205,6 +213,7 @@ public class Agent {
           return ResolveResult.ok;
           
         } else {
+          Assert.that(false, "@todo");
           memory.failedPlans.add(plan);
           plan.dependencies.clear();
         }
@@ -263,7 +272,7 @@ public class Agent {
         parentAgent.updateOccupiedTiles(prevOccupied, timestep, plans, memory.agents);
         parentAgent.updateOccupiedTiles(occupied, timestep + 1, plans, memory.agents);
         
-        print(occupied);
+        //print(occupied);
         
         List<Point> validMoves = new ArrayList<>();
         for (Point move : moves) {
@@ -482,7 +491,8 @@ public class Agent {
     for (Point endpoint : endPoints) {
       System.out.println(">" + endpoint);
     }
-
+    System.out.println();
+    
     while (endPoints.size() > 0) {
       Point endPoint = endPoints.remove(0);
       
@@ -602,7 +612,7 @@ public class Agent {
     updateOccupiedTiles(prevOccupied, timestep, plans, agents);
     updateOccupiedTiles(occupied, timestep + 1, plans, agents);
     
-    print(occupied);
+    //print(occupied);
 
     int left = 1;
     int childrenLeft = 0;
@@ -663,7 +673,7 @@ public class Agent {
         updateOccupiedTiles(prevOccupied, timestep, plans, agents);
         updateOccupiedTiles(occupied, timestep + 1, plans, agents);
         
-        print(occupied);
+        //print(occupied);
       }
       
     }
@@ -816,7 +826,7 @@ class SharedAgentMemory {
     for (Agent agent : agents) {
       Plan plan = new Plan();
       plan.agent = agent;
-      plan.start = 1; // @TODO
+      plan.start = agent.getPath().size();
       plans.add(plan);
     }
   }

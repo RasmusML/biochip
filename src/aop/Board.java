@@ -4,16 +4,8 @@ public class Board {
 
   public int[][] grid;
   
-  public Board() {
-    
-    String layout = "100\n" + 
-                    "111\n" +
-                    "100\n" +
-                    "100\n" +
-                    "100";
-                    
+  public Board(String layout) {
     grid = buildLayout(layout);
-    
   }
   
   private int[][] buildLayout(String layout) {

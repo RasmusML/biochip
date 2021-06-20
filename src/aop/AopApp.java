@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dmb.algorithms.Point;
-import dmb.components.input.BioArray;
-import dmb.testbench.tests.Test1BioArray;
 import framework.ApplicationAdapter;
 import framework.graphics.Alignment;
 import framework.graphics.Camera;
@@ -66,20 +64,28 @@ public class AopApp extends ApplicationAdapter {
     renderer = new Renderer(viewport);
     renderer.setCanvas(canvas);
     
-    board = new Board();
-    
-    float cx = board.getWidth() * tilesize / 2f;
-    float cy = board.getHeight() * tilesize / 2f;
-    boardCamera.lookAtNow(cx, cy);
-
+    /*
     okTest();
     reverseTest();
     normalTest2();
     reverseTest2();
+    */
+    undoTest1();
     
+    float cx = board.getWidth() * tilesize / 2f;
+    float cy = board.getHeight() * tilesize / 2f;
+    boardCamera.lookAtNow(cx, cy);
   }
 
   private void okTest() {
+    String layout = "100\n" + 
+                    "111\n" +
+                    "100\n" +
+                    "100\n" +
+                    "100";
+    
+    board = new Board(layout);
+    
     agents = new ArrayList<>();
 
     memory = new SharedAgentMemory(board);
@@ -108,6 +114,15 @@ public class AopApp extends ApplicationAdapter {
   }
   
   private void normalTest2() {
+    String layout = 
+        "100\n" + 
+        "111\n" +
+        "100\n" +
+        "100\n" +
+        "100";
+
+    board = new Board(layout);
+    
     agents = new ArrayList<>();
     
     memory = new SharedAgentMemory(board);
@@ -139,6 +154,15 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void reverseTest() {
+    String layout = 
+        "100\n" + 
+        "111\n" +
+        "100\n" +
+        "100\n" +
+        "100";
+
+    board = new Board(layout);
+    
     agents = new ArrayList<>();
 
     memory = new SharedAgentMemory(board);
@@ -167,6 +191,15 @@ public class AopApp extends ApplicationAdapter {
   }
   
   private void reverseTest2() {
+    String layout = 
+        "100\n" + 
+        "111\n" +
+        "100\n" +
+        "100\n" +
+        "100";
+
+    board = new Board(layout);
+    
     agents = new ArrayList<>();
 
     memory = new SharedAgentMemory(board);
@@ -190,6 +223,46 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(0, 2));
     path.add(new Point(0, 1));
     path.add(new Point(0, 0));
+    
+    Plan plan = memory.getPlan(agent0);
+    plan.addToPlan(path);
+    
+    agent0.request(plan);
+  }
+  
+  private void undoTest1() {
+    String layout = 
+        "0100\n" + 
+        "0111\n" +
+        "0100\n" +
+        "1100\n" +
+        "0100";
+
+    board = new Board(layout);
+    
+    agents = new ArrayList<>();
+
+    memory = new SharedAgentMemory(board);
+    
+    Agent agent0 = new Agent(memory, 0, new Point(1, 4));
+    Agent agent1 = new Agent(memory, 1, new Point(1, 0));
+    Agent agent2 = new Agent(memory, 2, new Point(1, 1));
+    
+    agents.add(agent0);
+    agents.add(agent1);
+    agents.add(agent2);
+    
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    memory.agents.add(agent2);
+    
+    memory.start();
+
+    List<Point> path = new ArrayList<>();
+    path.add(new Point(1, 3));
+    path.add(new Point(1, 2));
+    path.add(new Point(1, 1));
+    path.add(new Point(1, 0));
     
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
