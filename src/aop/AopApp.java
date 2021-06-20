@@ -64,13 +64,13 @@ public class AopApp extends ApplicationAdapter {
     renderer = new Renderer(viewport);
     renderer.setCanvas(canvas);
     
+    /*
     okTest();
     reverseTest();
     normalTest2();
     reverseTest2();
+     */
     undoTest1();
-    /*
-    */
     
     float cx = board.getWidth() * tilesize / 2f;
     float cy = board.getHeight() * tilesize / 2f;
