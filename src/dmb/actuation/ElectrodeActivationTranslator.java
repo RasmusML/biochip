@@ -6,6 +6,10 @@ import dmb.algorithms.Point;
 import framework.input.Droplet;
 import framework.input.DropletUnit;
 
+/**
+ *  Extracts the electrode actuation of droplets moving.
+ */
+
 public class ElectrodeActivationTranslator {
   
   // droplet units may cause an electrode first to de-actuate (unit move away), then actuate (unit move onto the electrode) during the same timestep. So instead of storing both actuation and de-actuation state (which would be wrong), only store the actuation state.
@@ -23,6 +27,13 @@ public class ElectrodeActivationTranslator {
     currentPlatformState = new ElectrodeState[width][height];
   }
   
+  /**
+   * Assumes electrode activated multiple timesteps have to be re-activated each timestep.
+   * 
+   * @param droplets
+   * @param timesteps - number of timesteps
+   * @return actuations each timestep
+   */
   public ElectrodeActivations[] translateStateless(List<Droplet> droplets, int timesteps) {
     ElectrodeActivations[] sections = new ElectrodeActivations[timesteps];
     
@@ -47,6 +58,13 @@ public class ElectrodeActivationTranslator {
     return sections;
   }
   
+  /**
+   * Assumes electrode activated multiple timesteps will only need to activated at the beginning and explicitly de-actuated when no longer actuated.
+   * 
+   * @param droplets
+   * @param timesteps - number of timesteps
+   * @return actuations each timestep
+   */
   public ElectrodeActivations[] translateStateful(List<Droplet> droplets, int timesteps) {
     ElectrodeActivations[] sections = new ElectrodeActivations[timesteps];
     

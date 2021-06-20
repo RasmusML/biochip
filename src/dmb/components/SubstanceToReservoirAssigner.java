@@ -14,6 +14,10 @@ import dmb.components.module.ModuleAllocator;
 import dmb.helpers.Assert;
 import dmb.helpers.RandomUtil;
 
+/**
+ *  Selects the fluid substance of an arrays reservoirs based on an assay.
+ */
+
 public class SubstanceToReservoirAssigner {
   
   public void assign(BioAssay assay, BioArray array, ModuleAllocator moduleAllocator) {

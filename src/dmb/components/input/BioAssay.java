@@ -8,6 +8,11 @@ import dmb.algorithms.Operation;
 import dmb.algorithms.OperationType;
 import dmb.helpers.Wrapper;
 
+/**
+ * BioAssay is the super-class for all assays. Assays should extends BioAssay.
+ * BioAssay contains a set of functions to inspect an assay.
+ */
+
 public class BioAssay {
 
   public int count;

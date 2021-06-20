@@ -2,6 +2,10 @@ package dmb.components;
 
 import dmb.algorithms.Point;
 
+/**
+ * A set of functions to determine whether spacing constraints, such as dynamic and static constraints, are satisfied.
+ */
+
 public class ConstraintsChecker {
   
   public boolean satifiesConstraints(Point to0, Point at1, Point to1) {

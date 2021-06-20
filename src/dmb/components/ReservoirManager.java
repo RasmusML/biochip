@@ -11,6 +11,13 @@ import dmb.components.module.ModuleAllocator;
 import framework.input.Droplet;
 import framework.input.DropletUnit;
 
+/**
+ * A wrapper around ModuleAllocator which handles Reservoir allocations for dispense operations.
+ * 
+ * @see ModuleAllocator
+ * @see Module
+ */
+
 public class ReservoirManager {
   
   private List<Module> dispensers;
@@ -30,29 +37,34 @@ public class ReservoirManager {
   }
   
   public Module reserve(String substance, List<Droplet> droplets, int timestamp) {
-    outer: for (Module dispenser : dispensers) {
+    for (Module dispenser : dispensers) {
       if (moduleAllocator.isInUse(dispenser)) continue;
       if (reserved.contains(dispenser)) continue;
 
       String dispenserSubstance = (String) dispenser.attributes.get(AttributeTags.substance);
       if (dispenserSubstance.equals(substance)) {
-        for (Droplet droplet : droplets) {
-          for (DropletUnit unit : droplet.units) {
-            Point at = unit.route.getPosition(timestamp - 1);
-            Point to = unit.route.getPosition(timestamp);
-  
-            if (!checker.satifiesConstraints(dispenser.position, at, to)) continue outer;
-          }
+        if (satisfiesConstraints(droplets, dispenser, timestamp)) {
+          moduleAllocator.allocate(dispenser);
+          reserved.add(dispenser);
+          return dispenser;
         }
-        
-        moduleAllocator.allocate(dispenser);
-        reserved.add(dispenser);
-        
-        return dispenser;
       }
     }
   
     return null;
+  }
+  
+  private boolean satisfiesConstraints(List<Droplet> droplets, Module dispenser, int timestamp) {
+    for (Droplet droplet : droplets) {
+      for (DropletUnit unit : droplet.units) {
+        Point at = unit.route.getPosition(timestamp - 1);
+        Point to = unit.route.getPosition(timestamp);
+
+        if (!checker.satifiesConstraints(dispenser.position, at, to)) return false;
+      }
+    }
+    
+    return true;
   }
   
   public void commit(Module module) {

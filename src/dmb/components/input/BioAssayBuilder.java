@@ -11,6 +11,18 @@ import dmb.helpers.ArrayUtils;
 import dmb.helpers.UidGenerator;
 import framework.input.Droplet;
 
+/**
+ * An API to connect and create operations for an assay. 
+ * 
+ * Operations are identified with an unique ID by the API.
+ * The IDs are used to connect one operation to another operation.
+ * 
+ * An operation may be connected multiple times if it has multiple predecessor or successor operation, 
+ * e.g. split operations and merge operations.
+ * 
+ * @see BioAssay
+ */
+
 public class BioAssayBuilder {
   
   private UidGenerator generator;
@@ -21,6 +33,12 @@ public class BioAssayBuilder {
     idToOperation = new HashMap<>();
   }
   
+  /**
+   * Creates a dispense operation.
+   * 
+   * @param substance - droplet substance
+   * @return ID
+   */
   public int createDispenseOperation(String substance) {
     int id = generator.getId();
     
@@ -40,6 +58,11 @@ public class BioAssayBuilder {
     return id;
   }
   
+  /**
+   * Creates a mixing operation.
+   * 
+   * @return ID
+   */
   public int createMixOperation() {
     int id = generator.getId();
     
@@ -56,6 +79,11 @@ public class BioAssayBuilder {
     return id;
   }
   
+  /**
+   * Creates a merge operation.
+   * 
+   * @return ID
+   */
   public int createMergeOperation() {
     int id = generator.getId();
     
@@ -72,6 +100,11 @@ public class BioAssayBuilder {
     return id;
   }
   
+  /**
+   * Creates a split operation.
+   * 
+   * @return ID
+   */
   public int createSplitOperation() {
     int id = generator.getId();
     
@@ -88,6 +121,11 @@ public class BioAssayBuilder {
     return id;
   }
   
+  /**
+   * Creates a dispose operation.
+   * 
+   * @return ID
+   */
   public int createDisposeOperation() {
     int id = generator.getId();
     
@@ -104,6 +142,12 @@ public class BioAssayBuilder {
     return id;
   }
 
+  /**
+   * Creates a heating operation.
+   * 
+   * @param temperature - the target temperature of the droplet
+   * @return ID
+   */
   public int createHeatingOperation(float temperature) {
     int id = generator.getId();
 
@@ -123,6 +167,12 @@ public class BioAssayBuilder {
     return id;
   }
   
+  /**
+   * Creates a detection operation.
+   * 
+   * @param sensor - sensor type
+   * @return ID
+   */
   public int createDetectionOperation(String sensor) {
     int id = generator.getId();
 
@@ -142,6 +192,12 @@ public class BioAssayBuilder {
     return id;
   }
   
+  /**
+   * Connects operation with ID <code>fromId</code> to operation with ID <code>toId</code>.
+   * 
+   * @param fromId - input operation id
+   * @param toId - output operation id
+   */
   public void connect(int fromId, int toId) {
     Operation from = idToOperation.get(fromId);
     Operation to = idToOperation.get(toId);
@@ -167,6 +223,9 @@ public class BioAssayBuilder {
     return idToOperation.size();
   }
   
+  /**
+   * @return all leaf operations
+   */
   public Operation[] getSink() {
     List<Operation> finalOperations = new ArrayList<>();
     
