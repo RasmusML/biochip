@@ -38,7 +38,7 @@ public class Agent {
   }
   
   public ResolveResult request(Plan plan) {
-    memory.root = plan;
+    memory.request = plan;
     memory.tryCount = 0;
     
     List<Agent> conflicting = getConflictingAgents();
@@ -55,25 +55,17 @@ public class Agent {
     
     if (ok) {
       
-      List<Plan> committablePlans = new ArrayList<>();
-      committablePlans.add(plan);
-      
-      while (committablePlans.size() > 0) {
-        Plan committable = committablePlans.remove(0);
-        
+      for (Plan committable : memory.plans) {
         Agent agent = committable.agent;
         agent.path.addAll(committable.path);
-        committable.path.clear();
-        
-        committablePlans.addAll(committable.dependencies);
       }
     }
     
-    memory.root = null;
+    memory.request = null;
     memory.failedPlans.clear();
+    memory.plans.clear();
     
     return ok ? ResolveResult.ok : ResolveResult.failed;
-    
   }
   
   public int getId() {
@@ -82,6 +74,9 @@ public class Agent {
 
   // tries to commit to a rule which satisfies the request. Rules are explicit contained here.
   public ResolveResult resolve(Plan parentPlan) {
+    Plan myPlan = memory.getPlan(this);
+    myPlan.pushDependencyLevel();
+    
     if (isResolved()) return ResolveResult.ok;
     
     List<Agent> agents = memory.agents;
@@ -97,111 +92,130 @@ public class Agent {
       List<Point> resolvedPath = getDeadlockResolvingPath(failedPlans, distanceGrid);
 
       if (resolvedPath == null) {
-        List<Point> oldPlanPath = parentPlan.undo();
-        
-        int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
-        System.out.println("outpost-grid");
-        print(outpostDistanceGrid);
-        
-        List<Point> outposts = getOutposts(outpostDistanceGrid);
-        
-        // @TODO: :outpost: we assume for now the first outpost solves the issue. However, we should loop here and try the next outpost.
-        
-        List<Point> outpostPath = getOutpostPath(outposts, failedPlans, outpostDistanceGrid);
-        
-        Plan plan = memory.getPlan(this);
-        plan.addToPlan(outpostPath);
-        parentPlan.dependencies.add(plan);
-        
-        List<Agent> conflictingAgents = getConflictingAgents();
-
-        boolean ok = true;
-        for (Agent agent : conflictingAgents) {
+        // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
+        // If the parentPlan is not the requesters plan, then this plan fails, and the parentPlan has to find another way to resolve its deadlock.
+        if (parentPlan.equals(memory.request)) {  // this is a special case for when the only way to resolve the deadlock is to make the requester stall for a period of time.
+          List<Point> oldPlanPath = parentPlan.undo();
           
-          ResolveResult result = agent.resolve(plan);
-          if (result == ResolveResult.failed) {
-            ok = false;
-            break;
+          int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
+          System.out.println("outpost-grid");
+          print(outpostDistanceGrid);
+          
+          List<Point> outposts = getOutposts(outpostDistanceGrid);
+          
+          // @TODO: :outpost: we assume for now the first outpost solves the issue. However, we should loop here and try the next outpost.
+          
+          List<Point> outpostPath = getOutpostPath(outposts, failedPlans, outpostDistanceGrid);
+          
+          myPlan.addToPlan(outpostPath);
+          parentPlan.addDependency(myPlan);
+          
+          List<Agent> conflictingAgents = getConflictingAgents();
+
+          boolean ok = true;
+          for (Agent agent : conflictingAgents) {
+            
+            ResolveResult result = agent.resolve(myPlan);
+            if (result == ResolveResult.failed) {
+              ok = false;
+              break;
+            }
           }
-        }
-        
-        Assert.that(ok, ":outpost: testFail should work on the first first outpost.");
-        
-        if (ok) {
-          Agent parentAgent = parentPlan.agent;
-          Agent requestingAgent = memory.root.agent;
-          if (parentAgent.equals(requestingAgent)) {  // the agent doing the request should get to get where he wants to. The rest of the agents don't care. They only move to resolve the deadlock.
-            Point parentTarget = oldPlanPath.get(oldPlanPath.size() - 1);
-            
-            List<Point> tiles = new ArrayList<>();
-            tiles.addAll(parentPlan.path);  // detouring moves
-            tiles.addAll(oldPlanPath); // original plan
-            tiles.add(parentAgent.getPosition()); // current position
-            
-            // @TODO: Request.pathing, Request.moveOthers
-            List<Point> path = findPath(parentAgent, parentTarget, tiles);
-            
-            if (path == null) {
-              // undo/fail
-              Assert.that(path != null, "todo!");
-            } else {
+          
+          Assert.that(ok, ":outpost: testFail should work on the first first outpost.");
+          
+          if (ok) {
+            Agent parentAgent = parentPlan.agent;
+            Agent requestingAgent = memory.request.agent;
+            if (parentAgent.equals(requestingAgent)) {  // the agent doing the request should get to get where he wants to. The rest of the agents don't care. They only move to resolve the deadlock.
+              Point parentTarget = oldPlanPath.get(oldPlanPath.size() - 1);
               
-              parentPlan.addToPlan(path);
+              List<Point> tiles = new ArrayList<>();
+              tiles.addAll(parentPlan.path);  // detouring moves
+              tiles.addAll(oldPlanPath); // original plan
+              tiles.add(parentAgent.getPosition()); // current position
               
-              conflictingAgents = parentAgent.getConflictingAgents();
-              Assert.that(conflictingAgents.contains(this));
-              //conflictingAgents.add(this);
+              // @TODO: Request.pathing, Request.moveOthers
+              List<Point> path = findPath(parentAgent, parentTarget, tiles);
               
-              ok = true;
-              for (Agent agent : conflictingAgents) {
-                ResolveResult result = agent.resolve(parentPlan);
-                if (result == ResolveResult.failed) {
-                  ok = false;
-                  break;
+              if (path == null) {
+                // undo/fail
+                Assert.that(path != null, "todo!");
+
+                return ResolveResult.failed;
+              } else {
+                
+                parentPlan.addToPlan(path);
+                
+                conflictingAgents = parentAgent.getConflictingAgents();
+                Assert.that(conflictingAgents.contains(this));
+                //conflictingAgents.add(this);
+                
+                parentPlan.pushDependencyLevel();
+                
+                ok = true;
+                for (Agent agent : conflictingAgents) {
+                  ResolveResult result = agent.resolve(parentPlan);
+                  if (result == ResolveResult.failed) {
+                    ok = false;
+                    break;
+                  }
+                }
+                
+                if (ok) {
+                  return ResolveResult.ok;
+                } else {
+                  Assert.that(false, "@todo");
+                  
+                  memory.failedPlans.add(parentPlan); // @TODO: deep-copy plan
+                  parentPlan.popDependencyLevel();
+
+                  // undo
+                  parentPlan.undo();
+                  parentPlan.addToPlan(oldPlanPath);
+                  
+                  return ResolveResult.failed;
                 }
               }
               
-              if (ok) {
-                memory.failedPlans.removeAll(failedPlans);
-                return ResolveResult.ok;
-              } else {
-                Assert.that(false, "@todo");
-                // undo
-                parentPlan.undo();
-                parentPlan.addToPlan(oldPlanPath);
-                
-                return ResolveResult.failed;
-              }
+            } else {
+              
+              memory.failedPlans.add(myPlan); // @TODO: deep-copy plan
+              myPlan.popDependencyLevel();
+              
+              return ResolveResult.failed;  // stalling the requester will not fix the deadlock, because the requester is not at fault.
             }
-          }
+              
+          } else {
+            Assert.that(false, "@todo");
             
-        } else {
-          Assert.that(false, "@todo");
-          
-          // @TODO: restore parent, if this swapping did not resolve the deadlock. Actually, the restoring should be outside the loop construct.
-          //parentPlan = oldParentPlan; // this will not work, because we just change the pointer of the object, actually change the pointer of the attributes.
-          
-          memory.failedPlans.add(plan);
-          
-          for (Plan dependency : plan.dependencies) {
-            dependency.undo();
+            // @TODO: restore parent, if this swapping did not resolve the deadlock. Actually, the restoring should be outside the loop construct.
+            //parentPlan = oldParentPlan; // this will not work, because we just change the pointer of the object, actually change the pointer of the attributes.
+            
+            memory.failedPlans.add(myPlan); // @TODO: deep-copy plan
+            myPlan.popDependencyLevel();
+
+            return ResolveResult.failed;
           }
-          plan.dependencies.clear();
+          
+          
+        } else {
+          memory.failedPlans.add(myPlan); // @TODO: deep-copy plan
+          myPlan.popDependencyLevel();
+          
+          return ResolveResult.failed;
         }
-        
-        return ResolveResult.failed;
         
       } else {
 
-        Plan plan = memory.getPlan(this);
-        plan.addToPlan(resolvedPath);
-        parentPlan.dependencies.add(plan);
+        myPlan.addToPlan(resolvedPath);
+        parentPlan.addDependency(myPlan);
         
         List<Agent> conflictingAgents = getConflictingAgents();
         
         boolean ok = true;
         for (Agent agent : conflictingAgents) {
-          ResolveResult result = agent.resolve(plan);
+          ResolveResult result = agent.resolve(myPlan);
           if (result == ResolveResult.failed) {
             ok = false;
             break;
@@ -209,23 +223,22 @@ public class Agent {
         }
         
         if (ok) { // commit
-          memory.failedPlans.removeAll(failedPlans);
           return ResolveResult.ok;
-          
         } else {
           Assert.that(false, "@todo");
-          memory.failedPlans.add(plan);
-          plan.dependencies.clear();
+          
+          memory.failedPlans.add(myPlan.copy()); // @TODO: deep-copy plan
+          myPlan.popDependencyLevel();
+
+          return ResolveResult.failed;
         }
       }
     }
-
-    return ResolveResult.failed;
-      
+    
+    return ResolveResult.failed;  // no more iterations left.
   }
   
   private boolean isResolved() {
-    
     for (Plan plan : memory.plans) {
       Agent agent = plan.agent;
       List<Agent> conflicting = agent.getConflictingAgents();
@@ -364,7 +377,6 @@ public class Agent {
       if (!board.isTileOpen(tx, ty)) continue;  // wall or outside the board
       if (overlay[tx][ty] == -1) continue;
       openNeighbourTiles += 1;
-      
     }
     
     return openNeighbourTiles >= 3;
@@ -383,14 +395,14 @@ public class Agent {
       pending.addAll(memory.agents);
       pending.remove(this);
       
-      int endTime = p.start + i;
+      int endTime = p.agent.path.size() + i;
       
       for (Plan plan : plans) {
         if (equals(plan.agent)) continue;
         if (conflicting.contains(plan.agent)) continue;
         if (plan.path.size() == 0) continue;  // @note: this only happens for the parent when doing the reverse?
 
-        int otherEndTime = plan.start + plan.path.size();
+        int otherEndTime = plan.agent.getPath().size() + plan.path.size();
         if (otherEndTime > endTime) continue;
         
         pending.remove(plan.agent);
@@ -458,7 +470,7 @@ public class Agent {
     List<Plan> plans = memory.plans;
     for (Plan plan : plans) {
       
-      if (plan.agent.equals(memory.root.agent)) {
+      if (plan.agent.equals(memory.request.agent)) {
         for (int i = 0; i <= plan.path.size() - 1; i++) { // we can't push the "root"/requester
           Point point = plan.path.get(i);
           overlay[point.x][point.y] = -1;
@@ -471,6 +483,7 @@ public class Agent {
       }
     }
     
+    // @TODO: outdated
     for (Plan plan : failedPlans) {
       Point last = plan.path.get(plan.path.size() - 1);
       overlay[last.x][last.y] = -2;
@@ -756,16 +769,18 @@ class TimePoint {
 class Plan {
   public Agent agent;
 
-  public int start; // @TODO
   public List<Point> path;
   public List<Integer> checkpoints;
   
-  public List<Plan> dependencies;  // plans created due to this plan.
+  public List<DependencyLevel> dependencyLevels;
+  //public List<Plan> dependencies;  // plans created due to this plan.
   
   public Plan() {
     path = new ArrayList<>();
-    dependencies = new ArrayList<>();
     checkpoints = new ArrayList<>();
+    dependencyLevels = new ArrayList<>();
+    
+    pushDependencyLevel();
   }
   
   public void addToPlan(List<Point> addition) {
@@ -773,6 +788,25 @@ class Plan {
     
     checkpoints.add(checkpoint);
     path.addAll(addition);
+  }
+  
+  public void pushDependencyLevel() {
+    DependencyLevel level = new DependencyLevel();
+    level.dependencies = new ArrayList<>();
+    dependencyLevels.add(level);
+  }
+  
+  public void popDependencyLevel() {
+    DependencyLevel level = dependencyLevels.remove(dependencyLevels.size() - 1);
+    
+    for (Plan plan : level.dependencies) {
+      plan.undo();
+    }
+  }
+  
+  public void addDependency(Plan plan) {
+    DependencyLevel level = dependencyLevels.get(dependencyLevels.size() - 1);
+    level.dependencies.add(plan);
   }
   
   public List<Point> undo() {
@@ -786,9 +820,13 @@ class Plan {
     Plan copy = new Plan();
     copy.agent = agent;
     copy.path.addAll(path);
-    copy.dependencies.addAll(dependencies);
+    copy.dependencyLevels.addAll(dependencyLevels); // @todo: deep-copy
     return copy;
   }
+}
+
+class DependencyLevel {
+  public List<Plan> dependencies;
 }
 
 class SharedAgentMemory {
@@ -796,24 +834,22 @@ class SharedAgentMemory {
   public int maxDepth;  // @TODO: max planning depth.
   public int numNodesToExploreInSearch;
   
-  //public int timestep;  // starts at 1.
-  
   public int totalTries;
   public int tryCount;  // share the tryCount between the agents so tries doesn't explode when agents request recursively.
   
   public List<Agent> agents;
+  
+  public Plan request;
 
   public Board board;
   
   public List<Plan> failedPlans;
   public List<Plan> plans;
   
-  public Plan root;
-  
   public SharedAgentMemory(Board board) {
     this.board = board;
     
-    totalTries = 10;
+    totalTries = 100;
     numNodesToExploreInSearch = 1000;
     
     agents = new ArrayList<>();
@@ -826,25 +862,8 @@ class SharedAgentMemory {
     for (Agent agent : agents) {
       Plan plan = new Plan();
       plan.agent = agent;
-      plan.start = agent.getPath().size();
       plans.add(plan);
     }
-  }
-  
-  public List<Plan> getPlans(Plan root) {
-    List<Plan> plans = new ArrayList<>();
-    
-    List<Plan> left = new ArrayList<>();
-    left.add(root);
-    
-    while (left.size() > 0) {
-      Plan plan = left.remove(0);
-      plans.add(plan);
-      
-      left.addAll(plan.dependencies);
-    }
-    
-    return plans;
   }
   
   public Plan getPlan(Agent agent) {
