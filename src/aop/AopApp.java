@@ -57,8 +57,6 @@ public class AopApp extends ApplicationAdapter {
     movementTime = 0.12f;
     stopTime = 0.45f;
     
-    agents = new ArrayList<>();
-
     canvas.createBufferStrategy(3);
     canvas.setIgnoreRepaint(true);
 
@@ -74,16 +72,18 @@ public class AopApp extends ApplicationAdapter {
     float cy = board.getHeight() * tilesize / 2f;
     boardCamera.lookAtNow(cx, cy);
 
-    memory = new SharedAgentMemory(board);
-    
-    //okTest();
-    //reverseTest();
-    //normalTest2();
+    okTest();
+    reverseTest();
+    normalTest2();
     reverseTest2();
     
   }
 
   private void okTest() {
+    agents = new ArrayList<>();
+
+    memory = new SharedAgentMemory(board);
+
     Agent agent0 = new Agent(memory, 0, new Point(0, 4));
     Agent agent1 = new Agent(memory, 1, new Point(0, 0));
     
@@ -104,10 +104,14 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent1);
     plan.addToPlan(path);
     
-    agent1.request(Request.pathing, plan);
+    agent1.request(plan);
   }
   
   private void normalTest2() {
+    agents = new ArrayList<>();
+    
+    memory = new SharedAgentMemory(board);
+    
     Agent agent0 = new Agent(memory, 0, new Point(0, 4));
     Agent agent1 = new Agent(memory, 1, new Point(0, 0));
     Agent agent2 = new Agent(memory, 2, new Point(0, 2));
@@ -131,10 +135,14 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent1);
     plan.addToPlan(path);
     
-    agent1.request(Request.pathing, plan);
+    agent1.request(plan);
   }
 
   private void reverseTest() {
+    agents = new ArrayList<>();
+
+    memory = new SharedAgentMemory(board);
+    
     Agent agent0 = new Agent(memory, 0, new Point(0, 4));
     Agent agent1 = new Agent(memory, 1, new Point(0, 0));
     
@@ -155,10 +163,14 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(Request.pathing, plan);
+    agent0.request(plan);
   }
   
   private void reverseTest2() {
+    agents = new ArrayList<>();
+
+    memory = new SharedAgentMemory(board);
+    
     Agent agent0 = new Agent(memory, 0, new Point(0, 4));
     Agent agent1 = new Agent(memory, 1, new Point(0, 0));
     Agent agent2 = new Agent(memory, 2, new Point(0, 2));
@@ -182,9 +194,8 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(Request.pathing, plan);
+    agent0.request(plan);
   }
-
 
   @Override
   public void update() {

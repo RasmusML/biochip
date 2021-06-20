@@ -33,47 +33,42 @@ public class Agent {
     return path.get(path.size() - 1);
   }
   
-  public ResolveResult request(Request request, Plan plan) {
+  public ResolveResult request(Plan plan) {
     memory.root = plan;
     memory.tryCount = 0;
     
-    if (request == Request.pathing) {
+    List<Agent> conflicting = getConflictingAgents();
+    
+    boolean ok = true;
+    for (Agent agent : conflicting) {
+      ResolveResult result = agent.resolve(plan);
       
-      List<Agent> conflicting = getConflictingAgents(plan.path);
-      
-      boolean ok = true;
-      for (Agent agent : conflicting) {
-        ResolveResult result = agent.resolve(request, plan);
-        
-        if (result == ResolveResult.failed) {
-          ok = false;
-          break;
-        }
+      if (result == ResolveResult.failed) {
+        ok = false;
+        break;
       }
-      
-      if (ok) {
-        
-        List<Plan> committablePlans = new ArrayList<>();
-        committablePlans.add(plan);
-        
-        while (committablePlans.size() > 0) {
-          Plan committable = committablePlans.remove(0);
-          
-          Agent agent = committable.agent;
-          agent.path.addAll(committable.path);
-          committable.path.clear();
-          
-          committablePlans.addAll(committable.dependencies);
-        }
-      }
-      
-      memory.root = null;
-      memory.failedPlans.clear();
-      
-      return ok ? ResolveResult.ok : ResolveResult.failed;
     }
     
-    throw new IllegalStateException("broken?");
+    if (ok) {
+      
+      List<Plan> committablePlans = new ArrayList<>();
+      committablePlans.add(plan);
+      
+      while (committablePlans.size() > 0) {
+        Plan committable = committablePlans.remove(0);
+        
+        Agent agent = committable.agent;
+        agent.path.addAll(committable.path);
+        committable.path.clear();
+        
+        committablePlans.addAll(committable.dependencies);
+      }
+    }
+    
+    memory.root = null;
+    memory.failedPlans.clear();
+    
+    return ok ? ResolveResult.ok : ResolveResult.failed;
     
   }
   
@@ -82,159 +77,149 @@ public class Agent {
   }
 
   // tries to commit to a rule which satisfies the request. Rules are explicit contained here.
-  public ResolveResult resolve(Request request, Plan parentPlan) {
+  public ResolveResult resolve(Plan parentPlan) {
+    if (isResolved()) return ResolveResult.ok;
     
-    if (request == Request.pathing) {
-      if (isResolved()) return ResolveResult.ok;
-      
-      List<Agent> agents = memory.agents;
-      
-      int[][] distanceGrid = getDistanceGrid(memory.plans, agents);
-      print(distanceGrid);
+    List<Agent> agents = memory.agents;
+    
+    int[][] distanceGrid = getDistanceGrid(memory.plans, agents);
+    print(distanceGrid);
 
-      while (memory.tryCount < memory.totalTries) {
-        memory.tryCount += 1;
+    while (memory.tryCount < memory.totalTries) {
+      memory.tryCount += 1;
+      
+      List<Plan> failedPlans = memory.getFailedPlans(this);
+      List<Point> resolvedPath = getDeadlockResolvingPath(failedPlans, distanceGrid);
+
+      if (resolvedPath == null) {
+        List<Point> oldPlanPath = parentPlan.undo();
         
-        List<Plan> failedPlans = memory.getFailedPlans(this);
-        List<Point> resolvedPath = getDeadlockResolvingPath(failedPlans, distanceGrid);
-  
-        if (resolvedPath == null) {
-          //Assert.that(false); // @remove
-          
-          List<Point> oldPlanPath = parentPlan.undo();
-          
-          int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
-          print(outpostDistanceGrid);
-          
-          List<Point> outposts = getOutposts(outpostDistanceGrid);
-          
-          // @TODO: :outpost: we assume for now the first outpost solves the issue. However, we should loop here and try the next outpost.
-          
-          List<Point> outpostPath = getOutpostPath(outposts, failedPlans, outpostDistanceGrid);
-          
-          List<Agent> conflictingAgents = getConflictingAgents(outpostPath);
+        int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
+        print(outpostDistanceGrid);
+        
+        List<Point> outposts = getOutposts(outpostDistanceGrid);
+        
+        // @TODO: :outpost: we assume for now the first outpost solves the issue. However, we should loop here and try the next outpost.
+        
+        List<Point> outpostPath = getOutpostPath(outposts, failedPlans, outpostDistanceGrid);
+        
+        Plan plan = memory.getPlan(this);
+        plan.addToPlan(outpostPath);
+        parentPlan.dependencies.add(plan);
+        
+        List<Agent> conflictingAgents = getConflictingAgents();
 
-          Plan plan = memory.getPlan(this);
-          plan.addToPlan(outpostPath);
-          parentPlan.dependencies.add(plan);
+        boolean ok = true;
+        for (Agent agent : conflictingAgents) {
           
-          boolean ok = true;
-          for (Agent agent : conflictingAgents) {
-            
-            ResolveResult result = agent.resolve(request, plan);
-            if (result == ResolveResult.failed) {
-              ok = false;
-              break;
-            }
-          }
-          
-          Assert.that(ok, ":outpost: testFail should work on the first first outpost.");
-          
-          if (ok) {
-            Agent parentAgent = parentPlan.agent;
-            Agent requestingAgent = memory.root.agent;
-            if (parentAgent.equals(requestingAgent)) {  // the agent doing the request should get to get where he wants to. The rest of the agents don't care. They only move to resolve the deadlock.
-              Point parentTarget = oldPlanPath.get(oldPlanPath.size() - 1);
-              
-              List<Point> tiles = new ArrayList<>();
-              tiles.addAll(parentPlan.path);  // detouring moves
-              tiles.addAll(oldPlanPath); // original plan
-              tiles.add(parentAgent.getPosition()); // current position
-              
-              List<Point> path = findPath(parentAgent, parentTarget, tiles);
-              
-              if (path == null) {
-                // undo/fail
-                Assert.that(path != null, "todo!");
-              } else {
-                
-                parentPlan.addToPlan(path);
-                
-                conflictingAgents = parentAgent.getConflictingAgents(path);
-                Assert.that(conflictingAgents.contains(this));
-                //conflictingAgents.add(this);
-                
-                ok = true;
-                for (Agent agent : conflictingAgents) {
-                  ResolveResult result = agent.resolve(request, parentPlan);
-                  if (result == ResolveResult.failed) {
-                    ok = false;
-                    break;
-                  }
-                }
-                
-                if (ok) {
-                  memory.failedPlans.removeAll(failedPlans);
-                  return ResolveResult.ok;
-                } else {
-                  // undo
-                  parentPlan.undo();
-                  parentPlan.addToPlan(oldPlanPath);
-                  
-                  return ResolveResult.failed;
-                }
-              }
-            }
-              
-          } else {
-            Assert.that(false, "@todo");
-            
-            // @TODO: restore parent, if this swapping did not resolve the deadlock. Actually, the restoring should be outside the loop construct.
-            //parentPlan = oldParentPlan; // this will not work, because we just change the pointer of the object, actually change the pointer of the attributes.
-            
-            memory.failedPlans.add(plan);
-            
-            for (Plan dependency : plan.dependencies) {
-              dependency.undo();
-            }
-            plan.dependencies.clear();
-          }
-          
-          return ResolveResult.failed;
-          
-        } else {
-
-          List<Agent> conflictingAgents = getConflictingAgents(resolvedPath);
-          
-          Plan plan = memory.getPlan(this);
-          plan.addToPlan(resolvedPath);
-          parentPlan.dependencies.add(plan);
-          
-          boolean ok = true;
-          for (Agent agent : conflictingAgents) {
-            ResolveResult result = agent.resolve(request, plan);
-            if (result == ResolveResult.failed) {
-              ok = false;
-              break;
-            }
-          }
-          
-          if (ok) { // commit
-            memory.failedPlans.removeAll(failedPlans);
-            return ResolveResult.ok;
-            
-          } else {
-            memory.failedPlans.add(plan);
-            plan.dependencies.clear();
+          ResolveResult result = agent.resolve(plan);
+          if (result == ResolveResult.failed) {
+            ok = false;
+            break;
           }
         }
-      }
+        
+        Assert.that(ok, ":outpost: testFail should work on the first first outpost.");
+        
+        if (ok) {
+          Agent parentAgent = parentPlan.agent;
+          Agent requestingAgent = memory.root.agent;
+          if (parentAgent.equals(requestingAgent)) {  // the agent doing the request should get to get where he wants to. The rest of the agents don't care. They only move to resolve the deadlock.
+            Point parentTarget = oldPlanPath.get(oldPlanPath.size() - 1);
+            
+            List<Point> tiles = new ArrayList<>();
+            tiles.addAll(parentPlan.path);  // detouring moves
+            tiles.addAll(oldPlanPath); // original plan
+            tiles.add(parentAgent.getPosition()); // current position
+            
+            List<Point> path = findPath(parentAgent, parentTarget, tiles);
+            
+            if (path == null) {
+              // undo/fail
+              Assert.that(path != null, "todo!");
+            } else {
+              
+              parentPlan.addToPlan(path);
+              
+              conflictingAgents = parentAgent.getConflictingAgents();
+              Assert.that(conflictingAgents.contains(this));
+              //conflictingAgents.add(this);
+              
+              ok = true;
+              for (Agent agent : conflictingAgents) {
+                ResolveResult result = agent.resolve(parentPlan);
+                if (result == ResolveResult.failed) {
+                  ok = false;
+                  break;
+                }
+              }
+              
+              if (ok) {
+                memory.failedPlans.removeAll(failedPlans);
+                return ResolveResult.ok;
+              } else {
+                // undo
+                parentPlan.undo();
+                parentPlan.addToPlan(oldPlanPath);
+                
+                return ResolveResult.failed;
+              }
+            }
+          }
+            
+        } else {
+          Assert.that(false, "@todo");
+          
+          // @TODO: restore parent, if this swapping did not resolve the deadlock. Actually, the restoring should be outside the loop construct.
+          //parentPlan = oldParentPlan; // this will not work, because we just change the pointer of the object, actually change the pointer of the attributes.
+          
+          memory.failedPlans.add(plan);
+          
+          for (Plan dependency : plan.dependencies) {
+            dependency.undo();
+          }
+          plan.dependencies.clear();
+        }
+        
+        return ResolveResult.failed;
+        
+      } else {
 
-      return ResolveResult.failed;
-      
-    } else {
-      throw new IllegalStateException("unknown request!");
+        Plan plan = memory.getPlan(this);
+        plan.addToPlan(resolvedPath);
+        parentPlan.dependencies.add(plan);
+        
+        List<Agent> conflictingAgents = getConflictingAgents();
+        
+        boolean ok = true;
+        for (Agent agent : conflictingAgents) {
+          ResolveResult result = agent.resolve(plan);
+          if (result == ResolveResult.failed) {
+            ok = false;
+            break;
+          }
+        }
+        
+        if (ok) { // commit
+          memory.failedPlans.removeAll(failedPlans);
+          return ResolveResult.ok;
+          
+        } else {
+          memory.failedPlans.add(plan);
+          plan.dependencies.clear();
+        }
+      }
     }
+
+    return ResolveResult.failed;
+      
   }
   
-
   private boolean isResolved() {
     
     for (Plan plan : memory.plans) {
       Agent agent = plan.agent;
-      int i = 1;
-      List<Point> path = plan.path;
-      List<Agent> conflicting = agent.getConflictingAgents(path);
+      List<Agent> conflicting = agent.getConflictingAgents();
       if (conflicting.size() > 0) return false;
     }
     
@@ -376,22 +361,20 @@ public class Agent {
     return openNeighbourTiles >= 3;
   }
 
-  public List<Agent> getConflictingAgents(List<Point> path) {
+  public List<Agent> getConflictingAgents() {
     List<Agent> conflicting = new ArrayList<>();
 
     Plan p = memory.getPlan(this);
-    int planSize = p.path.size();
-    int timestep = 1 + planSize; // @TODO
     
     List<Plan> plans = memory.plans;
-    for (int i = 0; i < path.size(); i++) {
-      Point at = path.get(i);
+    for (int i = 0; i < p.path.size(); i++) {
+      Point at = p.path.get(i);
       
       List<Agent> pending = new ArrayList<>();
       pending.addAll(memory.agents);
       pending.remove(this);
       
-      int endTime = timestep + i + 1;
+      int endTime = p.start + i;
       
       for (Plan plan : plans) {
         if (equals(plan.agent)) continue;
@@ -413,6 +396,9 @@ public class Agent {
       for (Agent other : pending) {
         if (equals(other)) continue;
         if (conflicting.contains(other)) continue;
+
+        Plan otherPlan = memory.getPlan(other);
+        if (otherPlan.path.size() > 0) continue;  // use the latest position of the agent, if the agent has a plan, then no need to use the last committed move.
         
         Point otherLastAt = other.getPosition();
         
@@ -872,10 +858,4 @@ class SharedAgentMemory {
 enum ResolveResult {
   ok,
   failed;
-}
-
-enum Request {
-  pathing;
-  //eventuallyPathing;
-  // moveUp
 }
