@@ -45,7 +45,7 @@ public class Agent {
     
     boolean ok = true;
     for (Agent agent : conflicting) {
-      ResolveResult result = agent.resolve(plan);
+      ResolveResult result = agent.resolve(plan, Phase.resolving);
       
       if (result == ResolveResult.failed) {
         ok = false;
@@ -72,16 +72,13 @@ public class Agent {
     return id;
   }
 
-  // tries to commit to a rule which satisfies the request. Rules are explicit contained here.
-  public ResolveResult resolve(Plan parentPlan) {
+  public ResolveResult resolve(Plan parentPlan, Phase phase) {
+    if (isResolved()) return ResolveResult.ok;
+
     Plan myPlan = memory.getPlan(this);
     myPlan.pushDependencyLevel();
     
-    if (isResolved()) return ResolveResult.ok;
-    
-    List<Agent> agents = memory.agents;
-    
-    int[][] distanceGrid = getDistanceGrid(memory.plans, agents);
+    int[][] distanceGrid = getDistanceGrid(memory.plans, memory.agents);
     System.out.println("distance-grid");
     print(distanceGrid);
 
@@ -92,124 +89,23 @@ public class Agent {
       List<Point> resolvedPath = getDeadlockResolvingPath(failedPlans, distanceGrid);
 
       if (resolvedPath == null) {
-        // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
-        // If the parentPlan is not the requesters plan, then this plan fails, and the parentPlan has to find another way to resolve its deadlock.
-        if (parentPlan.equals(memory.request)) {  // this is a special case for when the only way to resolve the deadlock is to make the requester stall for a period of time.
-          List<Point> oldPlanPath = parentPlan.undo();
+        if (phase == Phase.outposting) {  // an agent can outpost two successive times. If this happens, the the first oupost should select another outpost in the next iteration.
+          memory.addFailedPlan(myPlan);
+          myPlan.popDependencyLevel();
           
-          int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
-          System.out.println("outpost-grid");
-          print(outpostDistanceGrid);
-          
-          List<Point> outposts = getOutposts(outpostDistanceGrid);
-          
-          // @TODO: :outpost: we assume for now the first outpost solves the issue. However, we should loop here and try the next outpost.
-          /*
-          while (memory.tryCount < memory.totalTries) {
-            memory.tryCount += 1;
-          }
-           */
-          
-          List<Point> outpostPath = getOutpostPath(outposts, failedPlans, outpostDistanceGrid);
-          
-          myPlan.addToPlan(outpostPath);
-          parentPlan.addDependency(myPlan);
-          
-          List<Agent> conflictingAgents = getConflictingAgents();
-
-          boolean ok = true;
-          for (Agent agent : conflictingAgents) {
-            
-            ResolveResult result = agent.resolve(myPlan);
-            if (result == ResolveResult.failed) {
-              ok = false;
-              break;
-            }
-          }
-          
-          Assert.that(ok, ":outpost: testFail should work on the first first outpost.");
-          
-          if (ok) {
-            Agent parentAgent = parentPlan.agent;
-            Agent requestingAgent = memory.request.agent;
-            if (parentAgent.equals(requestingAgent)) {  // the agent doing the request should get to get where he wants to. The rest of the agents don't care. They only move to resolve the deadlock.
-              Point parentTarget = oldPlanPath.get(oldPlanPath.size() - 1);
-              
-              List<Point> tiles = new ArrayList<>();
-              tiles.addAll(parentPlan.path);  // detouring moves
-              tiles.addAll(oldPlanPath); // original plan
-              tiles.add(parentAgent.getPosition()); // current position
-              
-              // @TODO: Request.pathing, Request.moveOthers
-              List<Point> path = findPath(parentAgent, parentTarget, tiles);
-              
-              if (path == null) {
-                // undo/fail
-                Assert.that(path != null, "todo!");
-
-                return ResolveResult.failed;
-              } else {
-                
-                parentPlan.addToPlan(path);
-                
-                conflictingAgents = parentAgent.getConflictingAgents();
-                Assert.that(conflictingAgents.contains(this));
-                //conflictingAgents.add(this);
-                
-                parentPlan.pushDependencyLevel();
-                
-                ok = true;
-                for (Agent agent : conflictingAgents) {
-                  ResolveResult result = agent.resolve(parentPlan);
-                  if (result == ResolveResult.failed) {
-                    ok = false;
-                    break;
-                  }
-                }
-                
-                if (ok) {
-                  return ResolveResult.ok;
-                } else {
-                  Assert.that(false, "@todo");
-                  
-                  memory.addFailedPlan(parentPlan);
-                  parentPlan.popDependencyLevel();
-                  parentPlan.undo();
-
-                  parentPlan.addToPlan(oldPlanPath);
-                  
-                  return ResolveResult.failed;
-                }
-              }
-              
-            } else {
-              Assert.that(false, "@todo");
-
-              memory.addFailedPlan(myPlan);
-              myPlan.popDependencyLevel();
-              myPlan.undo();
-              
-              return ResolveResult.failed;  // stalling the requester will not fix the deadlock, because the requester is not at fault.
-            }
-              
-          } else {
-            Assert.that(false, "@todo!");
-            
-            // @TODO: restore parent, if this swapping did not resolve the deadlock. Actually, the restoring should be outside the loop construct.
-            //parentPlan = oldParentPlan; // this will not work, because we just change the pointer of the object, actually change the pointer of the attributes.
-            memory.addFailedPlan(myPlan);
-            myPlan.popDependencyLevel();
-            myPlan.undo();
-
-            //return ResolveResult.failed;
-          }
-          
-          
-        } else {
-          // if we get here, then the agent can't resolve the deadlock, the agent asking this agent to resolve the deadlock, will try and find another path to resolve the deadlock.
-          // so this agent doesn't undo its plan.
-
           return ResolveResult.failed;
+        } else {
+          
+          // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
+          // If the parentPlan is not the requesters plan, then this plan fails, and the parentPlan has to find another way to resolve its deadlock.
+          if (parentPlan.equals(memory.request)) {  // this is a special case for when the only way to resolve the deadlock is to make the requester stall for a period of time.
+            return tryWithOutposts(parentPlan, myPlan, failedPlans);
+          } else {
+            // if we get here, then the agent can't resolve the deadlock, because the agent asking is not the requester.
+            // The agent asking this agent to resolve the deadlock, will try and find another path to resolve the deadlock.
+            // so this agent doesn't undo its plan.
+            return ResolveResult.failed;
+          }
         }
         
       } else {
@@ -221,7 +117,7 @@ public class Agent {
         
         boolean ok = true;
         for (Agent agent : conflictingAgents) {
-          ResolveResult result = agent.resolve(myPlan);
+          ResolveResult result = agent.resolve(myPlan, Phase.resolving);
           if (result == ResolveResult.failed) {
             ok = false;
             break;
@@ -243,6 +139,113 @@ public class Agent {
     myPlan.popDependencyLevel();
     
     return ResolveResult.failed;  // no more iterations left.
+  }
+
+  private ResolveResult tryWithOutposts(Plan parentPlan, Plan myPlan, List<Plan> failedPlans) {
+    List<Point> oldParentPlanPath = parentPlan.undo();
+    
+    int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
+    System.out.println("outpost-grid");
+    print(outpostDistanceGrid);
+    
+    List<Point> outposts = getOutposts(outpostDistanceGrid);
+    
+    while (memory.tryCount < memory.totalTries) {
+      memory.tryCount += 1;
+      
+      List<Point> outpostPath = getOutpostPath(outposts, failedPlans, outpostDistanceGrid);
+      
+      myPlan.addToPlan(outpostPath);
+      parentPlan.addDependency(myPlan);
+      
+      List<Agent> conflictingAgents = getConflictingAgents();
+
+      boolean ok = true;
+      for (Agent agent : conflictingAgents) {
+        ResolveResult result = agent.resolve(myPlan, Phase.resolving);
+        if (result == ResolveResult.failed) {
+          ok = false;
+          break;
+        }
+      }
+      
+      if (ok) {
+        
+        Agent parentAgent = parentPlan.agent;
+        Agent requestingAgent = memory.request.agent;
+        
+        if (parentAgent.equals(requestingAgent)) {  // the agent doing the request should get to get where he wants to. The rest of the agents don't care. They only move to resolve the deadlock.
+          Point parentTarget = oldParentPlanPath.get(oldParentPlanPath.size() - 1);
+          
+          List<Point> tiles = new ArrayList<>();
+          tiles.addAll(parentPlan.path);  // detouring moves
+          tiles.addAll(oldParentPlanPath); // original plan
+          tiles.add(parentAgent.getPosition()); // current position
+          
+          List<Point> path = findPath(parentAgent, parentTarget, tiles);
+          
+          if (path == null) {
+            // undo/fail
+            Assert.that(path != null, "todo!");
+
+            return ResolveResult.failed;
+          } else {
+            
+            parentPlan.addToPlan(path);
+            parentPlan.pushDependencyLevel();
+            
+            conflictingAgents = parentAgent.getConflictingAgents();
+            Assert.that(conflictingAgents.contains(this));
+            //conflictingAgents.add(this);
+            
+            ok = true;
+            for (Agent agent : conflictingAgents) {
+              Phase agentPhase = equals(agent) ? Phase.outposting : Phase.resolving;
+              ResolveResult result = agent.resolve(parentPlan, agentPhase);
+              if (result == ResolveResult.failed) {
+                ok = false;
+                break;
+              }
+            }
+            
+            if (ok) {
+              return ResolveResult.ok;
+              
+            } else { // try another outpost.
+              memory.addFailedPlan(parentPlan);
+              
+              parentPlan.popDependencyLevel();
+              parentPlan.undo();
+            }
+          }
+          
+        } else {
+          Assert.that(false, "@todo");
+
+          memory.addFailedPlan(myPlan);
+          
+          myPlan.popDependencyLevel();
+          myPlan.undo();
+          
+          return ResolveResult.failed;  // stalling the requester will not fix the deadlock, because the requester is not at fault.
+        }
+          
+      } else {
+        Assert.that(false, "@todo!");
+        
+        // @TODO: restore parent, if this swapping did not resolve the deadlock. Actually, the restoring should be outside the loop construct.
+        //parentPlan = oldParentPlan; // this will not work, because we just change the pointer of the object, actually change the pointer of the attributes.
+        memory.addFailedPlan(myPlan);
+        
+        myPlan.popDependencyLevel();
+        myPlan.undo();
+
+      }
+    }
+
+    parentPlan.addToPlan(oldParentPlanPath);
+    
+    return ResolveResult.failed;
   }
   
   private boolean isResolved() {
@@ -438,6 +441,7 @@ public class Agent {
     return conflicting;
   }
   
+  // outposts are consumed here.
   private List<Point> getOutpostPath(List<Point> outposts, List<Plan> failedPlans, int[][] distanceGrid) {
     while (outposts.size() > 0) {
       Point endPoint = outposts.remove(0);
@@ -903,4 +907,9 @@ class SharedAgentMemory {
 enum ResolveResult {
   ok,
   failed;
+}
+
+enum Phase {
+  outposting,
+  resolving;
 }

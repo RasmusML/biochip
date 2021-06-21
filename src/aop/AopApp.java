@@ -65,12 +65,14 @@ public class AopApp extends ApplicationAdapter {
     renderer.setCanvas(canvas);
     
     /*
+     */
     okTest();
     reverseTest();
     normalTest2();
     reverseTest2();
-     */
     undoTest1();
+    undoTest2();
+    //undoTest3();
     
     float cx = board.getWidth() * tilesize / 2f;
     float cy = board.getHeight() * tilesize / 2f;
@@ -263,6 +265,93 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 2));
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
+    
+    Plan plan = memory.getPlan(agent0);
+    plan.addToPlan(path);
+    
+    agent0.request(plan);
+  }
+  
+  private void undoTest2() {
+    String layout = 
+        "001\n" +
+        "111\n" +
+        "101\n" +
+        "111";
+
+    board = new Board(layout);
+    
+    agents = new ArrayList<>();
+
+    memory = new SharedAgentMemory(board);
+    
+    Agent agent0 = new Agent(memory, 0, new Point(0, 2));
+    Agent agent1 = new Agent(memory, 1, new Point(1, 2));
+    Agent agent2 = new Agent(memory, 2, new Point(2, 2));
+    
+    agents.add(agent0);
+    agents.add(agent1);
+    agents.add(agent2);
+    
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    memory.agents.add(agent2);
+    
+    memory.start();
+
+    List<Point> path = new ArrayList<>();
+    path.add(new Point(0, 1));
+    path.add(new Point(0, 0));
+    path.add(new Point(1, 0));
+    path.add(new Point(2, 0));
+    path.add(new Point(2, 1));
+    path.add(new Point(2, 2));
+    path.add(new Point(2, 3));
+    
+    Plan plan = memory.getPlan(agent0);
+    plan.addToPlan(path);
+    
+    agent0.request(plan);
+  }
+  
+  private void undoTest3() {
+    String layout = 
+        "100\n" +
+        "101\n" +
+        "111\n" +
+        "101\n" +
+        "111";
+
+    board = new Board(layout);
+    
+    agents = new ArrayList<>();
+
+    memory = new SharedAgentMemory(board);
+    
+    Agent agent0 = new Agent(memory, 0, new Point(0, 4));
+    Agent agent1 = new Agent(memory, 1, new Point(0, 2));
+    Agent agent2 = new Agent(memory, 2, new Point(1, 2));
+    
+    agents.add(agent0);
+    agents.add(agent1);
+    agents.add(agent2);
+    
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    memory.agents.add(agent2);
+    
+    memory.start();
+
+    List<Point> path = new ArrayList<>();
+    path.add(new Point(0, 3));
+    path.add(new Point(0, 2));
+    path.add(new Point(0, 1));
+    path.add(new Point(0, 0));
+    path.add(new Point(1, 0));
+    path.add(new Point(2, 0));
+    path.add(new Point(2, 1));
+    path.add(new Point(2, 2));
+    path.add(new Point(2, 3));
     
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
