@@ -2,6 +2,10 @@ package dmb.components.mixingpercentages;
 
 import dmb.components.moves.Move;
 
+/**
+ * Computes how much droplets will mix when moving.
+ */
+
 public class MixingPercentages {
   
 	public float forwardPercentage;
@@ -12,6 +16,16 @@ public class MixingPercentages {
 	
 	public MixingPercentages() {
   }
+	
+	/**
+	 * 
+	 * Computes the mixing cause by the droplet moving.
+	 * Assumes the mixing depends only on the two most recent moves.
+	 * 
+	 * @param move - current move
+	 * @param previousMove - the previous move
+	 * @return droplet mixing (in decimal)
+	 */
 	
 	public float getMixingPercentage(Move move, Move previousMove) {
     if (previousMove == null) {
