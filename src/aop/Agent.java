@@ -90,7 +90,8 @@ public class Agent {
     if (result == ResolveResult.ok) return ResolveResult.ok;
       
     // try pushing the parent back.
-    // @TODO
+    result = tryWithPushingParentBack(parentPlan);  // @incomplete
+    if (result == ResolveResult.ok) return ResolveResult.ok;
     
     // try stalling the requester.
     result = tryWithOutposts(parentPlan, phase);
@@ -104,6 +105,89 @@ public class Agent {
     return ResolveResult.failed;  // no more iterations left.
   }
   
+  private ResolveResult tryWithPushingParentBack(Plan parentPlan) {
+    Plan myPlan = memory.getPlan(this);
+    
+    Point at = myPlan.getPosition();
+    if (at == null) at = myPlan.agent.getPosition();
+    
+    Point pushBack = parentPlan.getPosition();
+    
+    int time = path.size() + myPlan.path.size() + 1;  // next timestep.
+    List<Out> outs = getOuts(at, time);
+    
+    while (memory.tryCount < memory.totalTries) {
+      for (Out out : outs) {
+        memory.tryCount += 1;
+
+        // @TODO: remove out from list.
+        if (out.timestep == -1) continue; // is not possible to stay at the "out", because another agent needs the cell.
+        
+        time = getNextPushTime(time);
+        
+        List<Point> stays = new ArrayList<>();
+        int stayBy = time - out.timestep;
+        for (int i = 0; i < stayBy; i++) {
+          stays.add(out.at);
+        }
+        
+        List<Point> addedPath = new ArrayList<>();
+        addedPath.addAll(stays);
+        addedPath.add(pushBack);
+        
+        myPlan.addToPlan(addedPath);
+        
+        out.timestep = time;
+        
+        ResolveResult result = resolve(myPlan, Phase.resolving);  // @TODO: Phase.pushingParentBack? flag to say that you can't push the parent back. Actually, in some cases they can move back and forth to resolve the deadlock.
+        if (result == ResolveResult.ok) return ResolveResult.ok;
+        
+        myPlan.undo();
+      }
+    }
+    
+    return ResolveResult.failed;
+  }
+
+  private List<Out> getOuts(Point at, int timestep) {
+    List<Out> outs = new ArrayList<>();
+
+    List<Point> moves = new ArrayList<>();
+    moves.add(new Point(-1, 0));
+    moves.add(new Point(1, 0));
+    moves.add(new Point(0, 1));
+    moves.add(new Point(0, -1));
+    
+    for (Point move : moves) {
+      Point outAt = at.copy().add(move);
+      
+      if (isOccupied(outAt, timestep)) continue;
+      
+      Out out = new Out();
+      out.at = outAt;
+      out.timestep = timestep;
+      
+      outs.add(out);
+    }
+    
+    return outs;
+  }
+  
+  private boolean isOccupied(Point at, int timestep) {
+    
+    return false;
+  }
+  
+  private int getNextPushTime(int time) {
+    // @TODO: use isOccupied for simple implementation getNextPushTime (no detour)
+    return -1;
+  }
+
+  class Out {
+    public Point at;
+    public int timestep;
+  }
+
   private ResolveResult tryWithResolvingPaths(Plan parentPlan) {
     Plan myPlan = memory.getPlan(this);
     
@@ -131,7 +215,7 @@ public class Agent {
         ResolveResult result = agent.resolve(myPlan, Phase.resolving);
         if (result == ResolveResult.failed) {
           // only undo the child plans which found resolving route.
-          // the child plans failling do not have a resolving route to undo below.
+          // the child plans failing do not have a resolving route to undo below.
           myPlan.removeDependency(childPlan); 
           
           ok = false;
@@ -193,7 +277,7 @@ public class Agent {
         ResolveResult result = agent.resolve(myPlan, Phase.resolving);
         if (result == ResolveResult.failed) {
           // only undo the child plans which found resolving route.
-          // the child plans failling do not have a resolving route to undo below.
+          // the child plans failing do not have a resolving route to undo below.
           myPlan.removeDependency(childPlan); 
           
           ok = false;
@@ -206,69 +290,59 @@ public class Agent {
         Agent parentAgent = parentPlan.agent;
         Agent requestingAgent = memory.request.agent;
         
-        if (parentAgent.equals(requestingAgent)) {  // the agent doing the request should get to get where he wants to. The rest of the agents don't care. They only move to resolve the deadlock.
-          Point parentTarget = oldParentPlanPath.get(oldParentPlanPath.size() - 1);
-          
-          List<Point> tiles = new ArrayList<>();
-          tiles.addAll(parentPlan.path);  // detouring moves
-          tiles.addAll(oldParentPlanPath); // original plan
-          tiles.add(parentAgent.getPosition()); // current position
-          
-          List<Point> path = findPath(parentAgent, parentTarget, tiles);
-          
-          if (path == null) {
-            // undo/fail
-            Assert.that(path != null, "todo!");
+        Assert.that(parentAgent.equals(requestingAgent));
+        
+        Point parentTarget = oldParentPlanPath.get(oldParentPlanPath.size() - 1);
+        
+        List<Point> tiles = new ArrayList<>();
+        tiles.addAll(parentPlan.path);  // detouring moves
+        tiles.addAll(oldParentPlanPath); // original plan
+        tiles.add(parentAgent.getPosition()); // current position
+        
+        List<Point> path = findPath(parentAgent, parentTarget, tiles);
+        
+        if (path == null) {
+          // undo/fail
+          Assert.that(path != null, "todo!");
 
-            return ResolveResult.failed;
-          } else {
+          return ResolveResult.failed;
+        } else {
+          
+          parentPlan.addToPlan(path);
+          parentPlan.pushDependencyLevel();
+          
+          conflictingAgents = parentAgent.getConflictingAgents();
+          Assert.that(conflictingAgents.contains(this));
+          
+          ok = true;
+          for (Agent agent : conflictingAgents) {
+            Plan childPlan = memory.getPlan(agent);
+            parentPlan.addDependency(childPlan);
             
-            parentPlan.addToPlan(path);
-            parentPlan.pushDependencyLevel();
-            
-            conflictingAgents = parentAgent.getConflictingAgents();
-            Assert.that(conflictingAgents.contains(this));
-            //conflictingAgents.add(this);
-            
-            ok = true;
-            for (Agent agent : conflictingAgents) {
-              Plan childPlan = memory.getPlan(agent);
-              parentPlan.addDependency(childPlan);
+            Phase agentPhase = equals(agent) ? Phase.outposting : Phase.resolving;
+            ResolveResult result = agent.resolve(parentPlan, agentPhase);
+            if (result == ResolveResult.failed) {
+              // only undo the child plans which found resolving route.
+              // the child plans failing do not have a resolving route to undo below.
+              parentPlan.removeDependency(childPlan); 
               
-              Phase agentPhase = equals(agent) ? Phase.outposting : Phase.resolving;
-              ResolveResult result = agent.resolve(parentPlan, agentPhase);
-              if (result == ResolveResult.failed) {
-                // only undo the child plans which found resolving route.
-                // the child plans failling do not have a resolving route to undo below.
-                parentPlan.removeDependency(childPlan); 
-                
-                ok = false;
-                break;
-              }
-            }
-            
-            if (ok) {
-              return ResolveResult.ok;
-              
-            } else { // try another outpost.
-              memory.addFailedPlan(parentPlan);
-              
-              parentPlan.undo();
-              parentPlan.undoDependencyLevel();
-              parentPlan.popDependencyLevel();
+              ok = false;
+              break;
             }
           }
           
-        } else {
-          Assert.that(false, "@todo");
-
-          memory.addFailedPlan(myPlan);
-          
-          myPlan.popDependencyLevel();
-          myPlan.undo();
-          
-          return ResolveResult.failed;  // stalling the requester will not fix the deadlock, because the requester is not at fault.
+          if (ok) {
+            return ResolveResult.ok;
+            
+          } else { // try another outpost.
+            memory.addFailedPlan(parentPlan);
+            
+            parentPlan.undo();
+            parentPlan.undoDependencyLevel();
+            parentPlan.popDependencyLevel();
+          }
         }
+        
           
       } else {
         Assert.that(false, "@todo!");
@@ -457,7 +531,7 @@ public class Agent {
         
         pending.remove(plan.agent);
 
-        Point otherLastAt = plan.path.get(plan.path.size() - 1);
+        Point otherLastAt = plan.getPosition();
         
         if (at.x == otherLastAt.x && at.y == otherLastAt.y) {
           conflicting.add(plan.agent);
@@ -492,7 +566,7 @@ public class Agent {
       
       boolean alreadyFailed = false;
       for (Plan failed : failedPlans) {
-        Point last = failed.path.get(failed.path.size() - 1);
+        Point last = failed.getPosition();
         if (last.x == endPoint.x && last.y == endPoint.y) {
           alreadyFailed = true;
           break;
@@ -535,7 +609,7 @@ public class Agent {
     
     // @TODO: outdated :failedplans:
     for (Plan plan : failedPlans) {
-      Point last = plan.path.get(plan.path.size() - 1);
+      Point last = plan.getPosition();
       overlay[last.x][last.y] = -2;
     }
     
@@ -839,6 +913,11 @@ class Plan {
     
     checkpoints.add(checkpoint);
     path.addAll(addition);
+  }
+  
+  public Point getPosition() {
+    if (path.size() == 0) return null;
+    return path.get(path.size() - 1);
   }
   
   public void pushDependencyLevel() {
