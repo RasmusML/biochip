@@ -71,77 +71,89 @@ public class Agent {
   public int getId() {
     return id;
   }
-
+  
   public ResolveResult resolve(Plan parentPlan, Phase phase) {
     if (isResolved()) return ResolveResult.ok;
 
     Plan myPlan = memory.getPlan(this);
     myPlan.pushDependencyLevel();
     
-    int[][] distanceGrid = getDistanceGrid(memory.plans, memory.agents);
-    System.out.println("distance-grid");
-    print(distanceGrid);
-
-    while (memory.tryCount < memory.totalTries) {
-      memory.tryCount += 1;
-      
-      List<Plan> failedPlans = memory.getFailedPlans(this);
-      List<Point> resolvedPath = getDeadlockResolvingPath(failedPlans, distanceGrid);
-
-      if (resolvedPath == null) {
-        if (phase == Phase.outposting) {  // an agent can outpost two successive times. If this happens, the the first oupost should select another outpost in the next iteration.
-          memory.addFailedPlan(myPlan);
-          myPlan.popDependencyLevel();
-          
-          return ResolveResult.failed;
-        } else {
-          
-          // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
-          // If the parentPlan is not the requesters plan, then this plan fails, and the parentPlan has to find another way to resolve its deadlock.
-          if (parentPlan.equals(memory.request)) {  // this is a special case for when the only way to resolve the deadlock is to make the requester stall for a period of time.
-            return tryWithOutposts(parentPlan, myPlan, failedPlans);
-          } else {
-            // if we get here, then the agent can't resolve the deadlock, because the agent asking is not the requester.
-            // The agent asking this agent to resolve the deadlock, will try and find another path to resolve the deadlock.
-            // so this agent doesn't undo its plan.
-            return ResolveResult.failed;
-          }
-        }
-        
-      } else {
-
-        myPlan.addToPlan(resolvedPath);
-        parentPlan.addDependency(myPlan);
-        
-        List<Agent> conflictingAgents = getConflictingAgents();
-        
-        boolean ok = true;
-        for (Agent agent : conflictingAgents) {
-          ResolveResult result = agent.resolve(myPlan, Phase.resolving);
-          if (result == ResolveResult.failed) {
-            ok = false;
-            break;
-          }
-        }
-        
-        if (ok) { // commit
-          return ResolveResult.ok;
-        } else {  // undo and try another resolving path
-          memory.addFailedPlan(myPlan);
-          myPlan.clearDependencyLevel();
-          myPlan.undo();
-        }
-      }
-    }
+    ResolveResult result;
     
-    Assert.that(memory.tryCount == memory.totalTries);
+    // try finding a safe cell.
+    result = tryWithResolvingPaths(parentPlan);
+    if (result == ResolveResult.ok) return ResolveResult.ok;
+      
+    // try pushing the parent back.
+    
+    // try stalling the requester.
+    result = tryWithOutposts(parentPlan, phase);
+    if (result == ResolveResult.ok) return ResolveResult.ok;
+    
+    memory.addFailedPlan(myPlan);
     
     myPlan.popDependencyLevel();
     
     return ResolveResult.failed;  // no more iterations left.
   }
+  
+  private ResolveResult tryWithResolvingPaths(Plan parentPlan) {
+    Plan myPlan = memory.getPlan(this);
+    
+    int[][] distanceGrid = getDistanceGrid(memory.plans, memory.agents);
+    
+    System.out.println("distance-grid");
+    print(distanceGrid);
+    
+    while (memory.tryCount < memory.totalTries) {
+      memory.tryCount += 1;
+      
+      List<Plan> failedPlans = memory.getFailedPlans(this);
+      List<Point> resolvedPath = getDeadlockResolvingPath(failedPlans, distanceGrid);
+      if (resolvedPath == null) return ResolveResult.failed;
+      
+      myPlan.addToPlan(resolvedPath);
+      
+      parentPlan.addDependency(myPlan);
+      
+      List<Agent> conflictingAgents = getConflictingAgents();
+      
+      boolean ok = true;
+      for (Agent agent : conflictingAgents) {
+        ResolveResult result = agent.resolve(myPlan, Phase.resolving);
+        if (result == ResolveResult.failed) {
+          ok = false;
+          break;
+        }
+      }
+      
+      if (ok) { // commit
+        return ResolveResult.ok;
+      } else {  // undo and try another resolving path
+        memory.addFailedPlan(myPlan);
+        
+        //parentPlan.removeDependency(myPlan);
+        
+        myPlan.clearDependencyLevel();
+        myPlan.undo();
+      }
+    }
+    
+    return ResolveResult.failed;
+  }
 
-  private ResolveResult tryWithOutposts(Plan parentPlan, Plan myPlan, List<Plan> failedPlans) {
+
+  private ResolveResult tryWithOutposts(Plan parentPlan, Phase phase) {
+    // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
+    // If the parentPlan is not the requesters plan, then this plan fails, and the parentPlan has to find another way to resolve its deadlock.
+    // an agent can outpost two successive times. If this happens, the the first outpost should select another outpost in the next iteration.
+    if (phase == Phase.outposting) return ResolveResult.failed;
+
+    // this is a special case for when the only way to resolve the deadlock is to make the requester stall for a period of time.
+    if (!parentPlan.equals(memory.request)) return ResolveResult.failed;
+    
+    Plan myPlan = memory.getPlan(this);
+    
     List<Point> oldParentPlanPath = parentPlan.undo();
     
     int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
@@ -152,6 +164,8 @@ public class Agent {
     
     while (memory.tryCount < memory.totalTries) {
       memory.tryCount += 1;
+      
+      List<Plan> failedPlans = memory.getFailedPlans(this);
       
       List<Point> outpostPath = getOutpostPath(outposts, failedPlans, outpostDistanceGrid);
       
@@ -772,10 +786,6 @@ public class Agent {
   }
 }
 
-class TimePoint {
-  public int timestep;
-  public Point point;
-}
 
 class Plan {
   public Agent agent;
