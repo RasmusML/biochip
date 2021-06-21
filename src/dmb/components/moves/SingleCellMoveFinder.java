@@ -16,8 +16,6 @@ import framework.input.DropletUnit;
  * SingleCellMoveFinder finds the valid moves for a droplet which can only occupy a single cell.
  * MultiCellMoveFinder assumes two droplets merge if they occupy the same cell.
  * 
- * @author Rasmus
- *
  */
 
 public class SingleCellMoveFinder extends MoveFinder {

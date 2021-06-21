@@ -16,8 +16,6 @@ import framework.math.MathUtils;
  * MultiCellMoveFinder finds the valid moves for a droplet which can occupy multiple cells.
  * MultiCellMoveFinder assumes two droplets merge if they are vertical or horizontal adjacent.
  * 
- * @author Rasmus
- *
  */
 public class MultiCellMoveFinder extends MoveFinder {
   

@@ -2,6 +2,10 @@ package dmb.components.mixingpercentages;
 
 public class DefaultMixingPercentages extends MixingPercentages {
 
+  /**
+   * Mixing-percentages based on Mafei et al. 
+   */
+  
   public DefaultMixingPercentages() {
     forwardPercentage = 0.58f;
     reversePercentage = -0.5f;
