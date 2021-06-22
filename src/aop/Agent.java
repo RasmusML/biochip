@@ -203,8 +203,7 @@ public class Agent {
     while (memory.tryCount < memory.totalTries) {
       memory.tryCount += 1;
       
-      List<Plan> failedPlans = memory.getFailedPlans(this);
-      List<Point> resolvedPath = getDeadlockResolvingPath(failedPlans, distanceGrid);
+      List<Point> resolvedPath = getDeadlockResolvingPath(distanceGrid);
       if (resolvedPath == null) return ResolveResult.failed;
       
       myPlan.addToPlan(resolvedPath);
@@ -631,7 +630,7 @@ public class Agent {
     return null;
   }
   
-  private List<Point> getDeadlockResolvingPath(List<Plan> failedPlans, FloodGrid grid) {
+  private List<Point> getDeadlockResolvingPath(FloodGrid grid) {
     Board board = memory.board;
     
     int width = board.getWidth();
@@ -655,18 +654,11 @@ public class Agent {
       havenGrid[point.x][point.y] = -1;
     }
     
-    // @TODO: outdated :failedplans:
-    for (Plan plan : failedPlans) {
-      Point last = plan.getPosition();
-      havenGrid[last.x][last.y] = -2;
-    }
-    
     List<Point> endPoints = new ArrayList<>();
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
         if (havenGrid[x][y] == 0) continue;  // wall
         if (havenGrid[x][y] == -1) continue;  // agent
-        if (havenGrid[x][y] == -2) continue;  // failed plans @TODO: :failedplans:
         
         if (grid.distances[x][y] == -1) continue; // no path leads to the endpoint.
         if (grid.distances[x][y] == 0) continue; // if agent1 moves to agent2 (this agent) and stops, then agent2 can't push agent1 again. 
@@ -691,11 +683,35 @@ public class Agent {
       longPath.remove(0); // remove the first point, because the agent is already there.
       List<Point> path = shortenPath(longPath, havenGrid);
       
-      Point shortestEndpoint = path.get(path.size() - 1);
-      if (havenGrid[shortestEndpoint.x][shortestEndpoint.y] != -2) return path; // if this path is _not_ one of the failed paths, then use it as the path, else try another endpoint.
+      if (!isFailedPlan(path)) return path;
     }
     
     return null;
+  }
+
+  // if the full path is same length as a failed plan, the endpoints are the same and the failed plan is the same agent, then it is a match.
+  private boolean isFailedPlan(List<Point> path) {
+    List<Plan> failedPlans = memory.getFailedPlans(this);
+    
+    Plan myPlan = memory.getPlan(this);
+    
+    List<Point> fullPath = new ArrayList<>();
+    fullPath.addAll(myPlan.path);
+    fullPath.addAll(path);
+
+    Point end = fullPath.get(fullPath.size() - 1);
+    
+    for (Plan failed : failedPlans) {
+      if (!failed.agent.equals(this)) continue;
+      if (fullPath.size() != failed.path.size()) continue;
+
+      Point failedEnd = failed.path.get(failed.path.size() - 1);
+      if (end.x == failedEnd.x && end.y == failedEnd.y) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   private List<Point> shortenPath(List<Point> longPath, int[][] havenGrid) {
@@ -734,7 +750,6 @@ public class Agent {
     
     return path;
   }
-
 
   private FloodGrid getDistanceGrid() {
     Board board = memory.board;
@@ -992,7 +1007,7 @@ class Plan {
     Plan copy = new Plan();
     copy.agent = agent;
     copy.path.addAll(path);
-    copy.dependencyLevels.addAll(dependencyLevels); // @todo: deep-copy
+    //copy.dependencyLevels.addAll(dependencyLevels); // @todo: deep-copy
     return copy;
   }
 }
