@@ -6,6 +6,7 @@ import java.util.List;
 
 import dmb.algorithms.Point;
 import dmb.helpers.Assert;
+import framework.math.MathUtils;
 
 public class Agent {
 
@@ -195,15 +196,19 @@ public class Agent {
   private ResolveResult tryWithResolvingPaths(Plan parentPlan) {
     Plan myPlan = memory.getPlan(this);
     
-    FloodGrid distanceGrid = getDistanceGrid();
+    FloodGrid endpointGrid = getDistanceGrid();
     
     System.out.println("distance-grid");
-    print(distanceGrid.distances);
+    print(endpointGrid.distances);
+    
+    int[][] havenGrid = getEndPointHavenGrid();
+    List<Point> endPoints = getEndpoints(endpointGrid, havenGrid);
+    printEndPoints(endPoints);
     
     while (memory.tryCount < memory.totalTries) {
       memory.tryCount += 1;
       
-      List<Point> resolvedPath = getDeadlockResolvingPath(distanceGrid);
+      List<Point> resolvedPath = getDeadlockResolvingPath(endPoints, endpointGrid, havenGrid);
       if (resolvedPath == null) return ResolveResult.failed;
       
       myPlan.addToPlan(resolvedPath);
@@ -241,6 +246,64 @@ public class Agent {
     return ResolveResult.failed;
   }
 
+  private List<Point> getEndpoints(FloodGrid grid, int[][] havenGrid) {
+    Board board = memory.board;
+    
+    int width = board.getWidth();
+    int height = board.getHeight();
+    
+    List<Point> endPoints = new ArrayList<>();
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        if (havenGrid[x][y] == 0) continue;  // wall
+        if (havenGrid[x][y] == -1) continue;  // agent
+        
+        if (grid.distances[x][y] == -1) continue; // no path leads to the endpoint.
+        if (grid.distances[x][y] == 0) continue; // if agent1 moves to agent2 (this agent) and stops, then agent2 can't push agent1 again. 
+        
+        Point endpoint = new Point(x, y);
+        endPoints.add(endpoint);
+      }
+    }
+    
+    return endPoints;
+  }
+
+  private void printEndPoints(List<Point> endPoints) {
+    System.out.println("endpoints:");
+    for (Point endpoint : endPoints) {
+      System.out.println(">" + endpoint);
+    }
+    System.out.println();
+  }
+  
+  private int[][] getEndPointHavenGrid() {
+    Board board = memory.board;
+    
+    int width = board.getWidth();
+    int height = board.getHeight();
+    
+    int[][] havenGrid = new int[width][height]; // ok: 1, wall: 0, agent: -1, failed plans: -2
+    copy(board.grid, havenGrid);
+    
+    List<Plan> plans = memory.plans;
+    for (Plan plan : plans) {
+      if (plan.agent.equals(memory.request.agent)) continue;
+
+      for (int i = 0; i <= plan.path.size() - 2; i++) { // the last position is skipped, because the agent can push the other agent.
+        Point point = plan.path.get(i);
+        havenGrid[point.x][point.y] = -1;
+      }
+    }
+    
+    for (int i = 0; i <= memory.request.path.size() - 1; i++) { // we can't push the "root"/requester
+      Point point = memory.request.path.get(i);
+      havenGrid[point.x][point.y] = -1;
+    }
+    
+    return havenGrid;
+  }
+
   private ResolveResult tryWithOutposts(Plan parentPlan, Phase phase) {
     // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
     // If the parentPlan is not the requesters plan, then this plan fails, and the parentPlan has to find another way to resolve its deadlock.
@@ -262,7 +325,7 @@ public class Agent {
     print(outpostGrid.distances);
     
     List<Point> outposts = getOutposts(outpostGrid.distances);
-
+    
     int maxStalls = 5;
     int stall = 0;
     
@@ -278,9 +341,8 @@ public class Agent {
       //while (memory.tryCount < memory.totalTries) {
         memory.tryCount += 1;
         
-        List<Plan> failedPlans = memory.getFailedPlans(this);
-        List<Point> outpostPath = getOutpostPath(outpostsLeft, failedPlans, outpostGrid);
-        
+        List<Point> outpostPath = getOutpostPath(outpostsLeft, outpostGrid);
+   
         // no outposts left? retry the outposts but stall 1 more time-step.
         if (outpostPath == null) break;
         
@@ -320,8 +382,7 @@ public class Agent {
           List<Point> path = findPath(requestAgent, requesterTarget, originalRequestPlanPath);
           
           if (path == null) {
-            // undo/fail
-            Assert.that(path != null, "todo!");
+            Assert.that(false, "@test");
 
             memory.addFailedPlan(myPlan);
 
@@ -372,7 +433,7 @@ public class Agent {
           
             
         } else {
-          Assert.that(false, "@todo!");
+          Assert.that(false, "@test");
           
           memory.addFailedPlan(myPlan);
           
@@ -523,6 +584,24 @@ public class Agent {
         outposts.add(endpoint);
       }
     }
+
+    /*
+    
+    // this should resolve deadlocks faster.
+    Plan myPlan = memory.getPlan(this);
+    final Point at = (myPlan.getPosition() == null) ? getPosition() : myPlan.getPosition();
+    
+    Collections.sort(outposts, (p1, p2) -> {
+      int d1 = (int) MathUtils.getManhattanDistance(at.x, at.y, p1.x, p1.y);
+      int d2 = (int) MathUtils.getManhattanDistance(at.x, at.y, p2.x, p2.y);
+      return d1 - d2;
+    });
+    
+    // this makes sense when there are a lot of outposts e.g. on an assay
+    int maxOutposts = 5;
+    int numberOfOutposts = Math.min(maxOutposts, outposts.size());
+    outposts = outposts.subList(0, numberOfOutposts); 
+     */
     
     return outposts;
   }
@@ -605,7 +684,9 @@ public class Agent {
   }
   
   // outposts are consumed here.
-  private List<Point> getOutpostPath(List<Point> outposts, List<Plan> failedPlans, FloodGrid grid) {
+  private List<Point> getOutpostPath(List<Point> outposts, FloodGrid grid) {
+    List<Plan> failedPlans = memory.getFailedPlans(this);
+    
     while (outposts.size() > 0) {
       Point endPoint = outposts.remove(0);
       
@@ -630,50 +711,7 @@ public class Agent {
     return null;
   }
   
-  private List<Point> getDeadlockResolvingPath(FloodGrid grid) {
-    Board board = memory.board;
-    
-    int width = board.getWidth();
-    int height = board.getHeight();
-    
-    int[][] havenGrid = new int[width][height]; // ok: 1, wall: 0, agent: -1, failed plans: -2
-    copy(board.grid, havenGrid);
-    
-    List<Plan> plans = memory.plans;
-    for (Plan plan : plans) {
-      if (plan.agent.equals(memory.request.agent)) continue;
-
-      for (int i = 0; i <= plan.path.size() - 2; i++) { // the last position is skipped, because the agent can push the other agent.
-        Point point = plan.path.get(i);
-        havenGrid[point.x][point.y] = -1;
-      }
-    }
-    
-    for (int i = 0; i <= memory.request.path.size() - 1; i++) { // we can't push the "root"/requester
-      Point point = memory.request.path.get(i);
-      havenGrid[point.x][point.y] = -1;
-    }
-    
-    List<Point> endPoints = new ArrayList<>();
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        if (havenGrid[x][y] == 0) continue;  // wall
-        if (havenGrid[x][y] == -1) continue;  // agent
-        
-        if (grid.distances[x][y] == -1) continue; // no path leads to the endpoint.
-        if (grid.distances[x][y] == 0) continue; // if agent1 moves to agent2 (this agent) and stops, then agent2 can't push agent1 again. 
-        
-        Point endpoint = new Point(x, y);
-        endPoints.add(endpoint);
-      }
-    }
-    
-    System.out.println("endpoints:");
-    for (Point endpoint : endPoints) {
-      System.out.println(">" + endpoint);
-    }
-    System.out.println();
-    
+  private List<Point> getDeadlockResolvingPath(List<Point> endPoints, FloodGrid grid, int[][] havenGrid) {
     while (endPoints.size() > 0) {
       Point endPoint = endPoints.remove(0);
       
@@ -938,7 +976,7 @@ class Plan {
     pushRootDependencyLevel();
   }
 
-  public void pushRootDependencyLevel() {
+  private void pushRootDependencyLevel() {
     DependencyLevel level = new DependencyLevel();
     level.myPlan = this;
     level.parent = null;
