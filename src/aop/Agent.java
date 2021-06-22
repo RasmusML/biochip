@@ -90,8 +90,8 @@ public class Agent {
     if (result == ResolveResult.ok) return ResolveResult.ok;
       
     // try pushing the parent back.
-    result = tryWithPushingParentBack(parentPlan);  // @incomplete
-    if (result == ResolveResult.ok) return ResolveResult.ok;
+    //result = tryWithPushingParentBack(parentPlan);  // @incomplete
+    //if (result == ResolveResult.ok) return ResolveResult.ok;
     
     // try stalling the requester.
     result = tryWithOutposts(parentPlan, phase);
@@ -111,7 +111,7 @@ public class Agent {
     Point at = myPlan.getPosition();
     if (at == null) at = myPlan.agent.getPosition();
     
-    Point pushBack = parentPlan.getPosition();
+    Point pushBack = at.copy();
     
     int time = path.size() + myPlan.path.size() + 1;  // next timestep.
     List<Out> outs = getOuts(at, time);
@@ -191,10 +191,10 @@ public class Agent {
   private ResolveResult tryWithResolvingPaths(Plan parentPlan) {
     Plan myPlan = memory.getPlan(this);
     
-    int[][] distanceGrid = getDistanceGrid(memory.plans, memory.agents);
+    FloodGrid distanceGrid = getDistanceGrid();
     
     System.out.println("distance-grid");
-    print(distanceGrid);
+    print(distanceGrid.distances);
     
     while (memory.tryCount < memory.totalTries) {
       memory.tryCount += 1;
@@ -245,26 +245,30 @@ public class Agent {
     // an agent can outpost two successive times. If this happens, the the first outpost should select another outpost in the next iteration.
     if (phase == Phase.outposting) return ResolveResult.failed;
 
-    // this is a special case for when the only way to resolve the deadlock is to make the requester stall for a period of time.
-    if (!parentPlan.equals(memory.request)) return ResolveResult.failed;
-    
     Plan myPlan = memory.getPlan(this);
+    Plan requestPlan = memory.request;
+    Agent requestAgent = memory.request.agent;
     
-    List<Point> oldParentPlanPath = parentPlan.undo();
+    List<Point> originalRequestPlanPath = new ArrayList<>();
+    originalRequestPlanPath.add(requestPlan.agent.getPosition());
+    originalRequestPlanPath.addAll(requestPlan.path);
     
-    int[][] outpostDistanceGrid = getOutpostDistanceGrid(parentPlan);
+    List<Point> oldRequestPlanPath = requestPlan.undo();
+    FloodGrid outpostDistanceGrid = getOutpostDistanceGrid();
     
     System.out.println("outpost-grid");
-    print(outpostDistanceGrid);
+    print(outpostDistanceGrid.distances);
     
-    List<Point> outposts = getOutposts(outpostDistanceGrid);
+    List<Point> outposts = getOutposts(outpostDistanceGrid.distances);
+    //outposts.remove(0); // @hack @cleanup
     
     while (memory.tryCount < memory.totalTries) {
       memory.tryCount += 1;
       
       List<Plan> failedPlans = memory.getFailedPlans(this);
       List<Point> outpostPath = getOutpostPath(outposts, failedPlans, outpostDistanceGrid);
-
+      if (outpostPath == null) break;
+      
       myPlan.addToPlan(outpostPath);
 
       List<Agent> conflictingAgents = getConflictingAgents();
@@ -287,19 +291,9 @@ public class Agent {
       
       if (ok) {
         
-        Agent parentAgent = parentPlan.agent;
-        Agent requestingAgent = memory.request.agent;
+        Point requesterTarget = oldRequestPlanPath.get(oldRequestPlanPath.size() - 1);
         
-        Assert.that(parentAgent.equals(requestingAgent));
-        
-        Point parentTarget = oldParentPlanPath.get(oldParentPlanPath.size() - 1);
-        
-        List<Point> tiles = new ArrayList<>();
-        tiles.addAll(parentPlan.path);  // detouring moves
-        tiles.addAll(oldParentPlanPath); // original plan
-        tiles.add(parentAgent.getPosition()); // current position
-        
-        List<Point> path = findPath(parentAgent, parentTarget, tiles);
+        List<Point> path = findPath(requestAgent, requesterTarget, originalRequestPlanPath);
         
         if (path == null) {
           // undo/fail
@@ -308,23 +302,23 @@ public class Agent {
           return ResolveResult.failed;
         } else {
           
-          parentPlan.addToPlan(path);
-          parentPlan.pushDependencyLevel();
+          requestPlan.addToPlan(path);
+          requestPlan.pushDependencyLevel();
           
-          conflictingAgents = parentAgent.getConflictingAgents();
+          conflictingAgents = requestAgent.getConflictingAgents();
           Assert.that(conflictingAgents.contains(this));
           
           ok = true;
           for (Agent agent : conflictingAgents) {
             Plan childPlan = memory.getPlan(agent);
-            parentPlan.addDependency(childPlan);
+            requestPlan.addDependency(childPlan);
             
             Phase agentPhase = equals(agent) ? Phase.outposting : Phase.resolving;
-            ResolveResult result = agent.resolve(parentPlan, agentPhase);
+            ResolveResult result = agent.resolve(requestPlan, agentPhase);
             if (result == ResolveResult.failed) {
               // only undo the child plans which found resolving route.
               // the child plans failing do not have a resolving route to undo below.
-              parentPlan.removeDependency(childPlan); 
+              requestPlan.removeDependency(childPlan); 
               
               ok = false;
               break;
@@ -335,11 +329,11 @@ public class Agent {
             return ResolveResult.ok;
             
           } else { // try another outpost.
-            memory.addFailedPlan(parentPlan);
+            memory.addFailedPlan(requestPlan);
             
-            parentPlan.undo();
-            parentPlan.undoDependencyLevel();
-            parentPlan.popDependencyLevel();
+            requestPlan.undo();
+            requestPlan.undoDependencyLevel();
+            requestPlan.popDependencyLevel();
           }
         }
         
@@ -357,7 +351,7 @@ public class Agent {
       }
     }
 
-    parentPlan.addToPlan(oldParentPlanPath);
+    requestPlan.addToPlan(oldRequestPlanPath);
     
     return ResolveResult.failed;
   }
@@ -384,7 +378,7 @@ public class Agent {
     return grid;
   }
 
-  private List<Point> findPath(Agent parentAgent, Point target, List<Point> tiles) {
+  private List<Point> findPath(Agent agent, Point target, List<Point> tiles) {
     List<Point> moves = new ArrayList<>();
     moves.add(new Point(-1, 0));
     moves.add(new Point(1, 0));
@@ -393,6 +387,7 @@ public class Agent {
     moves.add(new Point(0, 0));
 
     int[][] grid = createGrid(tiles);
+    fill(grid, -1); // walls
     
     for (Point tile : tiles) {
       grid[tile.x][tile.y] = 0;
@@ -406,8 +401,8 @@ public class Agent {
     AStarPathFinder pathfinder = new AStarPathFinder() {
       @Override
       public List<Point> getMoves(Point at, int timestep) {
-        parentAgent.updateOccupiedTiles(prevOccupied, timestep, plans, memory.agents);
-        parentAgent.updateOccupiedTiles(occupied, timestep + 1, plans, memory.agents);
+        agent.updateOccupiedTiles(prevOccupied, timestep, plans, memory.agents);
+        agent.updateOccupiedTiles(occupied, timestep + 1, plans, memory.agents);
         
         //print(occupied);
         
@@ -427,8 +422,8 @@ public class Agent {
       }
     };
 
-    Point from = parentAgent.getPosition();
-    int timestamp = parentAgent.path.size();
+    Point from = agent.getPosition();
+    int timestamp = agent.path.size();
     
     List<Point> path = pathfinder.search(from, target, timestamp, memory.numNodesToExploreInSearch);
     if (path == null) return null;
@@ -448,6 +443,7 @@ public class Agent {
     List<Point> outposts = new ArrayList<>();
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
+        if (!board.isTileOpen(x, y)) continue;  // wall or outside board
         if (!isOutpost(x, y, outpostDistanceGrid)) continue;
         
         Point endpoint = new Point(x, y);
@@ -458,28 +454,8 @@ public class Agent {
     return outposts;
   }
   
-  private int[][] getOutpostDistanceGrid(Plan parentPlane) {
-    List<Plan> allPlans = memory.plans;
-    List<Agent> allAgents = memory.agents;
-    
-    List<Plan> plans = new ArrayList<>();
-    for (Plan plan : allPlans) {
-      if (plan.agent.equals(parentPlane.agent)) continue;
-      plans.add(plan);
-    }
-    
-    Agent parentAgent = parentPlane.agent;
-    
-    List<Agent> agents = new ArrayList<>();
-    for (Agent agent : allAgents) {
-      if (agent.equals(parentAgent)) continue;
-      agents.add(agent);
-    }
-    
-    int[][] distanceGrid = getDistanceGrid(plans, agents);
-    
-    return distanceGrid;
-    
+  private FloodGrid getOutpostDistanceGrid() {
+    return getDistanceGrid();
   }
 
   // @TODO: handle circular dependencies.
@@ -556,13 +532,12 @@ public class Agent {
   }
   
   // outposts are consumed here.
-  private List<Point> getOutpostPath(List<Point> outposts, List<Plan> failedPlans, int[][] distanceGrid) {
+  private List<Point> getOutpostPath(List<Point> outposts, List<Plan> failedPlans, FloodGrid grid) {
     while (outposts.size() > 0) {
       Point endPoint = outposts.remove(0);
       
-      List<Point> path = traverse(endPoint, distanceGrid, distanceGrid);
+      List<Point> path = traverse(endPoint, grid);
       if (path == null) continue; // if no path exists for the endpoint try with another endpoint
-      
       
       boolean alreadyFailed = false;
       for (Plan failed : failedPlans) {
@@ -582,43 +557,45 @@ public class Agent {
     return null;
   }
   
-  private List<Point> getDeadlockResolvingPath(List<Plan> failedPlans, int[][] distanceGrid) {
+  private List<Point> getDeadlockResolvingPath(List<Plan> failedPlans, FloodGrid grid) {
     Board board = memory.board;
     
     int width = board.getWidth();
     int height = board.getHeight();
     
-    int[][] overlay = new int[width][height]; // no path found (yet): -1, failedEndPoint: -2, distance: x (>= 0)
-    copy(distanceGrid, overlay);
+    int[][] havenGrid = new int[width][height]; // ok: 1, wall: 0, agent: -1, failed plans: -2
+    copy(board.grid, havenGrid);
     
     List<Plan> plans = memory.plans;
     for (Plan plan : plans) {
-      
-      if (plan.agent.equals(memory.request.agent)) {
-        for (int i = 0; i <= plan.path.size() - 1; i++) { // we can't push the "root"/requester
-          Point point = plan.path.get(i);
-          overlay[point.x][point.y] = -1;
-        }
-      } else {
-        for (int i = 0; i <= plan.path.size() - 2; i++) { // the last position is skipped, because the agent can push the other agent.
-          Point point = plan.path.get(i);
-          overlay[point.x][point.y] = -1;
-        }
+      if (plan.agent.equals(memory.request.agent)) continue;
+
+      for (int i = 0; i <= plan.path.size() - 2; i++) { // the last position is skipped, because the agent can push the other agent.
+        Point point = plan.path.get(i);
+        havenGrid[point.x][point.y] = -1;
       }
+    }
+    
+    for (int i = 0; i <= memory.request.path.size() - 1; i++) { // we can't push the "root"/requester
+      Point point = memory.request.path.get(i);
+      havenGrid[point.x][point.y] = -1;
     }
     
     // @TODO: outdated :failedplans:
     for (Plan plan : failedPlans) {
       Point last = plan.getPosition();
-      overlay[last.x][last.y] = -2;
+      havenGrid[last.x][last.y] = -2;
     }
     
     List<Point> endPoints = new ArrayList<>();
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
-        if (overlay[x][y] == -1) continue;
-        if (overlay[x][y] == -2) continue;  // @TODO: :failedplans:
-        if (overlay[x][y] == 0) continue; // if agent1 moves to agent2 (this agent) and stops, then agent2 can't push agent1 again. 
+        if (havenGrid[x][y] == 0) continue;  // wall
+        if (havenGrid[x][y] == -1) continue;  // agent
+        if (havenGrid[x][y] == -2) continue;  // failed plans @TODO: :failedplans:
+        
+        if (grid.distances[x][y] == -1) continue; // no path leads to the endpoint.
+        if (grid.distances[x][y] == 0) continue; // if agent1 moves to agent2 (this agent) and stops, then agent2 can't push agent1 again. 
         
         Point endpoint = new Point(x, y);
         endPoints.add(endpoint);
@@ -634,94 +611,73 @@ public class Agent {
     while (endPoints.size() > 0) {
       Point endPoint = endPoints.remove(0);
       
-      List<Point> longPath = traverse(endPoint, distanceGrid, overlay);
+      List<Point> longPath = traverse(endPoint, grid);
       if (longPath == null) continue; // if no path exists for the endpoint try with another endpoint
       
-      List<Point> path = shortenPath(longPath, overlay);
-      path.remove(0); // remove the first point, because the agent is already there.
+      longPath.remove(0); // remove the first point, because the agent is already there.
+      List<Point> path = shortenPath(longPath, havenGrid);
       
       Point shortestEndpoint = path.get(path.size() - 1);
-      if (overlay[shortestEndpoint.x][shortestEndpoint.y] != -2) return path; // if this path is _not_ one of the failed paths, then use it as the path, else try another endpoint.
+      if (havenGrid[shortestEndpoint.x][shortestEndpoint.y] != -2) return path; // if this path is _not_ one of the failed paths, then use it as the path, else try another endpoint.
     }
     
     return null;
   }
 
-  private List<Point> shortenPath(List<Point> longPath, int[][] overlay) {
+  private List<Point> shortenPath(List<Point> longPath, int[][] havenGrid) {
     List<Point> path = new ArrayList<>();
     
     for (Point point : longPath) {
       path.add(point);
       
-      if (overlay[point.x][point.y] >= 1) break;  // the first safe spot has been found. Lets stop.
+      if (havenGrid[point.x][point.y] == 1) break;  // the first safe spot has been found. Lets stop.
     }
     
     return path;
   }
 
-  private List<Point> traverse(Point goal, int[][] distanceGrid, int[][] overlay) {
-    List<Point> longPath = new ArrayList<>();
-    longPath.add(goal);
+  private List<Point> traverse(Point endPoint, FloodGrid grid) {
+    List<Point> path = new ArrayList<>();
+    path.add(endPoint);
     
-    Point current = goal;
-    while (distanceGrid[current.x][current.y] > 0) {
-      Board board = memory.board;
+    Point current = endPoint;
+    
+    while (grid.distances[current.x][current.y] != 0) {
+      int cost = grid.distances[current.x][current.y];
       
-      List<Point> moves = new ArrayList<>();
-      moves.add(new Point(-1, 0));
-      moves.add(new Point(1, 0));
-      moves.add(new Point(0, 1));
-      moves.add(new Point(0, -1));
+      Point backtrack = grid.backtracks[current.x][current.y];
+      int nextCost = grid.distances[backtrack.x][backtrack.y];
       
-      int cost = distanceGrid[current.x][current.y];
-      
-      int nextCost = cost;
-      Point selectedMove = null;
-      
-      for (Point move : moves) {
-        int tx = current.x + move.x;
-        int ty = current.y + move.y;
-        
-        if (!board.isTileOpen(tx, ty)) continue;  // wall or outside the board
-        if (distanceGrid[tx][ty] == -1) continue;
-        
-        int newCost = distanceGrid[tx][ty];
-        if (newCost < nextCost) {
-          nextCost = newCost;
-          selectedMove = move;
-        }
-      }
-      
-      if (selectedMove == null) return null;
-      
-      Point next = current.copy().add(selectedMove);
-
       int repeats = cost - nextCost;
       for (int i = 0; i < repeats; i++) {
-        longPath.add(next.copy());
+        path.add(backtrack.copy());
       }
       
-      current = next;
+      current = backtrack;
     }
     
-    Collections.reverse(longPath);
+    Collections.reverse(path);
     
-    return longPath;
+    return path;
   }
 
 
-  private int[][] getDistanceGrid(List<Plan> plans, List<Agent> agents) {
+  private FloodGrid getDistanceGrid() {
     Board board = memory.board;
+    
+    List<Plan> plans = memory.plans;
+    List<Agent> agents = memory.agents;
     
     int width = board.getWidth();
     int height = board.getHeight();
     
     int[][] distanceGrid = new int[width][height]; // no path found (yet): -1, distance: x (>= 0)
+    Point[][] backtrackGrid = new Point[width][height]; // null: no path
+
+    int[][] occupied = new int[width][height]; // free: -1, id: x (>= 0)
+    int[][] nextOccupied = new int[width][height]; // free: -1, id: x (>= 0)
     
-    int[][] prevOccupied = new int[width][height]; // free: -1, id: x (>= 0)
-    int[][] occupied = new int[width][height];     // free: -1, id: x (>= 0)
-    
-    fill(occupied, -1);
+    fill(nextOccupied, -1);
     fill(distanceGrid, -1);
     
     List<Point> moves = new ArrayList<>();
@@ -730,47 +686,38 @@ public class Agent {
     moves.add(new Point(0, 1));
     moves.add(new Point(0, -1));
     
-    int timestep = path.size();
-
-    Point at;
-    
     Plan plan = memory.getPlan(this);
-    if (plan.path.size() == 0) {
-      at = path.get(timestep - 1);
-    } else {
-      int planStep = plan.path.size();
-      
-      at = plan.path.get(planStep - 1);
-      timestep += planStep;
-    }
+    int timestep = path.size() + plan.path.size();
+
+    Point at = plan.getPosition();
+    if (at == null) at = path.get(path.size() - 1);
     
     List<Point> pending = new ArrayList<>();
     pending.add(at);
     
-    updateOccupiedTiles(prevOccupied, timestep, plans, agents);
-    updateOccupiedTiles(occupied, timestep + 1, plans, agents);
+    updateOccupiedTiles(occupied, timestep, plans, agents);
+    updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
     
     //print(occupied);
 
-    int left = 1;
-    int childrenLeft = 0;
+    int pendingInLayerCount = pending.size();
     
-    int minDistance = 0;
-    distanceGrid[at.x][at.y] = minDistance;
-    
-    minDistance += 1;
+    distanceGrid[at.x][at.y] = 0;
+    int minDistance = 1;
     
     int maxIterations = 1000;
     int iteration = 0;
     
     // flood-fill algorithm
     while (pending.size() > 0) {
+      pendingInLayerCount -= 1;
+
       iteration += 1;
       if (iteration >= maxIterations) break;
       
       Point current = pending.remove(0);
 
-      int neighboursNotEncountered = 0;
+      boolean anyNeighboursNotEncountered = false;
       
       for (Point move : moves) {
         int tx = current.x + move.x;
@@ -779,44 +726,43 @@ public class Agent {
         if (!board.isTileOpen(tx, ty)) continue;  // wall or outside the board
         if (distanceGrid[tx][ty] != -1) continue;  // already visited
         
-        if (occupied[tx][ty] != -1) { // already occupied by another agent
-          neighboursNotEncountered += 1;
-          continue; 
-        }
-        
-        if (prevOccupied[tx][ty] != -1 && prevOccupied[tx][ty] == occupied[current.x][current.y]) continue;  // the agents would jump through each other. Not possible.
+        if (nextOccupied[tx][ty] != -1) { // currently occupied by another agent but not visited
+          anyNeighboursNotEncountered = true;
 
-        distanceGrid[tx][ty] = minDistance;
-        
-        childrenLeft += 1;
-        
-        Point child = new Point(tx, ty);
-        pending.add(child);
+        } else {
+          if (occupied[tx][ty] != -1 && occupied[tx][ty] == nextOccupied[current.x][current.y]) continue;  // the agents would jump through each other. Not possible.
+          
+          distanceGrid[tx][ty] = minDistance;
+          backtrackGrid[tx][ty] = current;
+          
+          Point child = new Point(tx, ty);
+          pending.add(child);
+        }
       }
       
       // an agent may need to stall for some time before a tile becomes available.
-      if (occupied[current.x][current.y] == -1 && neighboursNotEncountered > 0) {
-        childrenLeft += 1;
+      if (nextOccupied[current.x][current.y] == -1 && anyNeighboursNotEncountered) {
         pending.add(current);
       }
 
-      left -= 1;
-      if (left == 0) {
+      if (pendingInLayerCount == 0) {
         minDistance += 1;
         timestep += 1;
         
-        left = childrenLeft;
-        childrenLeft = 0;
+        pendingInLayerCount = pending.size();
         
-        updateOccupiedTiles(prevOccupied, timestep, plans, agents);
-        updateOccupiedTiles(occupied, timestep + 1, plans, agents);
+        updateOccupiedTiles(occupied, timestep, plans, agents);
+        updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
         
         //print(occupied);
       }
-      
     }
     
-    return distanceGrid;
+    FloodGrid grid = new FloodGrid();
+    grid.distances = distanceGrid;
+    grid.backtracks = backtrackGrid;
+    
+    return grid;
   }
   
   // free: -1, id: x (>= 0)
@@ -1030,4 +976,9 @@ enum ResolveResult {
 enum Phase {
   outposting,
   resolving;
+}
+
+class FloodGrid {
+  public int[][] distances;
+  public Point[][] backtracks;
 }
