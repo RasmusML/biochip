@@ -63,8 +63,6 @@ public class Agent {
       }
     }
 
-    plan.popDependencyLevel();
-    
     memory.request = null;
     memory.tryCount = 0;
     memory.failedPlans.clear();
@@ -81,8 +79,14 @@ public class Agent {
     if (isResolved()) return ResolveResult.ok;
 
     Plan myPlan = memory.getPlan(this);
-    myPlan.pushDependencyLevel();
-    
+    myPlan.pushDependencyLevel(parentPlan);
+
+    if (isCircularDependency()) {
+      myPlan.popDependencyLevel();
+      
+      return ResolveResult.failed;
+    }
+
     ResolveResult result;
     
     // try finding a safe cell.
@@ -238,7 +242,6 @@ public class Agent {
     return ResolveResult.failed;
   }
 
-
   private ResolveResult tryWithOutposts(Plan parentPlan, Phase phase) {
     // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
     // If the parentPlan is not the requesters plan, then this plan fails, and the parentPlan has to find another way to resolve its deadlock.
@@ -254,106 +257,175 @@ public class Agent {
     originalRequestPlanPath.addAll(requestPlan.path);
     
     List<Point> oldRequestPlanPath = requestPlan.undo();
-    FloodGrid outpostDistanceGrid = getOutpostDistanceGrid();
+    FloodGrid outpostGrid = getOutpostDistanceGrid();
     
     System.out.println("outpost-grid");
-    print(outpostDistanceGrid.distances);
+    print(outpostGrid.distances);
     
-    List<Point> outposts = getOutposts(outpostDistanceGrid.distances);
-    //outposts.remove(0); // @hack @cleanup
+    List<Point> outposts = getOutposts(outpostGrid.distances);
+
+    int maxStalls = 5;
+    int stall = 0;
+    
+    List<Point> outpostsLeft = new ArrayList<>();
+    outpostsLeft.addAll(outposts);
     
     while (memory.tryCount < memory.totalTries) {
-      memory.tryCount += 1;
-      
-      List<Plan> failedPlans = memory.getFailedPlans(this);
-      List<Point> outpostPath = getOutpostPath(outposts, failedPlans, outpostDistanceGrid);
-      if (outpostPath == null) break;
-      
-      myPlan.addToPlan(outpostPath);
+      if (stall >= maxStalls) break;  // stalling did not seem to work. Try something else.
 
-      List<Agent> conflictingAgents = getConflictingAgents();
-
-      boolean ok = true;
-      for (Agent agent : conflictingAgents) {
-        Plan childPlan = memory.getPlan(agent);
-        myPlan.addDependency(childPlan);
+      //List<Point> outpostsLeft = new ArrayList<>();
+      //outpostsLeft.addAll(outposts);
+      
+      //while (memory.tryCount < memory.totalTries) {
+        memory.tryCount += 1;
         
-        ResolveResult result = agent.resolve(myPlan, Phase.resolving);
-        if (result == ResolveResult.failed) {
-          // only undo the child plans which found resolving route.
-          // the child plans failing do not have a resolving route to undo below.
-          myPlan.removeDependency(childPlan); 
-          
-          ok = false;
-          break;
+        List<Plan> failedPlans = memory.getFailedPlans(this);
+        List<Point> outpostPath = getOutpostPath(outpostsLeft, failedPlans, outpostGrid);
+        
+        // no outposts left? retry the outposts but stall 1 more time-step.
+        if (outpostPath == null) break;
+        
+        Point outpost = outpostPath.get(outpostPath.size() - 1);
+
+        List<Point> stalls = new ArrayList<>();
+        for (int i = 0; i < stall; i++) {
+          stalls.add(outpost.copy());
         }
-      }
-      
-      if (ok) {
         
-        Point requesterTarget = oldRequestPlanPath.get(oldRequestPlanPath.size() - 1);
+        outpostPath.addAll(stalls);
         
-        List<Point> path = findPath(requestAgent, requesterTarget, originalRequestPlanPath);
-        
-        if (path == null) {
-          // undo/fail
-          Assert.that(path != null, "todo!");
+        myPlan.addToPlan(outpostPath);
 
-          return ResolveResult.failed;
-        } else {
+        List<Agent> conflictingAgents = getConflictingAgents();
+
+        boolean ok = true;
+        for (Agent agent : conflictingAgents) {
+          Plan childPlan = memory.getPlan(agent);
+          myPlan.addDependency(childPlan);
           
-          requestPlan.addToPlan(path);
-          requestPlan.pushDependencyLevel();
-          
-          conflictingAgents = requestAgent.getConflictingAgents();
-          Assert.that(conflictingAgents.contains(this));
-          
-          ok = true;
-          for (Agent agent : conflictingAgents) {
-            Plan childPlan = memory.getPlan(agent);
-            requestPlan.addDependency(childPlan);
+          ResolveResult result = agent.resolve(myPlan, Phase.resolving);
+          if (result == ResolveResult.failed) {
+            // only undo the child plans which found resolving route.
+            // the child plans failing do not have a resolving route to undo below.
+            myPlan.removeDependency(childPlan); 
             
-            Phase agentPhase = equals(agent) ? Phase.outposting : Phase.resolving;
-            ResolveResult result = agent.resolve(requestPlan, agentPhase);
-            if (result == ResolveResult.failed) {
-              // only undo the child plans which found resolving route.
-              // the child plans failing do not have a resolving route to undo below.
-              requestPlan.removeDependency(childPlan); 
+            ok = false;
+            break;
+          }
+        }
+        
+        if (ok) {
+          
+          Point requesterTarget = oldRequestPlanPath.get(oldRequestPlanPath.size() - 1);
+          
+          List<Point> path = findPath(requestAgent, requesterTarget, originalRequestPlanPath);
+          
+          if (path == null) {
+            // undo/fail
+            Assert.that(path != null, "todo!");
+
+            memory.addFailedPlan(myPlan);
+
+            myPlan.undoDependencyLevel();
+            myPlan.undo();
+            
+          } else {
+
+            //printCircularDependency();
+            //requestPlan.agent.printCircularDependency();
+
+            requestPlan.addToPlan(path);
+            requestPlan.pushDependencyLevel(myPlan); // requester never check for circular-dependency which is desired. @followup is this desired? 
+            
+            conflictingAgents = requestAgent.getConflictingAgents();
+            Assert.that(conflictingAgents.contains(this));
+            
+            ok = true;
+            for (Agent agent : conflictingAgents) {
+              Plan childPlan = memory.getPlan(agent);
+              requestPlan.addDependency(childPlan);
               
-              ok = false;
-              break;
+              Phase agentPhase = equals(agent) ? Phase.outposting : Phase.resolving;
+              ResolveResult result = agent.resolve(requestPlan, agentPhase);
+              if (result == ResolveResult.failed) {
+                // only undo the child plans which found resolving route.
+                // the child plans failing do not have a resolving route to undo below.
+                requestPlan.removeDependency(childPlan); 
+                
+                ok = false;
+                break;
+              }
+            }
+            
+            if (ok) {
+              return ResolveResult.ok;
+              
+            } else { // try another outpost.
+              myPlan.undo();
+
+              memory.addFailedPlan(requestPlan);
+              
+              requestPlan.undo();
+              requestPlan.undoDependencyLevel();
+              requestPlan.popDependencyLevel();
             }
           }
           
-          if (ok) {
-            return ResolveResult.ok;
             
-          } else { // try another outpost.
-            memory.addFailedPlan(requestPlan);
-            
-            requestPlan.undo();
-            requestPlan.undoDependencyLevel();
-            requestPlan.popDependencyLevel();
-          }
-        }
-        
+        } else {
+          Assert.that(false, "@todo!");
           
-      } else {
-        Assert.that(false, "@todo!");
-        
-        // @TODO: restore parent, if this swapping did not resolve the deadlock. Actually, the restoring should be outside the loop construct.
-        //parentPlan = oldParentPlan; // this will not work, because we just change the pointer of the object, actually change the pointer of the attributes.
-        memory.addFailedPlan(myPlan);
-        
-        myPlan.popDependencyLevel();
-        myPlan.undo();
-
+          memory.addFailedPlan(myPlan);
+          
+          myPlan.undoDependencyLevel();
+          myPlan.undo();
+        }
       }
-    }
+      
+      //stall += 1;
+   
+    //}
 
-    requestPlan.addToPlan(oldRequestPlanPath);
+    requestPlan.addToPlan(oldRequestPlanPath);  // redo the undo of the requester plan.
     
     return ResolveResult.failed;
+  }
+  
+  private boolean isCircularDependency() {
+    //printCircularDependency();
+    
+    Plan myPlan = memory.getPlan(this);
+    
+    int occurrence = 0;
+    int maxOccurences = 1;
+    
+    DependencyLevel myLevel = myPlan.getCurrentDependencyLevel();
+    DependencyLevel ancestor = myLevel.parent;
+    
+    while (ancestor != null) {
+      if (myPlan.equals(ancestor.myPlan)) occurrence += 1;
+      ancestor = ancestor.parent;
+    }
+    
+    return occurrence > maxOccurences;
+  }
+  
+
+  private void printCircularDependency() {
+    Plan myPlan = memory.getPlan(this);
+    
+    DependencyLevel myLevel = myPlan.getCurrentDependencyLevel();
+    DependencyLevel ancestor = myLevel.parent;
+    
+    System.out.printf("%d<-", myPlan.agent.id);
+
+    while (ancestor != null) {
+      System.out.printf("%d<-", ancestor.myPlan.agent.id);
+      ancestor = ancestor.parent;
+    }
+    
+    System.out.println();
+    
   }
   
   private boolean isResolved() {
@@ -446,6 +518,8 @@ public class Agent {
         if (!board.isTileOpen(x, y)) continue;  // wall or outside board
         if (!isOutpost(x, y, outpostDistanceGrid)) continue;
         
+        if (outpostDistanceGrid[x][y] == 0) continue; // don't use the current position as an outpost.
+        
         Point endpoint = new Point(x, y);
         outposts.add(endpoint);
       }
@@ -488,7 +562,7 @@ public class Agent {
     Plan myPlan = memory.getPlan(this);
     
     List<Plan> plans = memory.plans;
-    for (int i = 0; i < myPlan.path.size(); i++) {
+    for (int i = 0; i < myPlan.path.size(); i++) {  // @TODO: handle with another plan is longer (in time) than this one, and they overlap
       Point at = myPlan.path.get(i);
       
       List<Agent> pending = new ArrayList<>();
@@ -846,7 +920,16 @@ class Plan {
     checkpoints = new ArrayList<>();
     dependencyLevels = new ArrayList<>();
     
-    pushDependencyLevel();
+    pushRootDependencyLevel();
+  }
+
+  public void pushRootDependencyLevel() {
+    DependencyLevel level = new DependencyLevel();
+    level.myPlan = this;
+    level.parent = null;
+    level.dependencies = new ArrayList<>();
+
+    dependencyLevels.add(level);
   }
 
   public void removeDependency(Plan plan) {
@@ -866,14 +949,23 @@ class Plan {
     return path.get(path.size() - 1);
   }
   
-  public void pushDependencyLevel() {
+  public void pushDependencyLevel(Plan parent) {
+    DependencyLevel parentDependencyLevel = parent.getCurrentDependencyLevel();
+    
     DependencyLevel level = new DependencyLevel();
+    level.myPlan = this;
+    level.parent = parentDependencyLevel;
     level.dependencies = new ArrayList<>();
+
     dependencyLevels.add(level);
   }
   
+  public DependencyLevel getCurrentDependencyLevel() {
+    return dependencyLevels.get(dependencyLevels.size() - 1);
+  }
+  
   public void undoDependencyLevel() {
-    DependencyLevel level = dependencyLevels.get(dependencyLevels.size() - 1);
+    DependencyLevel level = getCurrentDependencyLevel();
     
     for (Plan plan : level.dependencies) {
       plan.undo();
@@ -885,7 +977,7 @@ class Plan {
   }
   
   public void addDependency(Plan plan) {
-    DependencyLevel level = dependencyLevels.get(dependencyLevels.size() - 1);
+    DependencyLevel level = getCurrentDependencyLevel();
     level.dependencies.add(plan);
   }
   
@@ -906,6 +998,10 @@ class Plan {
 }
 
 class DependencyLevel {
+  public Plan myPlan;
+  
+  public DependencyLevel parent;
+  
   public List<Plan> dependencies;
 }
 
