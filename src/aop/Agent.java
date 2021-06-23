@@ -2,6 +2,7 @@ package aop;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import dmb.algorithms.Point;
@@ -95,8 +96,8 @@ public class Agent {
     if (result == ResolveResult.ok) return ResolveResult.ok;
       
     // try pushing the parent back.
-    //result = tryWithPushingParentBack(parentPlan);  // @incomplete
-    //if (result == ResolveResult.ok) return ResolveResult.ok;
+    result = tryWithPushingParentBack(parentPlan, phase);
+    if (result == ResolveResult.ok) return ResolveResult.ok;
     
     // try stalling the requester.
     result = tryWithOutposts(parentPlan, phase);
@@ -107,10 +108,14 @@ public class Agent {
     myPlan.undoDependencyLevel();
     myPlan.popDependencyLevel();
     
-    return ResolveResult.failed;  // no more iterations left.
+    return ResolveResult.failed;
   }
   
-  private ResolveResult tryWithPushingParentBack(Plan parentPlan) {
+  private ResolveResult tryWithPushingParentBack(Plan parentPlan, Phase phase) {
+    if (parentPlan.equals(memory.request)) return ResolveResult.failed; // it is not possible to push the requester back.
+
+    if (phase == Phase.pushingParentBack) return ResolveResult.failed;  // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
+    
     Plan myPlan = memory.getPlan(this);
     
     Point at = myPlan.getPosition();
@@ -118,76 +123,127 @@ public class Agent {
     
     Point pushBack = at.copy();
     
-    int time = path.size() + myPlan.path.size() + 1;  // next timestep.
-    List<Out> outs = getOuts(at, time);
+    int meTime = path.size() + myPlan.path.size();
+    int mePushedAwayTime = parentPlan.agent.path.size() + parentPlan.path.size();
+    int meJustBeforePushedAwayTime = mePushedAwayTime - 1;
+    
+    List<Point> stays = new ArrayList<>();
+
+    int stayBy = meJustBeforePushedAwayTime - meTime;
+    for (int i = 0; i < stayBy; i++) {
+      stays.add(at.copy());
+    }
+    
+    List<Out> outs = getOuts(at, meJustBeforePushedAwayTime);
     
     while (memory.tryCount < memory.totalTries) {
-      for (Out out : outs) {
-        memory.tryCount += 1;
-
-        // @TODO: remove out from list.
-        if (out.timestep == -1) continue; // is not possible to stay at the "out", because another agent needs the cell.
-        
-        time = getNextPushTime(time);
-        
-        List<Point> stays = new ArrayList<>();
-        int stayBy = time - out.timestep;
-        for (int i = 0; i < stayBy; i++) {
-          stays.add(out.at);
-        }
-        
-        List<Point> addedPath = new ArrayList<>();
-        addedPath.addAll(stays);
-        addedPath.add(pushBack);
-        
-        myPlan.addToPlan(addedPath);
-        
-        out.timestep = time;
-        
-        ResolveResult result = resolve(myPlan, Phase.resolving);  // @TODO: Phase.pushingParentBack? flag to say that you can't push the parent back. Actually, in some cases they can move back and forth to resolve the deadlock.
-        if (result == ResolveResult.ok) return ResolveResult.ok;
-        
-        myPlan.undo();
+      memory.tryCount += 1;
+      
+      if (outs.size() == 0) break;
+      
+      Out out = outs.remove(0);
+      
+      List<Point> path = new ArrayList<>();
+      path.addAll(stays);
+      
+      int stayByPushed = out.timestep - meJustBeforePushedAwayTime;
+      for (int i = 0; i < stayByPushed; i++) {
+        path.add(out.at);
       }
+      
+      path.add(pushBack);
+      
+      myPlan.addToPlan(path);
+      
+      ResolveResult result = resolve(myPlan, Phase.pushingParentBack);
+      if (result == ResolveResult.ok) return ResolveResult.ok;
+      
+      memory.addFailedPlan(myPlan);
+      
+      myPlan.undo();
+      
     }
     
     return ResolveResult.failed;
   }
 
-  private List<Out> getOuts(Point at, int timestep) {
-    List<Out> outs = new ArrayList<>();
+  private List<Out> getOuts(Point baseAt, int timestep) {
+    Board board = memory.board;
 
+    List<Plan> plans = memory.plans;
+    List<Agent> agents = memory.agents;
+    
+    int width = board.getWidth();
+    int height = board.getHeight();
+    
+    int[][] occupied = new int[width][height]; // free: -1, id: x (>= 0)
+    int[][] nextOccupied = new int[width][height]; // free: -1, id: x (>= 0)
+    
+    updateOccupiedTiles(occupied, timestep, plans, agents);
+    updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
+    
+    print(occupied);
+    print(nextOccupied);
+    
     List<Point> moves = new ArrayList<>();
     moves.add(new Point(-1, 0));
     moves.add(new Point(1, 0));
     moves.add(new Point(0, 1));
     moves.add(new Point(0, -1));
     
+    List<Out> outs = new ArrayList<>();
     for (Point move : moves) {
-      Point outAt = at.copy().add(move);
+      Point to = baseAt.copy().add(move);
       
-      if (isOccupied(outAt, timestep)) continue;
+      if (!board.isTileOpen(to.x, to.y)) continue;
+
+      if (occupied[to.x][to.y] != -1 && occupied[to.x][to.y] == nextOccupied[baseAt.x][baseAt.y]) continue;  // the agents would jump through each other. Not possible.
       
       Out out = new Out();
-      out.at = outAt;
-      out.timestep = timestep;
+      out.at = to;
+      out.timestep = timestep + 1;
       
       outs.add(out);
     }
     
-    return outs;
-  }
-  
-  private boolean isOccupied(Point at, int timestep) {
+    List<Out> pending = new ArrayList<>();
+    pending.addAll(outs);
     
-    return false;
+    int maxIterations = 100;
+    int requesterLength = memory.request.agent.path.size() + memory.request.path.size();
+    int iterationsNeeded = requesterLength - timestep - 1;
+    
+    int iterations = Math.min(iterationsNeeded, maxIterations);
+    
+    timestep += 1;
+    
+    updateOccupiedTiles(occupied, timestep, plans, agents);
+    updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
+    
+    for (int i = 0; i < iterations; i++) {
+
+      for (Iterator<Out> it = pending.iterator(); it.hasNext();) {
+        Out out = it.next();
+        Point at = out.at;
+        
+        // currently occupied by another agent but not visited
+        if (nextOccupied[at.x][at.y] != -1) {
+          it.remove();
+        } else {
+          out.timestep = timestep + 1;
+        }
+      }
+
+      timestep += 1;
+
+      updateOccupiedTiles(occupied, timestep, plans, agents);
+      updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
+    }
+    
+    return outs;
+    
   }
   
-  private int getNextPushTime(int time) {
-    // @TODO: use isOccupied for simple implementation getNextPushTime (no detour)
-    return -1;
-  }
-
   class Out {
     public Point at;
     public int timestep;
@@ -305,6 +361,8 @@ public class Agent {
   }
 
   private ResolveResult tryWithOutposts(Plan parentPlan, Phase phase) {
+    if (phase == Phase.pushingParentBack) return ResolveResult.failed;
+    
     // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
     // If the parentPlan is not the requesters plan, then this plan fails, and the parentPlan has to find another way to resolve its deadlock.
     // an agent can outpost two successive times. If this happens, the the first outpost should select another outpost in the next iteration.
@@ -525,27 +583,27 @@ public class Agent {
       grid[tile.x][tile.y] = 0;
     }
     
+    int[][] nextOccupied = createGrid(tiles);
     int[][] occupied = createGrid(tiles);
-    int[][] prevOccupied = createGrid(tiles);
     
     List<Plan> plans = memory.plans;
     
     AStarPathFinder pathfinder = new AStarPathFinder() {
       @Override
       public List<Point> getMoves(Point at, int timestep) {
-        agent.updateOccupiedTiles(prevOccupied, timestep, plans, memory.agents);
-        agent.updateOccupiedTiles(occupied, timestep + 1, plans, memory.agents);
+        agent.updateOccupiedTiles(occupied, timestep, plans, memory.agents);
+        agent.updateOccupiedTiles(nextOccupied, timestep + 1, plans, memory.agents);
         
         //print(occupied);
         
         List<Point> validMoves = new ArrayList<>();
         for (Point move : moves) {
           Point to = at.copy().add(move.x, move.y);
-          if (to.x < 0 || to.x >= occupied.length || to.y < 0 || to.y >= occupied[0].length) continue;
+          if (to.x < 0 || to.x >= nextOccupied.length || to.y < 0 || to.y >= nextOccupied[0].length) continue;
           if (grid[at.x][at.y] == -1) continue; // wall
           
-          if (occupied[to.x][to.y] != -1) continue;
-          if (prevOccupied[to.x][to.y] != -1 && prevOccupied[to.x][to.y] == occupied[at.x][at.y]) continue;  // the agents would jump through each other. Not possible.
+          if (nextOccupied[to.x][to.y] != -1) continue;
+          if (occupied[to.x][to.y] != -1 && occupied[to.x][to.y] == nextOccupied[at.x][at.y]) continue;  // the agents would jump through each other. Not possible.
 
           validMoves.add(move);
         }
@@ -804,7 +862,7 @@ public class Agent {
     int[][] occupied = new int[width][height]; // free: -1, id: x (>= 0)
     int[][] nextOccupied = new int[width][height]; // free: -1, id: x (>= 0)
     
-    fill(nextOccupied, -1);
+    //fill(nextOccupied, -1);
     fill(distanceGrid, -1);
     
     List<Point> moves = new ArrayList<>();
@@ -1124,6 +1182,7 @@ enum ResolveResult {
 
 enum Phase {
   outposting,
+  pushingParentBack,
   resolving;
 }
 
