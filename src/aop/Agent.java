@@ -103,8 +103,6 @@ public class Agent {
     result = tryWithOutposts(parentPlan, phase);
     if (result == ResolveResult.ok) return ResolveResult.ok;
     
-    memory.addFailedPlan(myPlan);
-    
     myPlan.undoDependencyLevel();
     myPlan.popDependencyLevel();
     
@@ -113,13 +111,16 @@ public class Agent {
   
   private ResolveResult tryWithPushingParentBack(Plan parentPlan, Phase phase) {
     if (parentPlan.equals(memory.request)) return ResolveResult.failed; // it is not possible to push the requester back.
-
+    
     if (phase == Phase.pushingParentBack) return ResolveResult.failed;  // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
     
     Plan myPlan = memory.getPlan(this);
     
     Point at = myPlan.getPosition();
     if (at == null) at = myPlan.agent.getPosition();
+    
+    Point parentTarget = parentPlan.getPosition();
+    if (!(parentTarget.x == at.x && parentTarget.y == at.y)) return ResolveResult.failed; // a push back move does not make sense, because the parent is just moving through.
     
     Point pushBack = at.copy();
     
@@ -155,7 +156,7 @@ public class Agent {
       
       myPlan.addToPlan(path);
       
-      ResolveResult result = resolve(myPlan, Phase.pushingParentBack);
+      ResolveResult result = parentPlan.agent.resolve(myPlan, Phase.pushingParentBack);
       if (result == ResolveResult.ok) return ResolveResult.ok;
       
       memory.addFailedPlan(myPlan);
@@ -257,7 +258,7 @@ public class Agent {
     System.out.println("distance-grid");
     print(endpointGrid.distances);
     
-    int[][] havenGrid = getEndPointHavenGrid();
+    int[][] havenGrid = getEndPointHavenGrid(endpointGrid.distances);
     List<Point> endPoints = getEndpoints(endpointGrid, havenGrid);
     printEndPoints(endPoints);
     
@@ -333,23 +334,36 @@ public class Agent {
     System.out.println();
   }
   
-  private int[][] getEndPointHavenGrid() {
+  private int[][] getEndPointHavenGrid(int[][] distanceGrid) {
+    Plan myPlan = memory.getPlan(this);
+    
     Board board = memory.board;
     
     int width = board.getWidth();
     int height = board.getHeight();
     
-    int[][] havenGrid = new int[width][height]; // ok: 1, wall: 0, agent: -1, failed plans: -2
+    int[][] havenGrid = new int[width][height]; // ok: 1, wall: 0, agent: -1
     copy(board.grid, havenGrid);
     
     List<Plan> plans = memory.plans;
     for (Plan plan : plans) {
+      // if (plan.equals(myPlan)) continue;
       if (plan.agent.equals(memory.request.agent)) continue;
-
-      for (int i = 0; i <= plan.path.size() - 2; i++) { // the last position is skipped, because the agent can push the other agent.
+      if (plan.path.size() == 0) continue;
+      
+      // the last position is skipped if this agent arrives after the other agent, because the agent can push the other agent.
+      for (int i = 0; i <= plan.path.size() - 2; i++) {
         Point point = plan.path.get(i);
         havenGrid[point.x][point.y] = -1;
       }
+
+      Point last = plan.path.get(plan.path.size() - 1);
+      
+      int steps = distanceGrid[last.x][last.y];
+      int meArrives = path.size() + myPlan.path.size() + steps;
+      int otherArrives = plan.agent.path.size() + plan.path.size();
+      
+      if (meArrives <= otherArrives) havenGrid[last.x][last.y] = -1;
     }
     
     for (int i = 0; i <= memory.request.path.size() - 1; i++) { // we can't push the "root"/requester
@@ -713,7 +727,7 @@ public class Agent {
         if (plan.path.size() == 0) continue;  // @note: this only happens for the parent when doing the reverse?
 
         int otherEndTime = plan.agent.getPath().size() + plan.path.size();
-        if (otherEndTime > endTime) continue;
+        if (otherEndTime > endTime) continue; // these agents will longer end-times are not possible to move. Hence, not conflicting. If there was an issue with these agents (overlapping), then it be handled earlier (e.g. in distance-grid)
         
         pending.remove(plan.agent);
 
@@ -1154,6 +1168,10 @@ class SharedAgentMemory {
   }
   
   public void addFailedPlan(Plan plan) {
+    if (plan.path.size() == 0) {
+      int k = 22;
+    }
+    
     failedPlans.add(plan.copy());  // @TODO: deep-copy
   }
   

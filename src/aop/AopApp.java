@@ -70,14 +70,10 @@ public class AopApp extends ApplicationAdapter {
     normalTest2();
     reverseTest2();
     undoTest2();
-    undoTest3();
     undoTest1();
+    undoTest3();
     */
     undoTest4();
-
-    /*
-     */
-
     
     float cx = board.getWidth() * tilesize / 2f;
     float cy = board.getHeight() * tilesize / 2f;
