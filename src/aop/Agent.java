@@ -7,7 +7,6 @@ import java.util.List;
 
 import dmb.algorithms.Point;
 import dmb.helpers.Assert;
-import framework.math.MathUtils;
 
 public class Agent {
 
@@ -96,8 +95,8 @@ public class Agent {
     if (result == ResolveResult.ok) return ResolveResult.ok;
       
     // try pushing the parent back.
-    result = tryWithPushingParentBack(parentPlan, phase);
-    if (result == ResolveResult.ok) return ResolveResult.ok;
+    //result = tryWithPushingParentBack(parentPlan, phase);
+    //if (result == ResolveResult.ok) return ResolveResult.ok;
     
     // try stalling the requester.
     result = tryWithOutposts(parentPlan, phase);
@@ -379,12 +378,17 @@ public class Agent {
     
     // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
     // If the parentPlan is not the requesters plan, then this plan fails, and the parentPlan has to find another way to resolve its deadlock.
-    // an agent can outpost two successive times. If this happens, the the first outpost should select another outpost in the next iteration.
+    // an agent can outpost two successive times. If this happens, the first outpost should select another outpost in the next iteration.
     if (phase == Phase.outposting) return ResolveResult.failed;
-
-    Plan myPlan = memory.getPlan(this);
+    
     Plan requestPlan = memory.request;
+    // no undoing left to be done. 
+    // This can happen, if multiple agents try to do an outpost and the requester does not get to find a new path in between, 
+    // because conflicting agents exists when moving to the outpost. 
+    if (requestPlan.path.size() == 0) return ResolveResult.failed;  
+    
     Agent requestAgent = memory.request.agent;
+    Plan myPlan = memory.getPlan(this);
     
     List<Point> originalRequestPlanPath = new ArrayList<>();
     originalRequestPlanPath.add(requestPlan.agent.getPosition());
@@ -398,126 +402,103 @@ public class Agent {
     
     List<Point> outposts = getOutposts(outpostGrid.distances);
     
-    int maxStalls = 5;
-    int stall = 0;
-    
     List<Point> outpostsLeft = new ArrayList<>();
     outpostsLeft.addAll(outposts);
     
     while (memory.tryCount < memory.totalTries) {
-      if (stall >= maxStalls) break;  // stalling did not seem to work. Try something else.
-
-      //List<Point> outpostsLeft = new ArrayList<>();
-      //outpostsLeft.addAll(outposts);
+      memory.tryCount += 1;
       
-      //while (memory.tryCount < memory.totalTries) {
-        memory.tryCount += 1;
+      List<Point> outpostPath = getOutpostPath(outpostsLeft, outpostGrid);
+ 
+      // no outposts left? retry the outposts but stall 1 more time-step.
+      if (outpostPath == null) break;
+      
+      myPlan.addToPlan(outpostPath);
+
+      List<Agent> conflictingAgents = getConflictingAgents();
+
+      boolean ok = true;
+      for (Agent agent : conflictingAgents) {
+        Plan childPlan = memory.getPlan(agent);
+        myPlan.addDependency(childPlan);
         
-        List<Point> outpostPath = getOutpostPath(outpostsLeft, outpostGrid);
-   
-        // no outposts left? retry the outposts but stall 1 more time-step.
-        if (outpostPath == null) break;
-        
-        Point outpost = outpostPath.get(outpostPath.size() - 1);
-
-        List<Point> stalls = new ArrayList<>();
-        for (int i = 0; i < stall; i++) {
-          stalls.add(outpost.copy());
-        }
-        
-        outpostPath.addAll(stalls);
-        
-        myPlan.addToPlan(outpostPath);
-
-        List<Agent> conflictingAgents = getConflictingAgents();
-
-        boolean ok = true;
-        for (Agent agent : conflictingAgents) {
-          Plan childPlan = memory.getPlan(agent);
-          myPlan.addDependency(childPlan);
+        ResolveResult result = agent.resolve(myPlan, Phase.resolving);
+        if (result == ResolveResult.failed) {
+          // only undo the child plans which found resolving route.
+          // the child plans failing do not have a resolving route to undo below.
+          myPlan.removeDependency(childPlan); 
           
-          ResolveResult result = agent.resolve(myPlan, Phase.resolving);
-          if (result == ResolveResult.failed) {
-            // only undo the child plans which found resolving route.
-            // the child plans failing do not have a resolving route to undo below.
-            myPlan.removeDependency(childPlan); 
-            
-            ok = false;
-            break;
-          }
-        }
-        
-        if (ok) {
-          
-          Point requesterTarget = oldRequestPlanPath.get(oldRequestPlanPath.size() - 1);
-          
-          List<Point> path = findPath(requestAgent, requesterTarget, originalRequestPlanPath);
-          
-          if (path == null) {
-            Assert.that(false, "@test");
-
-            memory.addFailedPlan(myPlan);
-
-            myPlan.undoDependencyLevel();
-            myPlan.undo();
-            
-          } else {
-
-            //printCircularDependency();
-            //requestPlan.agent.printCircularDependency();
-
-            requestPlan.addToPlan(path);
-            requestPlan.pushDependencyLevel(myPlan); // requester never check for circular-dependency which is desired. @followup is this desired? 
-            
-            conflictingAgents = requestAgent.getConflictingAgents();
-            Assert.that(conflictingAgents.contains(this));
-            
-            ok = true;
-            for (Agent agent : conflictingAgents) {
-              Plan childPlan = memory.getPlan(agent);
-              requestPlan.addDependency(childPlan);
-              
-              Phase agentPhase = equals(agent) ? Phase.outposting : Phase.resolving;
-              ResolveResult result = agent.resolve(requestPlan, agentPhase);
-              if (result == ResolveResult.failed) {
-                // only undo the child plans which found resolving route.
-                // the child plans failing do not have a resolving route to undo below.
-                requestPlan.removeDependency(childPlan); 
-                
-                ok = false;
-                break;
-              }
-            }
-            
-            if (ok) {
-              return ResolveResult.ok;
-              
-            } else { // try another outpost.
-              myPlan.undo();
-
-              memory.addFailedPlan(requestPlan);
-              
-              requestPlan.undo();
-              requestPlan.undoDependencyLevel();
-              requestPlan.popDependencyLevel();
-            }
-          }
-          
-            
-        } else {
-          Assert.that(false, "@test");
-          
-          memory.addFailedPlan(myPlan);
-          
-          myPlan.undoDependencyLevel();
-          myPlan.undo();
+          ok = false;
+          break;
         }
       }
       
-      //stall += 1;
-   
-    //}
+      if (ok) {
+        Point requesterTarget = oldRequestPlanPath.get(oldRequestPlanPath.size() - 1);
+        
+        List<Point> path = findPath(requestAgent, requesterTarget, originalRequestPlanPath);
+        
+        if (path == null) {
+          Assert.that(false, "@test");
 
+          memory.addFailedPlan(myPlan);
+
+          myPlan.undoDependencyLevel();
+          myPlan.undo();
+          
+        } else {
+
+          //printCircularDependency();
+          //requestPlan.agent.printCircularDependency();
+
+          requestPlan.addToPlan(path);
+          requestPlan.pushDependencyLevel(myPlan); // requester never check for circular-dependency which is desired. @followup is this desired? 
+          
+          conflictingAgents = requestAgent.getConflictingAgents();
+          Assert.that(conflictingAgents.contains(this));
+          
+          ok = true;
+          for (Agent agent : conflictingAgents) {
+            Plan childPlan = memory.getPlan(agent);
+            requestPlan.addDependency(childPlan);
+            
+            Phase agentPhase = equals(agent) ? Phase.outposting : Phase.resolving;
+            ResolveResult result = agent.resolve(requestPlan, agentPhase);
+            if (result == ResolveResult.failed) {
+              // only undo the child plans which found resolving route.
+              // the child plans failing do not have a resolving route to undo below.
+              requestPlan.removeDependency(childPlan); 
+              
+              ok = false;
+              break;
+            }
+          }
+          
+          if (ok) {
+            return ResolveResult.ok;
+            
+          } else { // try another outpost.
+            myPlan.undo();
+
+            memory.addFailedPlan(requestPlan);
+            
+            requestPlan.undo();
+            requestPlan.undoDependencyLevel();
+            requestPlan.popDependencyLevel();
+          }
+        }
+        
+          
+      } else {
+        Assert.that(false, "@test, ok tested");
+        
+        memory.addFailedPlan(myPlan);
+        
+        myPlan.undoDependencyLevel();
+        myPlan.undo();
+      }
+    }
+      
     requestPlan.addToPlan(oldRequestPlanPath);  // redo the undo of the requester plan.
     
     return ResolveResult.failed;
@@ -1168,9 +1149,7 @@ class SharedAgentMemory {
   }
   
   public void addFailedPlan(Plan plan) {
-    if (plan.path.size() == 0) {
-      int k = 22;
-    }
+    Assert.that(plan.path.size() > 0);
     
     failedPlans.add(plan.copy());  // @TODO: deep-copy
   }
