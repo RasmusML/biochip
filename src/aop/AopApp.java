@@ -66,6 +66,7 @@ public class AopApp extends ApplicationAdapter {
     
     //normalTest1();  // special: requester re-pathing
     
+    /*
     okTest();
     reverseTest();
     normalTest2();
@@ -78,6 +79,8 @@ public class AopApp extends ApplicationAdapter {
     failingTest1();
     failingTest2();
     failingTest3();
+    */
+    normalTest3();
     /*
     */
     
@@ -162,6 +165,46 @@ public class AopApp extends ApplicationAdapter {
     agent1.request(plan);
   }
 
+  private void normalTest3() {
+    String layout = 
+        "100\n" + 
+        "111\n" +
+        "100\n" +
+        "110\n" +
+        "100";
+
+    board = new Board(layout);
+    
+    agents = new ArrayList<>();
+    
+    memory = new SharedAgentMemory(board);
+    
+    Agent agent0 = new Agent(memory, 0, new Point(1, 3));
+    Agent agent1 = new Agent(memory, 1, new Point(0, 1));
+    Agent agent2 = new Agent(memory, 2, new Point(1, 1));
+    
+    agents.add(agent0);
+    agents.add(agent1);
+    agents.add(agent2);
+    
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    memory.agents.add(agent2);
+    
+    memory.start();
+
+    List<Point> path = new ArrayList<>();
+    path.add(new Point(0, 3));
+    path.add(new Point(0, 2));
+    path.add(new Point(0, 1));
+    path.add(new Point(0, 0));
+    
+    Plan plan = memory.getPlan(agent0);
+    plan.addToPlan(path);
+    
+    agent0.request(plan);
+  }
+  
   private void reverseTest() {
     String layout = 
         "100\n" + 

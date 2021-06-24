@@ -1099,7 +1099,7 @@ class DependencyLevel {
       //dependency.myPlan.dependencyLevels.remove(dependency);
     }
     
-    dependencies.clear();
+    dependencies.clear(); // @TODO: why is this necessary to make it work???
   }
 }
 
