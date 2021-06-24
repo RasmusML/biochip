@@ -95,8 +95,8 @@ public class Agent {
     if (result == ResolveResult.ok) return ResolveResult.ok;
       
     // try pushing the parent back.
-    //result = tryWithPushingParentBack(parentPlan, phase);
-    //if (result == ResolveResult.ok) return ResolveResult.ok;
+    result = tryWithPushingParentBack(parentPlan, phase);
+    if (result == ResolveResult.ok) return ResolveResult.ok;
     
     // try stalling the requester.
     result = tryWithOutposts(parentPlan, phase);
@@ -154,6 +154,11 @@ public class Agent {
       path.add(pushBack);
       
       myPlan.addToPlan(path);
+      
+      List<Agent> conflictingAgents = getConflictingAgents();
+      if (conflictingAgents.size() > 0) {
+        int k = 42;
+      }
       
       ResolveResult result = parentPlan.agent.resolve(myPlan, Phase.pushingParentBack);
       if (result == ResolveResult.ok) return ResolveResult.ok;
@@ -254,7 +259,7 @@ public class Agent {
     
     FloodGrid endpointGrid = getDistanceGrid();
     
-    System.out.println("distance-grid");
+    System.out.println("distance-grid " + id);
     print(endpointGrid.distances);
     
     int[][] havenGrid = getEndPointHavenGrid(endpointGrid.distances);
@@ -397,7 +402,7 @@ public class Agent {
     List<Point> oldRequestPlanPath = requestPlan.undo();
     FloodGrid outpostGrid = getOutpostDistanceGrid();
     
-    System.out.println("outpost-grid");
+    System.out.println("outpost-grid " + id);
     print(outpostGrid.distances);
     
     List<Point> outposts = getOutposts(outpostGrid.distances);
