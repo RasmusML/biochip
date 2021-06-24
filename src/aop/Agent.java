@@ -44,7 +44,7 @@ public class Agent {
     
     List<Agent> conflicting = getConflictingAgents();
     
-    DependencyLevel rootLevel = plan.getCurrentDependencyLevel();
+    DependencyLevel rootLevel = plan.dependencyLevels.get(0);
     
     boolean ok = true;
     for (Agent agent : conflicting) {
@@ -64,7 +64,6 @@ public class Agent {
     }
 
     memory.request = null;
-    memory.tryCount = 0;
     memory.failedPlans.clear();
     memory.plans.clear();
     
@@ -77,15 +76,15 @@ public class Agent {
   
   public ResolveResult resolve(Plan parentPlan, Phase phase, DependencyLevel parentLevel) {
     if (isResolved()) {
-      Assert.that(false);
+      //Assert.that(false);
       return ResolveResult.ok;
     }
 
     Plan myPlan = memory.getPlan(this);
     DependencyLevel myLevel = myPlan.pushDependencyLevel(parentLevel);
     
-    if (isCircularDependency()) {
-      Assert.that(false, "@incomplete");
+    if (isCircularDependency(myLevel)) {
+      //Assert.that(false, "@test");
       myPlan.popDependencyLevel(myLevel);
       
       return ResolveResult.failed;
@@ -163,7 +162,7 @@ public class Agent {
       
       List<Agent> conflictingAgents = getConflictingAgents();
       if (conflictingAgents.size() > 0) {
-        int k = 42;
+        int k = 42; // @incomplete
       }
       
       ResolveResult result = parentPlan.agent.resolve(myPlan, Phase.pushingParentBack, myLevel);
@@ -480,7 +479,7 @@ public class Agent {
         }
           
       } else {
-        Assert.that(false, "@test, ok tested");
+        //Assert.that(false, "@test, ok tested");
         
         memory.addFailedPlan(myPlan);
         
@@ -494,7 +493,7 @@ public class Agent {
     return ResolveResult.failed;
   }
   
-  private boolean isCircularDependency() {
+  private boolean isCircularDependency(DependencyLevel myLevel) {
     //printCircularDependency();
     
     Plan myPlan = memory.getPlan(this);
@@ -502,7 +501,6 @@ public class Agent {
     int occurrence = 0;
     int maxOccurences = 1;
     
-    DependencyLevel myLevel = myPlan.getCurrentDependencyLevel();
     DependencyLevel ancestor = myLevel.parent;
     
     while (ancestor != null) {
@@ -513,10 +511,9 @@ public class Agent {
     return occurrence > maxOccurences;
   }
 
-  private void printCircularDependency() {
+  private void printCircularDependency(DependencyLevel myLevel) {
     Plan myPlan = memory.getPlan(this);
     
-    DependencyLevel myLevel = myPlan.getCurrentDependencyLevel();
     DependencyLevel ancestor = myLevel.parent;
     
     System.out.printf("%d<-", myPlan.agent.id);
@@ -1055,10 +1052,6 @@ class Plan {
     return level;
   }
   
-  public DependencyLevel getCurrentDependencyLevel() {
-    return dependencyLevels.get(dependencyLevels.size() - 1);
-  }
-  
   public void popDependencyLevel(DependencyLevel level) {
     DependencyLevel copy = dependencyLevels.remove(dependencyLevels.size() - 1);
     Assert.that(level.equals(copy));
@@ -1105,6 +1098,8 @@ class DependencyLevel {
       dependency.myPlan.popDependencyLevel(dependency);
       //dependency.myPlan.dependencyLevels.remove(dependency);
     }
+    
+    dependencies.clear();
   }
 }
 

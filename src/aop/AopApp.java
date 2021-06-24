@@ -66,7 +66,6 @@ public class AopApp extends ApplicationAdapter {
     
     //normalTest1();  // special: requester re-pathing
     
-    /*
     okTest();
     reverseTest();
     normalTest2();
@@ -77,10 +76,9 @@ public class AopApp extends ApplicationAdapter {
     undoTest4();
     undoTest5();
     failingTest1();
-    */
     failingTest2();
-    /*
     failingTest3();
+    /*
     */
     
     float cx = board.getWidth() * tilesize / 2f;
