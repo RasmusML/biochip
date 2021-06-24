@@ -64,6 +64,8 @@ public class AopApp extends ApplicationAdapter {
     renderer = new Renderer(viewport);
     renderer.setCanvas(canvas);
     
+    //normalTest1();  // special: requester re-pathing
+    
     /*
     okTest();
     reverseTest();
@@ -77,6 +79,9 @@ public class AopApp extends ApplicationAdapter {
     failingTest1();
     */
     failingTest2();
+    /*
+    failingTest3();
+    */
     
     float cx = board.getWidth() * tilesize / 2f;
     float cy = board.getHeight() * tilesize / 2f;
@@ -455,6 +460,46 @@ public class AopApp extends ApplicationAdapter {
         "0100\n" + 
         "0110\n" +
         "0100\n" +
+        "0100\n" +
+        "0100";
+
+    board = new Board(layout);
+    
+    agents = new ArrayList<>();
+
+    memory = new SharedAgentMemory(board);
+    
+    Agent agent0 = new Agent(memory, 0, new Point(1, 4));
+    Agent agent1 = new Agent(memory, 1, new Point(1, 0));
+    Agent agent2 = new Agent(memory, 2, new Point(1, 2));
+    
+    agents.add(agent0);
+    agents.add(agent1);
+    agents.add(agent2);
+    
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    memory.agents.add(agent2);
+    
+    memory.start();
+
+    List<Point> path = new ArrayList<>();
+    path.add(new Point(1, 3));
+    path.add(new Point(1, 2));
+    path.add(new Point(1, 1));
+    path.add(new Point(1, 0));
+    
+    Plan plan = memory.getPlan(agent0);
+    plan.addToPlan(path);
+    
+    agent0.request(plan);
+  }
+  
+  private void failingTest2() {
+    String layout = 
+        "0100\n" + 
+        "0110\n" +
+        "0100\n" +
         "1100\n" +
         "0100";
 
@@ -493,7 +538,7 @@ public class AopApp extends ApplicationAdapter {
     agent0.request(plan);
   }
   
-  private void failingTest2() {
+  private void failingTest3() {
     String layout = 
         "0100\n" + 
         "0111\n" +
@@ -529,6 +574,43 @@ public class AopApp extends ApplicationAdapter {
 
     List<Point> path = new ArrayList<>();
     path.add(new Point(1, 3));
+    path.add(new Point(1, 2));
+    path.add(new Point(1, 1));
+    path.add(new Point(1, 0));
+    
+    Plan plan = memory.getPlan(agent0);
+    plan.addToPlan(path);
+    
+    agent0.request(plan);
+  }
+  
+  // only possible to solve, if requester can use other cells than that of the route to resolve the deadlock
+  private void normalTest1() {
+    String layout = 
+        "0100\n" + 
+        "0110\n" +
+        "0100\n" +
+        "0100\n" +
+        "0100";
+
+    board = new Board(layout);
+    
+    agents = new ArrayList<>();
+
+    memory = new SharedAgentMemory(board);
+    
+    Agent agent0 = new Agent(memory, 0, new Point(1, 3));
+    Agent agent1 = new Agent(memory, 1, new Point(1, 0));
+    
+    agents.add(agent0);
+    agents.add(agent1);
+    
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    
+    memory.start();
+
+    List<Point> path = new ArrayList<>();
     path.add(new Point(1, 2));
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));

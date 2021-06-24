@@ -44,12 +44,11 @@ public class Agent {
     
     List<Agent> conflicting = getConflictingAgents();
     
+    DependencyLevel rootLevel = plan.getCurrentDependencyLevel();
+    
     boolean ok = true;
     for (Agent agent : conflicting) {
-      Plan childPlan = memory.getPlan(agent);
-      plan.addDependency(childPlan);
-      
-      ResolveResult result = agent.resolve(plan, Phase.resolving);
+      ResolveResult result = agent.resolve(plan, Phase.resolving, rootLevel);
       
       if (result == ResolveResult.failed) {
         ok = false;
@@ -76,14 +75,18 @@ public class Agent {
     return id;
   }
   
-  public ResolveResult resolve(Plan parentPlan, Phase phase) {
-    if (isResolved()) return ResolveResult.ok;
+  public ResolveResult resolve(Plan parentPlan, Phase phase, DependencyLevel parentLevel) {
+    if (isResolved()) {
+      Assert.that(false);
+      return ResolveResult.ok;
+    }
 
     Plan myPlan = memory.getPlan(this);
-    myPlan.pushDependencyLevel(parentPlan);
-
+    DependencyLevel myLevel = myPlan.pushDependencyLevel(parentLevel);
+    
     if (isCircularDependency()) {
-      myPlan.popDependencyLevel();
+      Assert.that(false, "@incomplete");
+      myPlan.popDependencyLevel(myLevel);
       
       return ResolveResult.failed;
     }
@@ -91,24 +94,27 @@ public class Agent {
     ResolveResult result;
     
     // try finding a safe cell.
-    result = tryWithResolvingPaths(parentPlan);
+    result = tryWithResolvingPaths(parentPlan, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
       
     // try pushing the parent back.
-    result = tryWithPushingParentBack(parentPlan, phase);
+    result = tryWithPushingParentBack(parentPlan, phase, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
     
     // try stalling the requester.
-    result = tryWithOutposts(parentPlan, phase);
+    result = tryWithOutposts(parentPlan, phase, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
     
-    myPlan.undoDependencyLevel();
-    myPlan.popDependencyLevel();
+    myPlan.popDependencyLevel(myLevel);
+    
+    // only undo the child plans which found resolving route.
+    // the child plans failing do not have a resolving route to undo below.
+    parentLevel.removeDependency(myLevel);
     
     return ResolveResult.failed;
-  }
+  } 
   
-  private ResolveResult tryWithPushingParentBack(Plan parentPlan, Phase phase) {
+  private ResolveResult tryWithPushingParentBack(Plan parentPlan, Phase phase, DependencyLevel myLevel) {
     if (parentPlan.equals(memory.request)) return ResolveResult.failed; // it is not possible to push the requester back.
     
     if (phase == Phase.pushingParentBack) return ResolveResult.failed;  // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
@@ -160,7 +166,7 @@ public class Agent {
         int k = 42;
       }
       
-      ResolveResult result = parentPlan.agent.resolve(myPlan, Phase.pushingParentBack);
+      ResolveResult result = parentPlan.agent.resolve(myPlan, Phase.pushingParentBack, myLevel);
       if (result == ResolveResult.ok) return ResolveResult.ok;
       
       memory.addFailedPlan(myPlan);
@@ -254,7 +260,7 @@ public class Agent {
     public int timestep;
   }
 
-  private ResolveResult tryWithResolvingPaths(Plan parentPlan) {
+  private ResolveResult tryWithResolvingPaths(Plan parentPlan, DependencyLevel myLevel) {
     Plan myPlan = memory.getPlan(this);
     
     FloodGrid endpointGrid = getDistanceGrid();
@@ -278,17 +284,9 @@ public class Agent {
       
       boolean ok = true;
       for (Agent agent : conflictingAgents) {
-        Plan childPlan = memory.getPlan(agent);
-        myPlan.addDependency(childPlan);
-        
-        ResolveResult result = agent.resolve(myPlan, Phase.resolving);
+        ResolveResult result = agent.resolve(myPlan, Phase.resolving, myLevel);
         if (result == ResolveResult.failed) {
-          // only undo the child plans which found resolving route.
-          // the child plans failing do not have a resolving route to undo below.
-          myPlan.removeDependency(childPlan); 
-          
           ok = false;
-          
           break;
         }
       }
@@ -299,7 +297,7 @@ public class Agent {
       } else {  // undo and try another resolving path
         memory.addFailedPlan(myPlan);
         
-        myPlan.undoDependencyLevel();
+        myLevel.undo();
         myPlan.undo();
       }
     }
@@ -378,7 +376,7 @@ public class Agent {
     return havenGrid;
   }
 
-  private ResolveResult tryWithOutposts(Plan parentPlan, Phase phase) {
+  private ResolveResult tryWithOutposts(Plan parentPlan, Phase phase, DependencyLevel myLevel) {
     if (phase == Phase.pushingParentBack) return ResolveResult.failed;
     
     // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
@@ -396,8 +394,13 @@ public class Agent {
     Plan myPlan = memory.getPlan(this);
     
     List<Point> originalRequestPlanPath = new ArrayList<>();
+    
+    // requester can only use the cells on the path for the re-search.
     originalRequestPlanPath.add(requestPlan.agent.getPosition());
     originalRequestPlanPath.addAll(requestPlan.path);
+    
+    // requester can use any cell for the re-search.
+    //originalRequestPlanPath.addAll(memory.board.openTiles);
     
     List<Point> oldRequestPlanPath = requestPlan.undo();
     FloodGrid outpostGrid = getOutpostDistanceGrid();
@@ -424,15 +427,8 @@ public class Agent {
 
       boolean ok = true;
       for (Agent agent : conflictingAgents) {
-        Plan childPlan = memory.getPlan(agent);
-        myPlan.addDependency(childPlan);
-        
-        ResolveResult result = agent.resolve(myPlan, Phase.resolving);
+        ResolveResult result = agent.resolve(myPlan, Phase.resolving, myLevel);
         if (result == ResolveResult.failed) {
-          // only undo the child plans which found resolving route.
-          // the child plans failing do not have a resolving route to undo below.
-          myPlan.removeDependency(childPlan); 
-          
           ok = false;
           break;
         }
@@ -448,7 +444,7 @@ public class Agent {
 
           memory.addFailedPlan(myPlan);
 
-          myPlan.undoDependencyLevel();
+          myLevel.undo();
           myPlan.undo();
           
         } else {
@@ -457,23 +453,16 @@ public class Agent {
           //requestPlan.agent.printCircularDependency();
 
           requestPlan.addToPlan(path);
-          requestPlan.pushDependencyLevel(myPlan); // requester never check for circular-dependency which is desired. @followup is this desired? 
+          DependencyLevel requesterLevel = requestPlan.pushDependencyLevel(myLevel); // requester never check for circular-dependency which is desired. @followup is this desired? 
           
           conflictingAgents = requestAgent.getConflictingAgents();
           Assert.that(conflictingAgents.contains(this));
           
           ok = true;
           for (Agent agent : conflictingAgents) {
-            Plan childPlan = memory.getPlan(agent);
-            requestPlan.addDependency(childPlan);
-            
             Phase agentPhase = equals(agent) ? Phase.outposting : Phase.resolving;
-            ResolveResult result = agent.resolve(requestPlan, agentPhase);
+            ResolveResult result = agent.resolve(requestPlan, agentPhase, requesterLevel);
             if (result == ResolveResult.failed) {
-              // only undo the child plans which found resolving route.
-              // the child plans failing do not have a resolving route to undo below.
-              requestPlan.removeDependency(childPlan); 
-              
               ok = false;
               break;
             }
@@ -483,23 +472,19 @@ public class Agent {
             return ResolveResult.ok;
             
           } else { // try another outpost.
-            myPlan.undo();
-
             memory.addFailedPlan(requestPlan);
-            
-            requestPlan.undo();
-            requestPlan.undoDependencyLevel();
-            requestPlan.popDependencyLevel();
+
+            myLevel.undo();
+            myPlan.undo();
           }
         }
-        
           
       } else {
         Assert.that(false, "@test, ok tested");
         
         memory.addFailedPlan(myPlan);
         
-        myPlan.undoDependencyLevel();
+        myLevel.undo();
         myPlan.undo();
       }
     }
@@ -527,7 +512,6 @@ public class Agent {
     
     return occurrence > maxOccurences;
   }
-  
 
   private void printCircularDependency() {
     Plan myPlan = memory.getPlan(this);
@@ -703,12 +687,15 @@ public class Agent {
       
       List<Agent> pending = new ArrayList<>();
       pending.addAll(memory.agents);
-      pending.remove(this);
+      pending.remove(this); // this agent is removed!
+      pending.remove(memory.request.agent);
       
       int endTime = myPlan.agent.path.size() + i;
       
       for (Plan plan : plans) {
+        if (plan.equals(memory.request)) continue;  // @cleanup @new @test
         if (equals(plan.agent)) continue;
+
         if (conflicting.contains(plan.agent)) continue;
         if (plan.path.size() == 0) continue;  // @note: this only happens for the parent when doing the reverse?
 
@@ -1043,11 +1030,6 @@ class Plan {
     dependencyLevels.add(level);
   }
 
-  public void removeDependency(Plan plan) {
-    DependencyLevel level = dependencyLevels.get(dependencyLevels.size() - 1);
-    level.dependencies.remove(plan);
-  }
-
   public void addToPlan(List<Point> addition) {
     int checkpoint = path.size();
     
@@ -1060,36 +1042,26 @@ class Plan {
     return path.get(path.size() - 1);
   }
   
-  public void pushDependencyLevel(Plan parent) {
-    DependencyLevel parentDependencyLevel = parent.getCurrentDependencyLevel();
-    
+  public DependencyLevel pushDependencyLevel(DependencyLevel parent) {
     DependencyLevel level = new DependencyLevel();
     level.myPlan = this;
-    level.parent = parentDependencyLevel;
+    level.parent = parent;
     level.dependencies = new ArrayList<>();
+    
+    parent.dependencies.add(level);
 
     dependencyLevels.add(level);
+    
+    return level;
   }
   
   public DependencyLevel getCurrentDependencyLevel() {
     return dependencyLevels.get(dependencyLevels.size() - 1);
   }
   
-  public void undoDependencyLevel() {
-    DependencyLevel level = getCurrentDependencyLevel();
-    
-    for (Plan plan : level.dependencies) {
-      plan.undo();
-    }
-  }
-  
-  public void popDependencyLevel() {
-    dependencyLevels.remove(dependencyLevels.size() - 1);
-  }
-  
-  public void addDependency(Plan plan) {
-    DependencyLevel level = getCurrentDependencyLevel();
-    level.dependencies.add(plan);
+  public void popDependencyLevel(DependencyLevel level) {
+    DependencyLevel copy = dependencyLevels.remove(dependencyLevels.size() - 1);
+    Assert.that(level.equals(copy));
   }
   
   public List<Point> undo() {
@@ -1113,7 +1085,27 @@ class DependencyLevel {
   
   public DependencyLevel parent;
   
-  public List<Plan> dependencies;
+  public List<DependencyLevel> dependencies;
+  
+  public void addDependency(DependencyLevel level) {
+    dependencies.add(level);
+  }
+  
+  public void removeDependency(DependencyLevel level) {
+    Assert.that(dependencies.contains(level));
+    dependencies.remove(level);
+  }
+
+  public void undo() {
+    
+    for (DependencyLevel dependency : dependencies) {
+      dependency.undo();
+      dependency.myPlan.undo();
+      
+      dependency.myPlan.popDependencyLevel(dependency);
+      //dependency.myPlan.dependencyLevels.remove(dependency);
+    }
+  }
 }
 
 class SharedAgentMemory {
