@@ -211,17 +211,6 @@ public class GreedyRouter implements Router {
             BoundingBox boundingBox = droplet.getBoundingBox();
             stalledExtra.module = moduleAllocator.allocate(OperationType.heating, boundingBox.width, boundingBox.height, new AttributeTag(AttributeTags.temperature, temperature));
             
-            /*
-            Droplet droplet = stalled.manipulating[0];
-            
-            Point target = stalledExtra.module.position;
-            List<Point> path = pathFinder.search(droplet, target, stalledExtra.module, runningDroplets, array, moveFinder, moduleAllocator.getInUseOrAlwaysLockedModules(), timestamp - 1, 30);
-            droplet.route.path.addAll(path);
-            
-            for (Point point : path) {
-              System.out.printf(">>%s\n", point.toString());
-            }
-            */
           } else if (stalled.name.equals(OperationType.detection))  {
             String sensor = (String) stalled.attributes.get(AttributeTags.sensor);
             
@@ -229,17 +218,6 @@ public class GreedyRouter implements Router {
             BoundingBox boundingBox = droplet.getBoundingBox();
             stalledExtra.module = moduleAllocator.allocate(OperationType.detection, boundingBox.width, boundingBox.height, new AttributeTag(AttributeTags.sensor, sensor));
             
-            /*
-            Droplet droplet = stalled.manipulating[0];
-            
-            Point target = stalledExtra.module.position;
-            List<Point> path = pathFinder.search(droplet, target, stalledExtra.module, runningDroplets, array, moveFinder, moduleAllocator.getInUseOrAlwaysLockedModules(), timestamp - 1, 30);
-            droplet.route.path.addAll(path);
-            
-            for (Point point : path) {
-              System.out.printf(">>%s\n", point.toString());
-            }
-            */
           }
           
         }
