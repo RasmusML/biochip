@@ -1,11 +1,20 @@
 package aop;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import dmb.algorithms.Point;
+
 public class Board {
 
   public int[][] grid;
   
+  public List<Point> openTiles;
+  
   public Board(String layout) {
     grid = buildLayout(layout);
+    
+    openTiles = getOpenTiles();
   }
   
   private int[][] buildLayout(String layout) {
@@ -37,6 +46,18 @@ public class Board {
   
   public int getHeight() {
     return grid[0].length;
+  }
+  
+  private List<Point> getOpenTiles() {
+    List<Point> tiles = new ArrayList<>();
+    
+    for (int x = 0; x < getWidth(); x++) {
+      for (int y = 0; y < getHeight(); y++) {
+        if (isTileOpen(x, y)) tiles.add(new Point(x, y));
+      }
+    }
+    
+    return tiles;
   }
 
   public boolean isTileOpen(int tx, int ty) {
