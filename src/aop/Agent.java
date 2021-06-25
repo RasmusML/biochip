@@ -187,17 +187,32 @@ public class Agent {
       Assert.that(pushableAgents.contains(parentPlan.agent));
       pushableAgents.remove(parentPlan.agent);
       
-      if (pushableAgents.size() > 0) {
-        int k = 42; // @incomplete
+      boolean ok = true;
+      for (Agent agent : pushableAgents) {
+        ResolveResult result = agent.resolve(myPlan, Phase.resolving, myLevel);
+        if (result == ResolveResult.failed) {
+          ok = false;
+          break;
+        }
       }
       
-      ResolveResult result = parentPlan.agent.resolve(myPlan, Phase.pushingParentBack, myLevel);
-      if (result == ResolveResult.ok) return ResolveResult.ok;
-      
-      memory.addFailedPlan(myPlan);
-      
-      myPlan.undo();
-      
+      if (ok) {
+        ResolveResult result = parentPlan.agent.resolve(myPlan, Phase.resolving, myLevel);  // if "pushingParentBack" is used, then we can't do a push with 3 agents: ABC, only with 2 agents: AB
+        if (result == ResolveResult.ok) {
+          return ResolveResult.ok;
+        } else {
+          memory.addFailedPlan(myPlan);
+          
+          myLevel.undo();
+          myPlan.undo();
+        }
+        
+      } else {
+        memory.addFailedPlan(myPlan);
+        
+        myLevel.undo();
+        myPlan.undo();
+      }
     }
     
     return ResolveResult.failed;
@@ -670,8 +685,6 @@ public class Agent {
   private FloodGrid getOutpostDistanceGrid() {
     return getDistanceGrid();
   }
-
-  // @TODO: handle circular dependencies.
 
   private boolean isOutpost(int x, int y, int[][] overlay) {
     List<Point> moves = new ArrayList<>();
@@ -1192,7 +1205,7 @@ enum ResolveResult {
 
 enum Phase {
   outposting,
-  pushingParentBack,
+  pushingParentBack,  // @remove
   resolving;
 }
 

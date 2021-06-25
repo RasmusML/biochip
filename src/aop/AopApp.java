@@ -67,13 +67,12 @@ public class AopApp extends ApplicationAdapter {
     
     instances = new ArrayList<>();
     
+    openTest1();
     undoTest6();
-    /*
     undoTest3();
 
     reverseTest2();
     normalTest2();
-    //openTest1();
     okTest();
     reverseTest();
     undoTest2();
@@ -83,9 +82,10 @@ public class AopApp extends ApplicationAdapter {
     failingTest1();
     failingTest2();
     normalTest3();
-    normalTest1();  // special: requester re-pathing
     failingTest3();
-     */
+
+    //openTest2();
+    normalTest1();  // special: requester re-pathing
     
     Assert.that(instances.size() > 0);
     currentIndex = 0;
@@ -130,7 +130,9 @@ public class AopApp extends ApplicationAdapter {
     
     Plan plan = memory.getPlan(agent1);
     plan.addToPlan(path);
-    agent1.request(plan);
+
+    ResolveResult result = agent1.request(plan);
+    Assert.that(result == ResolveResult.ok);
     
     createAOPInstance(board, agents);
   }
@@ -181,7 +183,8 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent1);
     plan.addToPlan(path);
     
-    agent1.request(plan);
+    ResolveResult result = agent1.request(plan);
+    Assert.that(result == ResolveResult.ok);
     
     createAOPInstance(board, agents);
   }
@@ -222,7 +225,8 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(plan);
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.ok);
     
     createAOPInstance(board, agents);
   }
@@ -259,8 +263,9 @@ public class AopApp extends ApplicationAdapter {
     
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
-    
-    agent0.request(plan);
+
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.ok);
     
     createAOPInstance(board, agents);
   }
@@ -301,7 +306,8 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(plan);
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.ok);
     
     createAOPInstance(board, agents);
   }
@@ -342,7 +348,8 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(plan);
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.ok);
     
     createAOPInstance(board, agents);
   }
@@ -431,11 +438,11 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(plan);
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.ok);
     
     createAOPInstance(board, agents);
   }
-  
   
   private void undoTest4() {
     String layout = 
@@ -476,7 +483,8 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(plan);
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.ok);
     
     createAOPInstance(board, agents);
   }
@@ -520,7 +528,8 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(plan);
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.ok);
     
     createAOPInstance(board, agents);
   }
@@ -569,7 +578,9 @@ public class AopApp extends ApplicationAdapter {
     
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
-    agent0.request(plan);
+    
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.ok);
     
     createAOPInstance(board, agents);
   }
@@ -610,7 +621,8 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(plan);
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.failed);
     
     createAOPInstance(board, agents);
   }
@@ -654,7 +666,8 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(plan);
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.failed);
     
     createAOPInstance(board, agents);
   }
@@ -701,7 +714,8 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(plan);
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.failed);
     
     createAOPInstance(board, agents);
   }
@@ -739,12 +753,53 @@ public class AopApp extends ApplicationAdapter {
     Plan plan = memory.getPlan(agent0);
     plan.addToPlan(path);
     
-    agent0.request(plan);
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.failed);
     
     createAOPInstance(board, agents);
   }
   
   private void openTest1() {
+    String layout = "111\n" + 
+                    "111\n" +
+                    "101\n" +
+                    "111\n" +
+                    "111";
+    
+    Board board = new Board(layout);
+    
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
+
+    Agent agent0 = new Agent(memory, 0, new Point(0, 1), new Point(0, 2));
+    Agent agent1 = new Agent(memory, 1, new Point(0, 4));
+    
+    agents.add(agent0);
+    agents.add(agent1);
+    
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    
+    memory.start();
+
+    List<Point> path = new ArrayList<>();
+    path.add(new Point(0, 3));
+    path.add(new Point(0, 2));
+    path.add(new Point(0, 1));
+    path.add(new Point(1, 1));
+    path.add(new Point(1, 0));
+    
+    Plan plan = memory.getPlan(agent1);
+    plan.addToPlan(path);
+    
+    ResolveResult result = agent1.request(plan);
+    Assert.that(result == ResolveResult.ok);
+    
+    createAOPInstance(board, agents);
+  }
+  
+  // figure out what to do here. The problem is the requester has selected a path which goes through another agents committed move. We should probably make it illegal to do so, but not handle it in this algorith. Maybe just detect it?
+  private void openTest2() {
     String layout = "111\n" + 
                     "111\n" +
                     "101\n" +
@@ -776,7 +831,9 @@ public class AopApp extends ApplicationAdapter {
     
     Plan plan = memory.getPlan(agent1);
     plan.addToPlan(path);
-    agent1.request(plan);
+    
+    ResolveResult result = agent1.request(plan);
+    Assert.that(result == ResolveResult.failed);
     
     createAOPInstance(board, agents);
   }
