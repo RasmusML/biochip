@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dmb.algorithms.Point;
+import dmb.helpers.Assert;
 import framework.ApplicationAdapter;
 import framework.graphics.Alignment;
 import framework.graphics.Camera;
@@ -13,6 +14,7 @@ import framework.graphics.FitViewport;
 import framework.graphics.Renderer;
 import framework.input.Button;
 import framework.input.Keys;
+import framework.math.MathUtils;
 import framework.math.Vector2;
 
 public class AopApp extends ApplicationAdapter {
@@ -31,8 +33,10 @@ public class AopApp extends ApplicationAdapter {
   float tilesize = 32f;
   float gap = 1f;
 
-  Board board;
-  int timestamp;
+  List<AOPInstance> instances;
+  
+  int currentIndex;
+  AOPInstance current;
   
   float dt;
 
@@ -43,9 +47,6 @@ public class AopApp extends ApplicationAdapter {
   float stopTime;
   float movementTime;
 
-  List<Agent> agents;
-  SharedAgentMemory memory;
-  
   @Override
   public void init() {
     canvas = new Canvas();
@@ -64,9 +65,10 @@ public class AopApp extends ApplicationAdapter {
     renderer = new Renderer(viewport);
     renderer.setCanvas(canvas);
     
-    //normalTest1();  // special: requester re-pathing
+    instances = new ArrayList<>();
     
     /*
+     */
     okTest();
     reverseTest();
     normalTest2();
@@ -79,13 +81,18 @@ public class AopApp extends ApplicationAdapter {
     failingTest1();
     failingTest2();
     failingTest3();
-    */
     normalTest3();
-    /*
-    */
+    normalTest1();  // special: requester re-pathing
     
+    Assert.that(instances.size() > 0);
+    currentIndex = instances.size() - 1;
+
+    current = instances.get(currentIndex);
+    
+    Board board = current.board;
     float cx = board.getWidth() * tilesize / 2f;
     float cy = board.getHeight() * tilesize / 2f;
+    
     boardCamera.lookAtNow(cx, cy);
   }
 
@@ -96,11 +103,10 @@ public class AopApp extends ApplicationAdapter {
                     "100\n" +
                     "100";
     
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
 
     Agent agent0 = new Agent(memory, 0, new Point(0, 4));
     Agent agent1 = new Agent(memory, 1, new Point(0, 0));
@@ -121,10 +127,21 @@ public class AopApp extends ApplicationAdapter {
     
     Plan plan = memory.getPlan(agent1);
     plan.addToPlan(path);
-    
     agent1.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
+  private int getExecutionTime(List<Agent> agents) {
+    int maxExecutionTime = 0;
+    for (Agent agent : agents) {
+      int executionTime = agent.getPath().size();
+      if (executionTime > maxExecutionTime) maxExecutionTime = executionTime;
+    }
+    
+    return maxExecutionTime;
+  }
+
   private void normalTest2() {
     String layout = 
         "100\n" + 
@@ -133,11 +150,10 @@ public class AopApp extends ApplicationAdapter {
         "100\n" +
         "100";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-    
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(0, 4));
     Agent agent1 = new Agent(memory, 1, new Point(0, 0));
@@ -163,6 +179,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent1.request(plan);
+    
+    createAOPInstance(board, agents);
   }
 
   private void normalTest3() {
@@ -173,11 +191,10 @@ public class AopApp extends ApplicationAdapter {
         "110\n" +
         "100";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-    
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(1, 3));
     Agent agent1 = new Agent(memory, 1, new Point(0, 1));
@@ -203,6 +220,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   private void reverseTest() {
@@ -213,11 +232,10 @@ public class AopApp extends ApplicationAdapter {
         "100\n" +
         "100";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(0, 4));
     Agent agent1 = new Agent(memory, 1, new Point(0, 0));
@@ -240,6 +258,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   private void reverseTest2() {
@@ -249,12 +269,11 @@ public class AopApp extends ApplicationAdapter {
         "100\n" +
         "100\n" +
         "100";
-
-    board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    Board board = new Board(layout);
+    
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(0, 4));
     Agent agent1 = new Agent(memory, 1, new Point(0, 0));
@@ -280,6 +299,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   private void undoTest1() {
@@ -290,11 +311,10 @@ public class AopApp extends ApplicationAdapter {
         "1100\n" +
         "0100";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(1, 4));
     Agent agent1 = new Agent(memory, 1, new Point(1, 0));
@@ -320,6 +340,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   private void undoTest2() {
@@ -329,11 +351,10 @@ public class AopApp extends ApplicationAdapter {
         "101\n" +
         "111";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(0, 2));
     Agent agent1 = new Agent(memory, 1, new Point(1, 2));
@@ -362,6 +383,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   private void undoTest3() {
@@ -372,11 +395,10 @@ public class AopApp extends ApplicationAdapter {
         "101\n" +
         "111";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(0, 4));
     Agent agent1 = new Agent(memory, 1, new Point(0, 2));
@@ -407,6 +429,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   
@@ -418,11 +442,10 @@ public class AopApp extends ApplicationAdapter {
         "1100\n" +
         "0100";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(1, 4));
     Agent agent1 = new Agent(memory, 1, new Point(1, 0));
@@ -451,6 +474,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   private void undoTest5() {
@@ -461,11 +486,10 @@ public class AopApp extends ApplicationAdapter {
         "1100\n" +
         "0100";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(1, 4));
     Agent agent1 = new Agent(memory, 1, new Point(1, 0));
@@ -494,6 +518,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   private void failingTest1() {
@@ -504,11 +530,10 @@ public class AopApp extends ApplicationAdapter {
         "0100\n" +
         "0100";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(1, 4));
     Agent agent1 = new Agent(memory, 1, new Point(1, 0));
@@ -534,6 +559,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   private void failingTest2() {
@@ -544,11 +571,10 @@ public class AopApp extends ApplicationAdapter {
         "1100\n" +
         "0100";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(1, 4));
     Agent agent1 = new Agent(memory, 1, new Point(1, 0));
@@ -577,6 +603,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   private void failingTest3() {
@@ -587,11 +615,10 @@ public class AopApp extends ApplicationAdapter {
         "1100\n" +
         "0100";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(1, 4));
     Agent agent1 = new Agent(memory, 1, new Point(1, 0));
@@ -623,6 +650,8 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
   }
   
   // only possible to solve, if requester can use other cells than that of the route to resolve the deadlock
@@ -634,11 +663,10 @@ public class AopApp extends ApplicationAdapter {
         "0100\n" +
         "0100";
 
-    board = new Board(layout);
+    Board board = new Board(layout);
     
-    agents = new ArrayList<>();
-
-    memory = new SharedAgentMemory(board);
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
     
     Agent agent0 = new Agent(memory, 0, new Point(1, 3));
     Agent agent1 = new Agent(memory, 1, new Point(1, 0));
@@ -660,14 +688,30 @@ public class AopApp extends ApplicationAdapter {
     plan.addToPlan(path);
     
     agent0.request(plan);
+    
+    createAOPInstance(board, agents);
+  }
+  
+  private void createAOPInstance(Board board, List<Agent> agents) {
+    AOPInstance instance = new AOPInstance();
+    instance.timestamp = 0;
+    instance.executionTime = getExecutionTime(agents);
+    instance.agents = agents;
+    instance.board = board;
+    
+    instances.add(instance);
   }
 
   @Override
   public void update() {
+    handleInput();
+
+    String title = String.format("@%d", app.getFps());
+    app.setTitle(title);
+    
     if (running) step = true;
     
-    /*
-    if (timestamp < result.executionTime) {
+    if (current.timestamp < current.executionTime) {
       if (step) {
         float maxTime = moving ? movementTime : stopTime;
   
@@ -678,7 +722,7 @@ public class AopApp extends ApplicationAdapter {
           dt = 0;
   
           if (moving) {
-            timestamp += 1;
+            current.timestamp += 1;
             step = false;
           }
           
@@ -686,11 +730,9 @@ public class AopApp extends ApplicationAdapter {
         }
       }
     }
-    */
-    
-    String title = String.format("@%d", app.getFps());
-    app.setTitle(title);
+  }
 
+  private void handleInput() {
     if (input.isKeyPressed(Keys.X)) {
       boardCamera.zoomNow(boardCamera.targetZoom * 1.02f);
     }
@@ -700,9 +742,6 @@ public class AopApp extends ApplicationAdapter {
     }
     
     if (input.isKeyJustPressed(Keys.SPACE)) {
-      //reshaper.step();
-      
-      /*
       if (running) {
         if (!moving) {  // if the droplets are not in the moving state, then just stop immediately. Otherwise, let them finish the move. Yielding a smooth animation
           step = false;
@@ -714,14 +753,48 @@ public class AopApp extends ApplicationAdapter {
       }
       
       running = !running;
-      */
+    }
+    
+    if (input.isKeyJustPressed(Keys.W)) {
+      running = false;
+      moving = false;
+      step = false;
+      dt = 0;
       
+      currentIndex += 1;
+      if (currentIndex >= instances.size()) currentIndex = instances.size() - 1;
+
+      current = instances.get(currentIndex);
+      
+      Board board = current.board;
+      float cx = board.getWidth() * tilesize / 2f;
+      float cy = board.getHeight() * tilesize / 2f;
+      
+      boardCamera.lookAtNow(cx, cy);
+    }
+    
+    if (input.isKeyJustPressed(Keys.Q)) {
+      running = false;
+      moving = false;
+      step = false;
+      dt = 0;
+      
+      currentIndex -= 1;
+      if (currentIndex < 0) currentIndex = 0;
+
+      current = instances.get(currentIndex);
+      
+      Board board = current.board;
+      float cx = board.getWidth() * tilesize / 2f;
+      float cy = board.getHeight() * tilesize / 2f;
+      
+      boardCamera.lookAtNow(cx, cy);
     }
     
     if (input.isKeyJustPressed(Keys.R)) {
       running = false;
       step = false;
-      timestamp = 0;
+      current.timestamp = 0;
       dt = 0;
     }
 
@@ -756,7 +829,7 @@ public class AopApp extends ApplicationAdapter {
     if (input.isKeyJustPressed(Keys.RIGHT)) {
       running = false;
       step = false;
-      timestamp += 1;
+      current.timestamp += 1;
     }
     
     if (input.isKeyJustPressed(Keys.LEFT)) {
@@ -764,15 +837,15 @@ public class AopApp extends ApplicationAdapter {
       step = false;
       dt = 0;
 
-      timestamp -= 1;
-      if (timestamp < 0) timestamp = 0;
+      current.timestamp -= 1;
+      if (current.timestamp < 0) current.timestamp = 0;
     }
-
-    boardCamera.update();
   }
 
   @Override
   public void draw() {
+    boardCamera.update();
+    
     renderer.begin();
     renderer.clear();
 
@@ -784,6 +857,8 @@ public class AopApp extends ApplicationAdapter {
   private void drawBoard() {
     viewport.setCamera(boardCamera);
     
+    Board board = current.board;
+    
     { // frame
       renderer.setColor(Color.GRAY);
 
@@ -793,6 +868,18 @@ public class AopApp extends ApplicationAdapter {
       float height = board.getHeight() * tilesize + gap * 2f;
 
       renderer.fillRect(xx, yy, width, height);
+
+      // id
+      float offsetX = -5;
+      float offsetY = 5;
+      
+      float xxx = xx + offsetX;
+      float yyy = yy + offsetY + height;
+      
+      String text = String.format("%d", currentIndex);
+
+      renderer.setColor(Color.black);
+      renderer.drawText(text, xxx, yyy, Alignment.BottomLeft);
     }
 
     { // grid tiles
@@ -819,25 +906,40 @@ public class AopApp extends ApplicationAdapter {
     
     { // agents
       
-      for (Agent agent : agents) {
+      for (Agent agent : current.agents) {
         drawAgent(agent);
       }
     }
   }
 
   private void drawAgent(Agent agent) {
-    Point at = agent.getPosition(timestamp);
     Color color = Color.green;
+    Point at = agent.getPosition(current.timestamp);
     
     if (at == null) {
      at = agent.getPosition();
      color = Color.gray;
     }
+
+    float dx = 0;
+    float dy = 0;
     
+    if (moving) {
+      Point to = agent.getPosition(current.timestamp + 1);
+      if (to == null) {
+        to = agent.getPosition();
+       }
+      
+      dx = to.x - at.x;
+      dy = to.y - at.y;
+    }
+
     float offset = (tilesize - tilesize) / 2f;
     
-    float x = at.x * tilesize + gap + offset;
-    float y = at.y * tilesize + gap + offset;
+    float percentage = dt / (float) movementTime;
+    
+    float x = (at.x + dx * percentage) * tilesize + gap + offset;
+    float y = (at.y + dy * percentage) * tilesize + gap + offset;
     
     float width = tilesize - gap * 2f;
     float height = tilesize - gap * 2f;
@@ -861,4 +963,15 @@ public class AopApp extends ApplicationAdapter {
   public void resize(int width, int height) {
     viewport.update(canvas.getWidth(), canvas.getHeight());
   }
+}
+
+class AOPInstance {
+  
+  public int timestamp;
+  public int executionTime;
+
+  public Board board;
+  public SharedAgentMemory memory;
+  public List<Agent> agents;
+
 }

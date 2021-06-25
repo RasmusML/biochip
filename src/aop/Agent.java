@@ -66,6 +66,7 @@ public class Agent {
     memory.request = null;
     memory.failedPlans.clear();
     memory.plans.clear();
+    memory.agents.clear();
     
     return ok ? ResolveResult.ok : ResolveResult.failed;
   }
@@ -348,7 +349,7 @@ public class Agent {
     
     List<Plan> plans = memory.plans;
     for (Plan plan : plans) {
-      // if (plan.equals(myPlan)) continue;
+      if (plan.equals(myPlan)) continue;
       if (plan.agent.equals(memory.request.agent)) continue;
       if (plan.path.size() == 0) continue;
       
@@ -417,8 +418,7 @@ public class Agent {
       
       List<Point> outpostPath = getOutpostPath(outpostsLeft, outpostGrid);
  
-      // no outposts left? retry the outposts but stall 1 more time-step.
-      if (outpostPath == null) break;
+      if (outpostPath == null) break; // try another outposts (if any left).
       
       myPlan.addToPlan(outpostPath);
 
@@ -439,7 +439,7 @@ public class Agent {
         List<Point> path = findPath(requestAgent, requesterTarget, originalRequestPlanPath);
         
         if (path == null) {
-          Assert.that(false, "@test");
+          //Assert.that(false, "@test, ok tested");
 
           memory.addFailedPlan(myPlan);
 
