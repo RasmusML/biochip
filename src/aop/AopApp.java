@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dmb.algorithms.Point;
+import dmb.gui.ColorPalette;
 import dmb.helpers.Assert;
 import framework.ApplicationAdapter;
 import framework.graphics.Alignment;
@@ -134,7 +135,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent1.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private int getExecutionTime(List<Agent> agents) {
@@ -186,7 +187,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent1.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
 
   private void normalTest3() {
@@ -228,7 +229,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void reverseTest() {
@@ -267,7 +268,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void reverseTest2() {
@@ -309,7 +310,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void undoTest1() {
@@ -351,7 +352,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void undoTest2() {
@@ -394,7 +395,7 @@ public class AopApp extends ApplicationAdapter {
     
     agent0.request(plan);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void undoTest3() {
@@ -441,7 +442,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void undoTest4() {
@@ -486,7 +487,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void undoTest5() {
@@ -531,7 +532,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void undoTest6() {
@@ -582,7 +583,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void failingTest1() {
@@ -624,7 +625,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.failed);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void failingTest2() {
@@ -669,7 +670,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.failed);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void failingTest3() {
@@ -717,7 +718,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.failed);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   // only possible to solve, if requester can use other cells than that of the route to resolve the deadlock
@@ -756,7 +757,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent0.request(plan);
     Assert.that(result == ResolveResult.failed);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   private void openTest1() {
@@ -795,7 +796,7 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent1.request(plan);
     Assert.that(result == ResolveResult.ok);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
   // figure out what to do here. The problem is the requester has selected a path which goes through another agents committed move. We should probably make it illegal to do so, but not handle it in this algorith. Maybe just detect it?
@@ -835,15 +836,16 @@ public class AopApp extends ApplicationAdapter {
     ResolveResult result = agent1.request(plan);
     Assert.that(result == ResolveResult.failed);
     
-    createAOPInstance(board, agents);
+    createAOPInstance(board, agents, path);
   }
   
-  private void createAOPInstance(Board board, List<Agent> agents) {
+  private void createAOPInstance(Board board, List<Agent> agents, List<Point> path) {
     AOPInstance instance = new AOPInstance();
     instance.timestamp = 0;
     instance.executionTime = getExecutionTime(agents);
     instance.agents = agents;
     instance.board = board;
+    instance.originalRequesterPath = new ArrayList<>(path);
     
     instances.add(instance);
   }
@@ -1056,6 +1058,20 @@ public class AopApp extends ApplicationAdapter {
         drawAgent(agent);
       }
     }
+    
+    { // draw path
+      for (Point path : current.originalRequesterPath) {
+        float radius = tilesize / 4f;
+
+        float xx = path.x * tilesize + gap + (tilesize - gap * 2f) / 2f - radius;
+        float yy = path.y * tilesize + gap + (tilesize - gap * 2f) / 2f - radius;
+        
+        Color color = ColorPalette.seeThroughRed;
+        renderer.setColor(color);
+        renderer.fillCircle(xx, yy, radius);
+        
+      }
+    }
   }
 
   private void drawAgent(Agent agent) {
@@ -1114,6 +1130,8 @@ public class AopApp extends ApplicationAdapter {
 class AOPInstance {
   public int timestamp;
   public int executionTime;
+  
+  public List<Point> originalRequesterPath;
 
   public Board board;
   public SharedAgentMemory memory;
