@@ -2,18 +2,22 @@ package dmb.gui;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.Box;
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
 
 import dmb.algorithms.DropletSizeAwareGreedyRouter;
 import dmb.algorithms.GreedyRouter;
@@ -74,6 +78,21 @@ public class SelectionScene extends Scene {
   private void createGUI(List<Test> tests, List<String> bundleNames, MixingPercentages percentages) {
     root = new JPanel();
     
+    JPanel content = new JPanel();
+    
+    Color contentColor = Color.white;
+    
+    content.setBackground(contentColor);
+    content.setBorder(createContentBorder());
+    content.setLayout(new GridBagLayout());
+
+    GridBagConstraints constraints = new GridBagConstraints();
+    constraints.insets = new Insets(5, 5, 5, 5);
+    constraints.fill = GridBagConstraints.BOTH;
+    
+    constraints.gridx = 0;
+    constraints.gridy = 0;
+    
     BoxLayout layout = new BoxLayout(root, BoxLayout.Y_AXIS);
     
     root.setLayout(layout);
@@ -98,9 +117,6 @@ public class SelectionScene extends Scene {
     defaultButtonColor = new Color(color.getRGB());
         
     solveButton.setPreferredSize(buttonSize);
-    solveButton.setMinimumSize(buttonSize);
-    solveButton.setSize(buttonSize);
-    solveButton.setMaximumSize(buttonSize);
     solveButton.addActionListener(new ActionListener() {
       
       @Override
@@ -135,9 +151,6 @@ public class SelectionScene extends Scene {
     
     visualizeButton.setEnabled(false);
     visualizeButton.setPreferredSize(buttonSize);
-    visualizeButton.setMinimumSize(buttonSize);
-    visualizeButton.setSize(buttonSize);
-    visualizeButton.setMaximumSize(buttonSize);
     visualizeButton.addActionListener(new ActionListener() {
       
       @Override
@@ -147,9 +160,6 @@ public class SelectionScene extends Scene {
     });
     
     routerSelector.setPreferredSize(buttonSize);
-    routerSelector.setMinimumSize(buttonSize);
-    routerSelector.setSize(buttonSize);
-    routerSelector.setMaximumSize(buttonSize);
     routerSelector.addActionListener(new ActionListener() {
       
       @Override
@@ -168,9 +178,6 @@ public class SelectionScene extends Scene {
     });
     
     testSelector.setPreferredSize(buttonSize);
-    testSelector.setMinimumSize(buttonSize);
-    testSelector.setSize(buttonSize);
-    testSelector.setMaximumSize(buttonSize);
     testSelector.addActionListener(new ActionListener() {
       
       @Override
@@ -192,30 +199,32 @@ public class SelectionScene extends Scene {
     
     JSeparator sep = new JSeparator();
     sep.setPreferredSize(seperatorSize);
-    sep.setMinimumSize(seperatorSize);
-    sep.setSize(seperatorSize);
-    sep.setMaximumSize(seperatorSize);    
     
-    solveButton.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-    visualizeButton.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-    routerSelector.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-    testSelector.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-    sep.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+    content.add(routerSelector, constraints);
     
-    int paddingY = 10;
-    
-    root.add(Box.createRigidArea(new Dimension(0, paddingY)));
-    root.add(routerSelector);
-    root.add(Box.createRigidArea(new Dimension(0, paddingY)));
-    root.add(testSelector);
-    root.add(Box.createRigidArea(new Dimension(0, paddingY)));
-    root.add(solveButton);
+    constraints.gridx = 0;
+    constraints.gridy += 1;
+    content.add(testSelector, constraints);
 
-    root.add(Box.createRigidArea(new Dimension(0, paddingY)));
-    root.add(sep);
+    constraints.gridx = 0;
+    constraints.gridy += 1;
+    content.add(solveButton, constraints);
+
+    constraints.gridx = 0;
+    constraints.gridy += 1;
+    content.add(sep, constraints);
+
+    constraints.gridx = 0;
+    constraints.gridy += 1;
+    content.add(visualizeButton, constraints);
+
     
-    root.add(Box.createRigidArea(new Dimension(0, paddingY)));
-    root.add(visualizeButton);
+    root.setLayout(new GridBagLayout());
+    constraints = new GridBagConstraints();
+    constraints.fill = GridBagConstraints.NONE;
+    constraints.anchor = GridBagConstraints.CENTER;
+    root.add(content, constraints);
+    
   }
 
   @Override
@@ -243,5 +252,12 @@ public class SelectionScene extends Scene {
     else if (routerName.equals(dropletSizeAwareGreedyRouterName)) return new DropletSizeAwareGreedyRouter();
     throw new IllegalStateException("unknown router!");
   }
+  
+  private Border createContentBorder() {
+    Border contentBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+    Border emptyBorder = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+    return BorderFactory.createCompoundBorder(contentBorder, emptyBorder);
+  }
+
 
 }
