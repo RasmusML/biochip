@@ -57,22 +57,6 @@ public class SelectionScene extends Scene {
     
     createGUI(tests, bundleNames, percentages);
 
-    /*
-    BioAssay assay;
-    BioArray array;
-
-    assay = new Test6BioAssay();
-    array = new Test6BioArray();
-    
-    Router router = new DropletSizeAwareGreedyRouter();
-    //router = new GreedyRouter();
-    
-    shared.array = array;
-    shared.assay = assay;
-    shared.mixingPercentages = percentages;
-    shared.router = router;
-    shared.result = shared.router.compute(shared.assay, shared.array, shared.mixingPercentages);
-    */
   }
 
   private void createGUI(List<Test> tests, List<String> bundleNames, MixingPercentages percentages) {
@@ -231,8 +215,6 @@ public class SelectionScene extends Scene {
   public void enter() {
     app.setRoot(root);
     app.attachInputListenersToComponent(root);
-    
-    //manager.changeScene("replay");  // @fix
   }
   
   private List<String> extractTestNames(List<Test> tests) {
@@ -258,6 +240,4 @@ public class SelectionScene extends Scene {
     Border emptyBorder = BorderFactory.createEmptyBorder(10, 10, 10, 10);
     return BorderFactory.createCompoundBorder(contentBorder, emptyBorder);
   }
-
-
 }
