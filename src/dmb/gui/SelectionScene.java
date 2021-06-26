@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -11,33 +13,17 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 
 import dmb.algorithms.DropletSizeAwareGreedyRouter;
+import dmb.algorithms.GreedyRouter;
 import dmb.algorithms.Router;
-import dmb.components.input.BioArray;
-import dmb.components.input.BioAssay;
+import dmb.algorithms.RoutingResult;
 import dmb.components.mixingpercentages.DefaultMixingPercentages;
 import dmb.components.mixingpercentages.MixingPercentages;
-import dmb.testbench.tests.BlockingDispenserTestBioArray;
-import dmb.testbench.tests.BlockingDispenserTestBioAssay;
-import dmb.testbench.tests.CrowdedModuleBioArray;
-import dmb.testbench.tests.CrowdedModuleBioAssay;
-import dmb.testbench.tests.ModuleBioArray2;
-import dmb.testbench.tests.ModuleBioAssay2;
-import dmb.testbench.tests.PCRMixingTreeArray;
-import dmb.testbench.tests.PCRMixingTreeAssay;
-import dmb.testbench.tests.PlatformArray4;
-import dmb.testbench.tests.PlatformAssay4;
-import dmb.testbench.tests.Test3BioArray;
-import dmb.testbench.tests.Test3BioAssay;
-import dmb.testbench.tests.Test6BioArray;
-import dmb.testbench.tests.Test6BioAssay;
-import dmb.testbench.tests.functionality.DetectorArray1;
-import dmb.testbench.tests.functionality.DetectorAssay1;
-import dmb.testbench.tests.functionality.DisposeArray1;
-import dmb.testbench.tests.functionality.DisposeAssay1;
-import dmb.testbench.tests.functionality.MergeArray3;
-import dmb.testbench.tests.functionality.MergeAssay3;
+import dmb.testbench.Test;
+import dmb.testbench.bundles.BenchmarkTestBundle;
+import dmb.testbench.bundles.TestBundle;
 import framework.scenes.Scene;
 
 public class SelectionScene extends Scene {
@@ -45,118 +31,34 @@ public class SelectionScene extends Scene {
   private JPanel root;
   private Shared shared;
   
+  private String selectedRouter;
+  private String selectedTest;
+  
+  private Color defaultButtonColor;
+  
+  private final String greedyRouterName = "Greedy Router";
+  private final String dropletSizeAwareGreedyRouterName = "Droplet Size-aware Greedy Router";
+  
   public SelectionScene(Shared shared) {
     this.shared = shared;
   }
   
   @Override
   public void init() {
-    root = new JPanel();
+    TestBundle bundle = new BenchmarkTestBundle();
+    List<Test> tests = bundle.get();
+    List<String> bundleNames = extractTestNames(tests);
     
-    BoxLayout layout = new BoxLayout(root, BoxLayout.Y_AXIS);
-    root.setLayout(layout);
+    MixingPercentages percentages = new DefaultMixingPercentages();
+    
+    createGUI(tests, bundleNames, percentages);
 
-    Dimension buttonSize = new Dimension(225, 40);
-    
-    JButton run = new JButton("Run");
-    JButton replay = new JButton("Replay");
-    
-    String[] items = new String[] {"a", "b", "c", "d", "e", "f"};
-    
-    JComboBox<String> testSelector = new JComboBox<>(items);
-
-    run.setPreferredSize(buttonSize);
-    run.setMinimumSize(buttonSize);
-    run.setSize(buttonSize);
-    run.setMaximumSize(buttonSize);
-    run.addActionListener(new ActionListener() {
-      
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        shared.result = shared.router.compute(shared.assay, shared.array, shared.mixingPercentages);
-        replay.setEnabled(true);
-
-        Color color;
-        if (shared.result.completed) {
-          color = Color.green;
-        } else {
-          color = Color.red;
-        }
-        
-        replay.setBackground(color);
-      }
-    });
-    
-    replay.setEnabled(false);
-    replay.setPreferredSize(buttonSize);
-    replay.setMinimumSize(buttonSize);
-    replay.setSize(buttonSize);
-    replay.setMaximumSize(buttonSize);
-    replay.addActionListener(new ActionListener() {
-      
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        manager.changeScene("replay");
-      }
-    });
-    
-    testSelector.setPreferredSize(buttonSize);
-    testSelector.setMinimumSize(buttonSize);
-    testSelector.setSize(buttonSize);
-    testSelector.setMaximumSize(buttonSize);
-    
-    run.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-    replay.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-    testSelector.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-
-    root.add(Box.createRigidArea(new Dimension(0, 10)));
-    root.add(run);
-    root.add(Box.createRigidArea(new Dimension(0, 10)));
-    root.add(replay);
-    root.add(Box.createRigidArea(new Dimension(0, 10)));
-    root.add(testSelector);
-    
-    
-    
+    /*
     BioAssay assay;
     BioArray array;
 
-    MixingPercentages percentages = new DefaultMixingPercentages();
-
-    assay = new DisposeAssay1();
-    array = new DisposeArray1();
-    
-    assay = new BlockingDispenserTestBioAssay();
-    array = new BlockingDispenserTestBioArray();
-
-    assay = new Test3BioAssay();
-    array = new Test3BioArray();
-    
-    assay = new CrowdedModuleBioAssay();
-    array = new CrowdedModuleBioArray();
-
-    assay = new PCRMixingTreeAssay();
-    array = new PCRMixingTreeArray();
-
-    assay = new ModuleBioAssay2();
-    array = new ModuleBioArray2();
-
-    assay = new PlatformAssay4();
-    array = new PlatformArray4();
-
-    assay = new MergeAssay3();
-    array = new MergeArray3();
-    
-    assay = new DetectorAssay1();
-    array = new DetectorArray1();
-    
     assay = new Test6BioAssay();
     array = new Test6BioArray();
-    
-    /*
-    assay = new Test6BioAssay();
-    array = new ModuleBioArray2();
-    */
     
     Router router = new DropletSizeAwareGreedyRouter();
     //router = new GreedyRouter();
@@ -165,14 +67,181 @@ public class SelectionScene extends Scene {
     shared.assay = assay;
     shared.mixingPercentages = percentages;
     shared.router = router;
+    shared.result = shared.router.compute(shared.assay, shared.array, shared.mixingPercentages);
+    */
   }
-  
+
+  private void createGUI(List<Test> tests, List<String> bundleNames, MixingPercentages percentages) {
+    root = new JPanel();
+    
+    BoxLayout layout = new BoxLayout(root, BoxLayout.Y_AXIS);
+    
+    root.setLayout(layout);
+
+    Dimension buttonSize = new Dimension(225, 40);
+    
+    JButton solveButton = new JButton("Solve");
+    JButton visualizeButton = new JButton("Visualize");
+    
+    String[] routerNames = new String[] {greedyRouterName, dropletSizeAwareGreedyRouterName};
+    JComboBox<String> routerSelector = new JComboBox<>(routerNames);
+    
+    String[] testNames = new String[bundleNames.size()];
+    bundleNames.toArray(testNames);
+    
+    JComboBox<String> testSelector = new JComboBox<>(testNames);
+    
+    selectedTest = (String) testSelector.getSelectedItem();
+    selectedRouter = (String) routerSelector.getSelectedItem();
+
+    Color color = solveButton.getBackground();
+    defaultButtonColor = new Color(color.getRGB());
+        
+    solveButton.setPreferredSize(buttonSize);
+    solveButton.setMinimumSize(buttonSize);
+    solveButton.setSize(buttonSize);
+    solveButton.setMaximumSize(buttonSize);
+    solveButton.addActionListener(new ActionListener() {
+      
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        String routerName = (String) routerSelector.getSelectedItem();
+        Router router = getRouter(routerName);
+
+        int testIndex = testSelector.getSelectedIndex();
+        Test test = tests.get(testIndex);
+        
+        RoutingResult result = router.compute(test.assay, test.array, percentages);
+
+        shared.router = router;
+        shared.array = test.array;
+        shared.assay = test.assay;
+        shared.result = result;
+        
+        Color color;
+        if (result.completed) {
+          color = Color.green;
+        } else {
+          color = Color.red;
+        }
+        
+        solveButton.setEnabled(false);
+
+        visualizeButton.setBackground(color);
+        visualizeButton.setEnabled(true);
+      }
+
+    });
+    
+    visualizeButton.setEnabled(false);
+    visualizeButton.setPreferredSize(buttonSize);
+    visualizeButton.setMinimumSize(buttonSize);
+    visualizeButton.setSize(buttonSize);
+    visualizeButton.setMaximumSize(buttonSize);
+    visualizeButton.addActionListener(new ActionListener() {
+      
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        manager.changeScene("replay");
+      }
+    });
+    
+    routerSelector.setPreferredSize(buttonSize);
+    routerSelector.setMinimumSize(buttonSize);
+    routerSelector.setSize(buttonSize);
+    routerSelector.setMaximumSize(buttonSize);
+    routerSelector.addActionListener(new ActionListener() {
+      
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        String selected = (String) routerSelector.getSelectedItem();
+        
+        if (!selected.equals(selectedRouter)) {
+          selectedRouter = selected;
+          
+          visualizeButton.setEnabled(false);
+          solveButton.setEnabled(true);
+          
+          visualizeButton.setBackground(defaultButtonColor);
+        }
+      }
+    });
+    
+    testSelector.setPreferredSize(buttonSize);
+    testSelector.setMinimumSize(buttonSize);
+    testSelector.setSize(buttonSize);
+    testSelector.setMaximumSize(buttonSize);
+    testSelector.addActionListener(new ActionListener() {
+      
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        String selected = (String) testSelector.getSelectedItem();
+        
+        if (!selected.equals(selectedTest)) {
+          selectedTest = selected;
+          
+          visualizeButton.setEnabled(false);
+          solveButton.setEnabled(true);
+          
+          visualizeButton.setBackground(defaultButtonColor);
+        }
+      }
+    });
+
+    Dimension seperatorSize = new Dimension(225, 1);
+    
+    JSeparator sep = new JSeparator();
+    sep.setPreferredSize(seperatorSize);
+    sep.setMinimumSize(seperatorSize);
+    sep.setSize(seperatorSize);
+    sep.setMaximumSize(seperatorSize);    
+    
+    solveButton.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+    visualizeButton.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+    routerSelector.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+    testSelector.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+    sep.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+    
+    int paddingY = 10;
+    
+    root.add(Box.createRigidArea(new Dimension(0, paddingY)));
+    root.add(routerSelector);
+    root.add(Box.createRigidArea(new Dimension(0, paddingY)));
+    root.add(testSelector);
+    root.add(Box.createRigidArea(new Dimension(0, paddingY)));
+    root.add(solveButton);
+
+    root.add(Box.createRigidArea(new Dimension(0, paddingY)));
+    root.add(sep);
+    
+    root.add(Box.createRigidArea(new Dimension(0, paddingY)));
+    root.add(visualizeButton);
+  }
+
   @Override
   public void enter() {
     app.setRoot(root);
     app.attachInputListenersToComponent(root);
     
-    //shared.result = shared.router.compute(shared.assay, shared.array, shared.mixingPercentages);
     //manager.changeScene("replay");  // @fix
   }
+  
+  private List<String> extractTestNames(List<Test> tests) {
+    List<String> names = new ArrayList<>();
+    
+    for (Test test : tests) {
+      String assayName = test.assay.getClass().getSimpleName();
+      String testName = assayName.replaceAll("(BioAssay)|(Assay)", "");
+      names.add(testName);
+    }
+    
+    return names;
+  }
+  
+  private Router getRouter(String routerName) {
+    if (routerName.equals(greedyRouterName)) return new GreedyRouter();
+    else if (routerName.equals(dropletSizeAwareGreedyRouterName)) return new DropletSizeAwareGreedyRouter();
+    throw new IllegalStateException("unknown router!");
+  }
+
 }

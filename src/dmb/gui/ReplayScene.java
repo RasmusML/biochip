@@ -162,11 +162,16 @@ public class ReplayScene extends Scene {
 
     float zoom = Math.min(zoomX, zoomY);
     if (zoom > maxZoom) zoom = maxZoom;
+    
+    float startZoom = 0.8f;
+    zoom *= startZoom; 
+    
     boardCamera.zoomNow(zoom);
     
     timelineLayout = new CompactTimelineLayout();
     //timelineLayout = new SimpleTimelineLayout();
     
+    timeline.height = 0;
     timelineUnits = timelineLayout.pack(assay.getOperations());
     
     for (TimelineUnit unit : timelineUnits) {
@@ -187,6 +192,8 @@ public class ReplayScene extends Scene {
 	
 	@Override
 	public void update() {
+	  boardCamera.update();
+	  
 		handleInput();
 		
     float tx = (timestamp * timeline.timescale) + timeline.offsetX;
@@ -197,8 +204,6 @@ public class ReplayScene extends Scene {
     String title = String.format("@%d", app.getFps());
     app.setTitle(title);
 		
-		boardCamera.update();
-
 		if (selected.unit != null) {
 		  int end = selected.unit.start + selected.unit.duration;
 		  if (timestamp >= end) {

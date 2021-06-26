@@ -8,6 +8,6 @@ public class RunMeTestSuite {
     TestSuite testSuite = new TestSuite();
     
     testSuite.runAllRoutersWithOperationalTests();
-    testSuite.runAllRoutersWithRealTests();
+    testSuite.runAllRoutersWithBenchmarkTests();
   }
 }
