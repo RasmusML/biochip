@@ -171,7 +171,6 @@ public class Application {
       e.printStackTrace();
     }
   }
- 
 
 	public void setIconImage(Image image) {
 	  window.setIconImage(image);

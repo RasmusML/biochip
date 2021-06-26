@@ -138,6 +138,8 @@ public class KeyboardHandler {
 		registerKey(KeyEvent.VK_X, Keys.X);
 		registerKey(KeyEvent.VK_Y, Keys.Y);
 		registerKey(KeyEvent.VK_Z, Keys.Z);
+		registerKey(KeyEvent.VK_ESCAPE, Keys.ESCAPE);
+    
 		/*
 		registerKey(16777414, Keys.�);
 		registerKey(16777432, Keys.�);

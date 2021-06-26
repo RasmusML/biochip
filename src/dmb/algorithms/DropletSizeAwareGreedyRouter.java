@@ -228,14 +228,16 @@ public class DropletSizeAwareGreedyRouter implements Router {
             
             Droplet droplet = stalled.manipulating[0];
             BoundingBox boundingBox = droplet.getBoundingBox();
-            stalledExtra.module = moduleAllocator.allocate(OperationType.heating, boundingBox.width, boundingBox.height, new AttributeTag(AttributeTags.temperature, temperature));
+            Module module = moduleAllocator.allocate(OperationType.heating, boundingBox.width, boundingBox.height, new AttributeTag(AttributeTags.temperature, temperature));
+            stalledExtra.module = module;
             
           } else if (stalled.name.equals(OperationType.detection))  {
             String sensor = (String) stalled.attributes.get(AttributeTags.sensor);
             
             Droplet droplet = stalled.manipulating[0];
             BoundingBox boundingBox = droplet.getBoundingBox();
-            stalledExtra.module = moduleAllocator.allocate(OperationType.detection, boundingBox.width, boundingBox.height, new AttributeTag(AttributeTags.sensor, sensor));
+            Module module = moduleAllocator.allocate(OperationType.detection, boundingBox.width, boundingBox.height, new AttributeTag(AttributeTags.sensor, sensor));
+            stalledExtra.module = module;
           }
         }
       }

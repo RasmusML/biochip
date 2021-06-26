@@ -39,7 +39,9 @@ public class SceneManager {
 	}
 	
 	public void draw() {
-		if (activeScene != null) activeScene.draw();
+		if (activeScene != null) {
+		  activeScene.draw();
+		}
 	}
 	
 	public void resize(int width, int height) {

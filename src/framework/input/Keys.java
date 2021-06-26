@@ -42,6 +42,8 @@ public class Keys {
 	public static final int LEFT = 32;
 	public static final int RIGHT = 33;
 	
-	public static final int numberOfKeys = 34;
+	public static final int ESCAPE = 34;
+	
+	public static final int numberOfKeys = 35;
 	
 }
