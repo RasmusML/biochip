@@ -163,34 +163,31 @@ public class DropletReshapeApp extends ApplicationAdapter {
     
     if (input.isMouseJustReleased(Button.LEFT)) {
       
-      if (reshape.size() > 0) {
-        throw new IllegalStateException("first select droplet shape then target-shape");
-      }
-
-      
-      int mx = input.getX();
-      int my = input.getY();
-      
-      Vector2 world = viewport.screenToWorld(mx, my);
-      
-      int x = (int) (world.x / tilesize);
-      int y = (int) (world.y / tilesize);
-      
-      boolean match = false;
-      for (DropletUnit unit : droplet.units) {
-        Point at = unit.route.getPosition();
+      if (reshape.size() == 0) {
+        int mx = input.getX();
+        int my = input.getY();
         
-        if (x == at.x && y == at.y) {
-          droplet.units.remove(unit);
-          match = true;
-          break;
+        Vector2 world = viewport.screenToWorld(mx, my);
+        
+        int x = (int) (world.x / tilesize);
+        int y = (int) (world.y / tilesize);
+        
+        boolean match = false;
+        for (DropletUnit unit : droplet.units) {
+          Point at = unit.route.getPosition();
+          
+          if (x == at.x && y == at.y) {
+            droplet.units.remove(unit);
+            match = true;
+            break;
+          }
         }
-      }
-      
-      if (!match) {
-        DropletUnit unit = new DropletUnit();
-        unit.route.path.add(new Point(x, y));
-        droplet.units.add(unit);
+        
+        if (!match) {
+          DropletUnit unit = new DropletUnit();
+          unit.route.path.add(new Point(x, y));
+          droplet.units.add(unit);
+        }
       }
     }
 

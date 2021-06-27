@@ -8,6 +8,8 @@ import dmb.components.input.BioAssay;
 import dmb.testbench.Test;
 import dmb.testbench.tests.BlockingDispenserTestBioArray;
 import dmb.testbench.tests.BlockingDispenserTestBioAssay;
+import dmb.testbench.tests.ColorimetricProteinArray1;
+import dmb.testbench.tests.ColorimetricProteinAssay1;
 import dmb.testbench.tests.CrowdedModuleBioArray;
 import dmb.testbench.tests.CrowdedModuleBioAssay;
 import dmb.testbench.tests.InVitroArray1;
@@ -62,6 +64,8 @@ public class BenchmarkTestBundle implements TestBundle {
   }
   
   private void registerAllTests() {
+    register(new ColorimetricProteinAssay1(), new ColorimetricProteinArray1());
+    
     register(new PCRMixingTreeAssay2(), new PCRMixingTreeArray2());
 
     register(new InVitroAssay1(), new InVitroArray1());
