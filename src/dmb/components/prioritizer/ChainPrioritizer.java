@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dmb.algorithms.Operation;
-import dmb.algorithms.OperationType;
 import dmb.helpers.ArrayUtils;
 
-public class ChainPrioritizer implements Prioritizer {
+public abstract class ChainPrioritizer implements Prioritizer {
   
+  protected abstract int getOperationCost(Operation operation);
+
   @Override
   public int prioritize(Operation o1, Operation o2) {
     int v1 = getLongestChainValue(o1);
@@ -73,39 +74,8 @@ public class ChainPrioritizer implements Prioritizer {
     return longest.value;
   }
   
-  private int getOperationCost(Operation operation) {
-    return getAverageOperationDuration(operation);
-  }
   
-  private int getAverageOperationDuration(Operation operation) {
-    if (operation.name.equals(OperationType.mix)) {
-      return 200;
-    } else if (operation.name.equals(OperationType.split)) {
-      return 4;
-    } else if (operation.name.equals(OperationType.dispense)) {
-      return 3;
-    } else if (operation.name.equals(OperationType.merge)) {
-      return 20;
-    } else if (operation.name.equals(OperationType.dispose)) {
-      return 30;
-    } else if (operation.name.equals(OperationType.heating)) {
-      return 100;
-    } else if (operation.name.equals(OperationType.detection)) {
-      return 20;
-    } else {
-      throw new IllegalStateException("unknown operation type.");
-    }
-  }
-  
-  private int getCount(Operation operation) {
-    return 1;
-  }
-  
-  private int getUniform(Operation operation) {
-    return 0;
-  }
-  
-  static private class ChainValue {
+  private class ChainValue {
     public Operation operation;
     public int value;
   }

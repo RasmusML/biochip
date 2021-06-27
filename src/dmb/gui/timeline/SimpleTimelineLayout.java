@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dmb.algorithms.Operation;
-import dmb.algorithms.OperationType;
-import framework.input.Droplet;
 
 public class SimpleTimelineLayout implements TimelineLayout {
 
@@ -16,49 +14,8 @@ public class SimpleTimelineLayout implements TimelineLayout {
     for (int i = 0; i < operations.size(); i++) {
       Operation operation = operations.get(i);
       
-      if (!completedOperation(operation)) continue;
-      
-      int start, end;
-      if (operation.name.equals(OperationType.mix)) {
-        Droplet droplet = operation.manipulating[0];
-        start = droplet.getStartTimestamp();
-        end = droplet.getEndTimestamp();
-        
-      } else if (operation.name.equals(OperationType.merge)) {
-        Droplet droplet0 = operation.manipulating[0];
-        Droplet droplet1 = operation.manipulating[1];
-        start = Math.max(droplet0.getStartTimestamp(), droplet1.getStartTimestamp());
-        end = Math.min(droplet0.getEndTimestamp(), droplet1.getEndTimestamp());
-
-      } else if (operation.name.equals(OperationType.split)) {
-        Droplet droplet = operation.manipulating[0];
-        start = droplet.getStartTimestamp();
-        end = droplet.getEndTimestamp();
-
-      } else if (operation.name.equals(OperationType.dispense)) {
-        Droplet droplet = operation.manipulating[0];
-        start = droplet.getStartTimestamp();
-        end = droplet.getEndTimestamp();
-
-      } else if (operation.name.equals(OperationType.heating)) {
-        Droplet droplet = operation.manipulating[0];
-        start = droplet.getStartTimestamp();
-        end = droplet.getEndTimestamp();
-
-      } else if (operation.name.equals(OperationType.dispose)) {
-        Droplet droplet = operation.manipulating[0];
-        start = droplet.getStartTimestamp();
-        end = droplet.getEndTimestamp();
-        
-      } else if (operation.name.equals(OperationType.detection)) {
-        Droplet droplet = operation.manipulating[0];
-        start = droplet.getStartTimestamp();
-        end = droplet.getEndTimestamp();
-
-      } else {
-        throw new IllegalStateException("broken! " + operation.name);
-      }
-      
+      int start = operation.getStartTime();
+      int end = operation.getEndTime();
       int duration = end - start;
 
       TimelineUnit unit = new TimelineUnit();
@@ -71,12 +28,5 @@ public class SimpleTimelineLayout implements TimelineLayout {
     }
     
     return units;
-  }
-  
-  private boolean completedOperation(Operation operation) {
-    for (Droplet droplet : operation.manipulating) {
-      if (droplet == null) return false;
-    }
-    return true;
   }
 }

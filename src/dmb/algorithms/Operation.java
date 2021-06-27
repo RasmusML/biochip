@@ -17,4 +17,38 @@ public class Operation {
   
   public Droplet[] manipulating;
   public Droplet[] forwarding;
+  
+  public boolean completed() {
+    for (Droplet droplet : manipulating) {
+      if (droplet == null) return false;
+    }
+    return true;
+  }
+  
+  public int getStartTime() {
+    int start = Integer.MIN_VALUE;
+    
+    for (Droplet droplet : manipulating) {
+      int dropletStart = droplet.getStartTimestamp();
+      if (dropletStart > start) start = dropletStart;
+    }
+    
+    return start;
+  }
+  
+  public int getEndTime() {
+    int end = Integer.MAX_VALUE;
+    
+    for (Droplet droplet : manipulating) {
+      int dropletEnd = droplet.getEndTimestamp();
+      if (dropletEnd < end) end = dropletEnd;
+    }
+    
+    return end;
+  }
+  
+  public int getDuration() {
+    return getEndTime() - getStartTime();
+  }
+
 }

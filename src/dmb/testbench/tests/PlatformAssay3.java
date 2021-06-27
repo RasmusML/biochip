@@ -1,7 +1,7 @@
 package dmb.testbench.tests;
 
 import dmb.components.input.BioAssay;
-import dmb.components.input.BioAssayBuilder;
+import dmb.testbench.builder.BioAssayBuilder;
 
 public class PlatformAssay3 extends BioAssay {
   

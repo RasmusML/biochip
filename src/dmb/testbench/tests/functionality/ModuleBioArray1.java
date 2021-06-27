@@ -1,4 +1,4 @@
-package dmb.testbench.tests;
+package dmb.testbench.tests.functionality;
 
 import dmb.components.input.BioArray;
 import dmb.testbench.catalogs.SmallModuleCatalog;

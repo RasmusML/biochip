@@ -7,7 +7,10 @@ public class TestResult {
   public int id;
   public int seed;
   public boolean completed;
+
+  public float compileTime;
   public int executionTime;
-  public float runningTime;
+ 
   public Router router;
+  public Test test;
 }

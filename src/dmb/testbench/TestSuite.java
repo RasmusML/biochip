@@ -1,10 +1,13 @@
 package dmb.testbench;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import dmb.algorithms.DropletSizeAwareGreedyRouter;
 import dmb.algorithms.GreedyRouter;
+import dmb.algorithms.Operation;
 import dmb.algorithms.Router;
 import dmb.algorithms.RoutingResult;
 import dmb.components.input.BioArray;
@@ -22,7 +25,7 @@ public class TestSuite {
   
   private boolean writeToFile = true;
 
-  private int runs = 100;
+  private int runs = 1000;
   private int recapSeedPrintInterval = runs / 10;
 
   private int seed;
@@ -59,9 +62,8 @@ public class TestSuite {
     greedyRouter = new GreedyRouter();
     dropletSizeAwareGreedyRouter = new DropletSizeAwareGreedyRouter();
     
-    register(greedyRouter);
-    register(dropletSizeAwareGreedyRouter);
-
+    routers.add(greedyRouter);
+    //routers.add(dropletSizeAwareGreedyRouter);
   }
 
   public void runAllRoutersWithBenchmarkTests() {
@@ -86,6 +88,8 @@ public class TestSuite {
       allTestResults.addAll(routeTestResults);
       routeTestResults.clear();
     }
+    
+    printAverageOperationExecutionTimes();
     
     if (writeToFile) writer.writeAll(allTestResults);
     tests.clear();
@@ -151,11 +155,49 @@ public class TestSuite {
       testResult.id = i;
       testResult.completed = result.completed;
       testResult.executionTime = result.executionTime;
-      testResult.runningTime = msElapsed / 1000f;
+      testResult.compileTime = msElapsed / 1000f;
       testResult.seed = seed;
       testResult.router = router;
+      testResult.test = test;
       
       routeTestResults.add(testResult);
+    }
+  }
+  
+
+  public void printAverageOperationExecutionTimes() {
+    class Average {
+      public int total;
+      public int count;
+    }
+    
+    Map<String, Average> operationToAverageExecutionTime = new HashMap<>();
+    
+    for (TestResult result : allTestResults) {
+      if (!result.completed) continue;
+      List<Operation> operations = result.test.assay.getOperations();
+      
+      for (Operation operation : operations) {
+        Average average = operationToAverageExecutionTime.get(operation.name);
+        if (average == null) {
+          average = new Average();
+          operationToAverageExecutionTime.put(operation.name, average);
+        }
+        
+        average.total += operation.getDuration();
+        average.count += 1;
+      }
+    }
+    
+    for (Map.Entry<String, Average> entry : operationToAverageExecutionTime.entrySet()) {
+      String name = entry.getKey();
+      Average average = entry.getValue();
+      
+      if (average.count == 0) continue;
+      
+      int avg = Math.round(average.total / average.count);
+      System.out.printf("%s - avg: %d\n", name, avg);
+      
     }
   }
   
@@ -180,7 +222,7 @@ public class TestSuite {
       if (result.completed) {
         stat.completedCount += 1;
         stat.executionTime += result.executionTime;
-        stat.runningTime += result.runningTime;
+        stat.runningTime += result.compileTime;
       } else {
         stat.failedCount += 1;
       }
@@ -210,10 +252,6 @@ public class TestSuite {
     System.out.printf(" avg. steps: %d, ", cumulated.executionTime / cumulated.completedCount);
     System.out.printf("took on avg %.3f secs to compute.", cumulated.runningTime / cumulated.completedCount);
     System.out.printf("\n");
-  }
-
-  private void register(Router router) {
-    routers.add(router);
   }
   
   static private class Statistics {

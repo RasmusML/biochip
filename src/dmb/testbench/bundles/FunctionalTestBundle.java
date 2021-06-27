@@ -6,6 +6,8 @@ import java.util.List;
 import dmb.components.input.BioArray;
 import dmb.components.input.BioAssay;
 import dmb.testbench.Test;
+import dmb.testbench.tests.functionality.BlockingDispenserTestBioArray;
+import dmb.testbench.tests.functionality.BlockingDispenserTestBioAssay;
 import dmb.testbench.tests.functionality.DetectorArray1;
 import dmb.testbench.tests.functionality.DetectorAssay1;
 import dmb.testbench.tests.functionality.DispenseArray1;
@@ -22,6 +24,12 @@ import dmb.testbench.tests.functionality.MixArray1;
 import dmb.testbench.tests.functionality.MixArray2;
 import dmb.testbench.tests.functionality.MixAssay1;
 import dmb.testbench.tests.functionality.MixAssay2;
+import dmb.testbench.tests.functionality.ModuleBioArray1;
+import dmb.testbench.tests.functionality.ModuleBioAssay1;
+import dmb.testbench.tests.functionality.PlatformArray1;
+import dmb.testbench.tests.functionality.PlatformAssay1;
+import dmb.testbench.tests.functionality.Test1BioArray;
+import dmb.testbench.tests.functionality.Test1BioAssay;
 
 public class FunctionalTestBundle implements TestBundle {
   
@@ -46,6 +54,10 @@ public class FunctionalTestBundle implements TestBundle {
     register(new MergeAssay3(), new MergeArray3());
     register(new MixAssay1(), new MixArray1());
     register(new MixAssay2(), new MixArray2());
+    register(new BlockingDispenserTestBioAssay(), new BlockingDispenserTestBioArray());
+    register(new ModuleBioAssay1(), new ModuleBioArray1());
+    register(new Test1BioAssay(), new Test1BioArray());
+    register(new PlatformAssay1(), new PlatformArray1());
   }
   
   private void register(BioAssay assay, BioArray array) {

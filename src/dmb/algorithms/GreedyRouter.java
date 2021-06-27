@@ -17,7 +17,6 @@ import dmb.components.input.AttributeTags;
 import dmb.components.input.BioArray;
 import dmb.components.input.BioAssay;
 import dmb.components.mixingpercentages.MixingPercentages;
-import dmb.components.module.FirstModuleAllocationStrategy;
 import dmb.components.module.MinModuleAllocationStrategy;
 import dmb.components.module.Module;
 import dmb.components.module.ModuleAllocationStrategy;
@@ -25,8 +24,10 @@ import dmb.components.module.ModuleAllocator;
 import dmb.components.moves.Move;
 import dmb.components.moves.MoveFinder;
 import dmb.components.moves.SingleCellMoveFinder;
-import dmb.components.prioritizer.ChainPrioritizer;
+import dmb.components.prioritizer.CountChainPrioritizer;
 import dmb.components.prioritizer.Prioritizer;
+import dmb.components.prioritizer.RandomPrioritizer;
+import dmb.components.prioritizer.WeightedChainPrioritizer;
 import dmb.helpers.Assert;
 import dmb.helpers.GeometryUtil;
 import dmb.helpers.Logger;
@@ -62,7 +63,7 @@ public class GreedyRouter implements Router {
   
   private int timestamp;
   
-  private float[] probabilitiesA, probabilitiesB, probabilitiesC;
+  private float[] moveWeights;
   
   /*
    * The algorithm is based on the following papers:
@@ -88,14 +89,12 @@ public class GreedyRouter implements Router {
     s2rAssigner.assign(assay, array, moduleAllocator);
     reservoirManager = new ReservoirManager(moduleAllocator, checker);
     
-    probabilitiesA = new float[] {85f, 10f, 5f};
-    probabilitiesB = new float[] {50f, 33f, 17f};
-    probabilitiesC = new float[] {34f, 33f, 33f};
-    
-    prioritizer = new ChainPrioritizer();
+    prioritizer = new WeightedChainPrioritizer();
     
     maxIterationsPerOperation = 500;  // if no operation terminates before iteration is this value, then we assume that no solution can be found.
     iteration = 0;
+    
+    moveWeights = new float[] { 50f, 33.3f, 16.6f };
 
     operationIdToExtra = new HashMap<>();
 
@@ -624,12 +623,10 @@ public class GreedyRouter implements Router {
       return distance1 - distance2;
     });
 
-    float[] allWeights = { 50f, 33.3f, 16.6f };
-
     int candidateSize = (int) MathUtils.clamp(1, 3, validMoves.size());
 
     float[] weights = new float[candidateSize];
-    System.arraycopy(allWeights, 0, weights, 0, candidateSize);
+    System.arraycopy(moveWeights, 0, weights, 0, candidateSize);
 
     int bestMoveIndex = indexSelector.select(weights);
 
@@ -677,12 +674,10 @@ public class GreedyRouter implements Router {
       return -(distance1 - distance2);
     });
 
-    float[] allWeights = { 50f, 33.3f, 16.6f };
-
     int candidateSize = (int) MathUtils.clamp(1, 3, validMoves.size());
 
     float[] weights = new float[candidateSize];
-    System.arraycopy(allWeights, 0, weights, 0, candidateSize);
+    System.arraycopy(moveWeights, 0, weights, 0, candidateSize);
 
     int bestMoveIndex = indexSelector.select(weights);
 
@@ -806,12 +801,10 @@ public class GreedyRouter implements Router {
       return distance1 - distance2;
     });
 
-    float[] allWeights = { 50f, 33.3f, 16.6f };
-
     int candidateSize = (int) MathUtils.clamp(1, 3, validMoves.size());
 
     float[] weights = new float[candidateSize];
-    System.arraycopy(allWeights, 0, weights, 0, candidateSize);
+    System.arraycopy(moveWeights, 0, weights, 0, candidateSize);
 
     int bestMoveIndex = indexSelector.select(weights);
 
@@ -889,12 +882,10 @@ public class GreedyRouter implements Router {
       selectedMoves.addAll(validMoves);
     }
     
-    float[] allWeights = { 50f, 33.3f, 16.6f };
-
     int candidateSize = (int) MathUtils.clamp(1, 3, selectedMoves.size());
 
     float[] weights = new float[candidateSize];
-    System.arraycopy(allWeights, 0, weights, 0, candidateSize);
+    System.arraycopy(moveWeights, 0, weights, 0, candidateSize);
 
     int bestMoveIndex = indexSelector.select(weights);
 

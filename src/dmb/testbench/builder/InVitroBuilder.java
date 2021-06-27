@@ -1,10 +1,9 @@
-package dmb.testbench;
+package dmb.testbench.builder;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import dmb.algorithms.Operation;
-import dmb.components.input.BioAssayBuilder;
 
 public class InVitroBuilder {
   

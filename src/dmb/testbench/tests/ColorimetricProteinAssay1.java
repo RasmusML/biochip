@@ -1,7 +1,7 @@
 package dmb.testbench.tests;
 
 import dmb.components.input.BioAssay;
-import dmb.testbench.ColorimetricProteinBuilder;
+import dmb.testbench.builder.ColorimetricProteinBuilder;
 
 public class ColorimetricProteinAssay1 extends BioAssay {
   

@@ -12,7 +12,7 @@ public class TestResultFileWriter {
   public void writeTestResultsFromSingleTestAndRouter(List<TestResult> testSeeds) {
     StringBuilder content = new StringBuilder();
     for (TestResult test : testSeeds) {
-      String line = String.format("%d %b %d %.3f", test.seed, test.completed, test.executionTime, test.runningTime);
+      String line = String.format("%d %b %d %.3f", test.seed, test.completed, test.executionTime, test.compileTime);
 
       content.append(line);
       content.append("\n");

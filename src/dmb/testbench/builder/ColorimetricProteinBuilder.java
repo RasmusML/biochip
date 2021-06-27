@@ -1,7 +1,6 @@
-package dmb.testbench;
+package dmb.testbench.builder;
 
 import dmb.algorithms.Operation;
-import dmb.components.input.BioAssayBuilder;
 import dmb.helpers.Assert;
 import framework.math.MathUtils;
 
@@ -23,7 +22,7 @@ public class ColorimetricProteinBuilder {
     builder = new BioAssayBuilder();
 
     int substance = builder.createDispenseOperation("substance");
-    int root = createDilutionExpandBlock(substance);
+    int root = createDilutionExpansionBlock(substance);
     
     dilute(expansionLevels, dilutionLevelLeft, root);
     dilute(expansionLevels, dilutionLevelLeft, root);
@@ -47,13 +46,13 @@ public class ColorimetricProteinBuilder {
       }
       
     } else {
-      int expansion = createDilutionExpandBlock(id);
+      int expansion = createDilutionExpansionBlock(id);
       dilute(expansionLevelLeft - 1, dilutionLevelLeft, expansion);
       dilute(expansionLevelLeft - 1, dilutionLevelLeft, expansion);
     }
   }
 
-  private int createDilutionExpandBlock(int substance) {
+  private int createDilutionExpansionBlock(int substance) {
     int diluter = builder.createDispenseOperation("diluter");
     
     int merge = builder.createMergeOperation();
@@ -70,7 +69,7 @@ public class ColorimetricProteinBuilder {
   }
   
   private int createDilutionBlock(int substance) {
-    int diluter = createDilutionExpandBlock(substance);
+    int diluter = createDilutionExpansionBlock(substance);
     int disposer = builder.createDisposeOperation();
     builder.connect(diluter, disposer);
     
