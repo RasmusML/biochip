@@ -23,7 +23,7 @@ public class TestResultFileWriter {
     String testName = result.name;
     String routerName = result.router.getClass().getSimpleName();
 
-    String filename = String.format("%s-%s", routerName, testName);
+    String filename = String.format("%s_%s", routerName, testName);
     
     String file = String.format("./test/%s.txt", filename);
     

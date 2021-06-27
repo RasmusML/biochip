@@ -43,7 +43,7 @@ def read_file(filename):
     return content.replace(",", ".") # some systems use ',' for floating point in Java. However, Python expects '.', e.g. 3.1415
     
 def get_full_test_name(router, test_name):
-    return "{}-{}.txt".format(router, test_name)
+    return "{}_{}.txt".format(router, test_name)
     
 def read_test_file(router, test):
     name = get_full_test_name(router, test)
