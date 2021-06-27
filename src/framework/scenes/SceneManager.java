@@ -39,9 +39,7 @@ public class SceneManager {
 	}
 	
 	public void draw() {
-		if (activeScene != null) {
-		  activeScene.draw();
-		}
+		if (activeScene != null) activeScene.draw();
 	}
 	
 	public void resize(int width, int height) {
@@ -53,7 +51,7 @@ public class SceneManager {
 	}
 	
 	public void dispose() {
-		for (Entry<String, Scene> entry : scenes.entrySet())   {
+		for (Entry<String, Scene> entry : scenes.entrySet()) {
 			Scene scene = entry.getValue();
 			scene.dispose();
 		}
