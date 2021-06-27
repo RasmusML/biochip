@@ -42,9 +42,9 @@ public class GreedyRouter implements Router {
   private ConstraintsChecker checker;
   private RandomIndexSelector indexSelector;
   private MoveFinder moveFinder;
-  
+
   private Prioritizer prioritizer;
-  
+
   private ReservoirManager reservoirManager;
   private ModuleAllocator moduleAllocator;
 
@@ -60,11 +60,11 @@ public class GreedyRouter implements Router {
 
   private int maxIterationsPerOperation;
   private int iteration;
-  
+
   private int timestamp;
-  
+
   private float[] moveWeights;
-  
+
   /*
    * The algorithm is based on the following papers:
    * 
@@ -88,12 +88,12 @@ public class GreedyRouter implements Router {
     SubstanceToReservoirAssigner s2rAssigner = new SubstanceToReservoirAssigner();
     s2rAssigner.assign(assay, array, moduleAllocator);
     reservoirManager = new ReservoirManager(moduleAllocator, checker);
-    
+
     prioritizer = new WeightedChainPrioritizer();
-    
-    maxIterationsPerOperation = 500;  // if no operation terminates before iteration is this value, then we assume that no solution can be found.
+
+    maxIterationsPerOperation = 500; // if no operation terminates before iteration is this value, then we assume that no solution can be found.
     iteration = 0;
-    
+
     moveWeights = new float[] { 50f, 33.3f, 16.6f };
 
     operationIdToExtra = new HashMap<>();
@@ -141,9 +141,9 @@ public class GreedyRouter implements Router {
 
           String substance = (String) stalled.attributes.get(AttributeTags.substance);
           Module reserved = reservoirManager.reserve(substance, runningDroplets, timestamp);
-          
+
           if (reserved != null) {
-            
+
             if (successor != null && successor.name.equals(OperationType.merge)) {
               Operation predecessor0 = successor.inputs[0];
               Operation predecessor1 = successor.inputs[1];
@@ -151,7 +151,7 @@ public class GreedyRouter implements Router {
               Operation sibling = (predecessor0.id == stalled.id) ? predecessor1 : predecessor0;
               if (sibling.name.equals(OperationType.dispense)) {
                 String siblingSubstance = (String) sibling.attributes.get(AttributeTags.substance);
-                
+
                 Module siblingReservoir = reservoirManager.reserve(siblingSubstance, runningDroplets, timestamp);
 
                 if (siblingReservoir == null) {
@@ -177,13 +177,13 @@ public class GreedyRouter implements Router {
                   dispenseDroplet(stalled, reserved);
                 }
               }
-              
+
             } else {
               it.remove();
               dispenseDroplet(stalled, reserved);
             }
           }
-          
+
           reservoirManager.consumeReservations();
 
         } else {
@@ -191,7 +191,7 @@ public class GreedyRouter implements Router {
 
           runningOperations.add(stalled);
           stalledExtra.running = true;
-          
+
           for (int i = 0; i < stalled.inputs.length; i++) {
             Operation input = stalled.inputs[i];
             OperationExtra inputExtra = operationIdToExtra.get(input.id);
@@ -203,31 +203,31 @@ public class GreedyRouter implements Router {
 
             stalled.manipulating[i] = forwardedDroplet;
           }
-          
-          if (stalled.name.equals(OperationType.heating))  {
+
+          if (stalled.name.equals(OperationType.heating)) {
             float temperature = (float) stalled.attributes.get(AttributeTags.temperature);
-            
+
             Droplet droplet = stalled.manipulating[0];
             BoundingBox boundingBox = droplet.getBoundingBox();
             stalledExtra.module = moduleAllocator.allocate(OperationType.heating, boundingBox.width, boundingBox.height, new AttributeTag(AttributeTags.temperature, temperature));
-            
-          } else if (stalled.name.equals(OperationType.detection))  {
+
+          } else if (stalled.name.equals(OperationType.detection)) {
             String sensor = (String) stalled.attributes.get(AttributeTags.sensor);
-            
+
             Droplet droplet = stalled.manipulating[0];
             BoundingBox boundingBox = droplet.getBoundingBox();
             stalledExtra.module = moduleAllocator.allocate(OperationType.detection, boundingBox.width, boundingBox.height, new AttributeTag(AttributeTags.sensor, sensor));
-            
+
           }
-          
+
         }
       }
 
       runningOperations.sort((o1, o2) -> prioritizer.prioritize(o1, o2));
-      
+
       for (Operation operation : runningOperations) {
         OperationExtra extra = operationIdToExtra.get(operation.id);
-        
+
         if (operation.name.equals(OperationType.dispense)) {
           // the first move is a bit special, because the move was selected during the spawn above.
           // the first move is already "processed" so skip that.
@@ -237,14 +237,14 @@ public class GreedyRouter implements Router {
           if (to != null) continue;
 
           extra.currentDurationInTimesteps += 1;
-          
+
           Module dispenser = extra.module;
           if (extra.currentDurationInTimesteps >= dispenser.duration) {
             retire(droplet);
             Droplet forwarded = createForwardedDroplet(Move.None, droplet, droplet.area);
-            
+
             moduleAllocator.free(dispenser);
-            
+
             operation.forwarding[0] = forwarded;
             extra.done = true;
           } else {
@@ -256,15 +256,15 @@ public class GreedyRouter implements Router {
           Droplet droplet1 = operation.manipulating[1];
 
           Move move0 = getMergeMove(droplet0, droplet1, runningDroplets, array);
-          if (move0 == null) continue;  // no move? detour!
-          
+          if (move0 == null) continue; // no move? detour!
+
           move(droplet0, move0);
 
           Move move1 = getMergeMove(droplet1, droplet0, runningDroplets, array);
           if (move1 == null) continue; // no move? detour!
-          
+
           move(droplet1, move1);
-          
+
           if (merged(droplet0, droplet1)) {
             extra.done = true;
 
@@ -289,51 +289,52 @@ public class GreedyRouter implements Router {
             extra.done = true;
 
             retire(droplet);
-            
+
             float area1 = droplet.area / 2f;
             float area2 = droplet.area - area1;
-            
+
             // select the bottom droplet-units to go down
-            Droplet d1 = createForwardedDroplet(Move.Down, droplet, area1);  // @TODO: fix droplet successor is overriden, so the visualization is not quit right.
-            
+            Droplet d1 = createForwardedDroplet(Move.Down, droplet, area1); // @TODO: fix droplet successor is overriden, so the visualization is not quit right.
+
             // select the top droplet-units to go up
             Droplet d2 = createForwardedDroplet(Move.Up, droplet, area2);
-            
+
             operation.forwarding[0] = d1;
             operation.forwarding[1] = d2;
-            
+
           } else if (canSplit(droplet, Orientation.Horizontal, runningDroplets, array)) {
             extra.done = true;
 
             retire(droplet);
-            
+
             float area1 = droplet.area / 2f;
             float area2 = droplet.area - area1;
 
             // select the left droplet-units to go left
             Droplet d1 = createForwardedDroplet(Move.Left, droplet, area1);
-            
+
             // select the right droplet-units to go right
             Droplet d2 = createForwardedDroplet(Move.Right, droplet, area2);
-            
+
             operation.forwarding[0] = d1;
             operation.forwarding[1] = d2;
-            
+
           } else {
             // move somewhere, where it can split.
             Move move = getSplitMove(droplet, runningDroplets, array);
             if (move == null) continue;
-            
+
             move(droplet, move);
           }
-          
+
         } else if (operation.name.equals(OperationType.mix)) {
           Droplet droplet = operation.manipulating[0];
 
           Move move = getMixMove(droplet, percentages, array);
           if (move == null) continue;
-          
-          Move previousMove = droplet.units.get(0).route.getMove(timestamp - 2);  // @Cleanup
+
+          DropletUnit unit = droplet.units.get(0);
+          Move previousMove = unit.route.getMove(timestamp - 2);
           float mixing = percentages.getMixingPercentage(move, previousMove);
 
           extra.mixingPercentage += mixing;
@@ -345,21 +346,21 @@ public class GreedyRouter implements Router {
             operation.forwarding[0] = forward;
 
             retire(droplet);
-            
+
           } else {
             move(droplet, move);
           }
-        } else if(operation.name.equals(OperationType.dispose)) {
+        } else if (operation.name.equals(OperationType.dispose)) {
           Droplet droplet = operation.manipulating[0];
-          
+
           // for now, we only dispose droplets with 1 unit size. If the droplet is larger, then split operations should occur in the assay.
           Assert.that(droplet.units.size() == 1);
-          
+
           DropletUnit unit = droplet.units.get(0);
           Point at = unit.route.getPosition(timestamp - 1);
-          
+
           Point waste = getClosestWasteReservoir(droplet, array);
-          
+
           boolean arrived = (at.x == waste.x && at.y == waste.y);
           if (arrived) {
             extra.done = true;
@@ -367,49 +368,49 @@ public class GreedyRouter implements Router {
           } else {
             Move move = getDisposeMove(droplet, waste, runningDroplets, array);
             if (move == null) continue;
-            
+
             Point to = at.copy().add(move.x, move.y);
             unit.route.path.add(to);
           }
-          
+
         } else {
           // "unknown" module operations
 
-          Assert.that(extra.module != null);  // actually it can be null when modules are more robust (when no module is assignable atm, but later is)
+          Assert.that(extra.module != null); // actually it can be null when modules are more robust (when no module is assignable atm, but later is)
 
           Droplet droplet = operation.manipulating[0];
           Module module = extra.module;
-          
+
           boolean dropletInside = true;
           for (DropletUnit unit : droplet.units) {
             Point at = unit.route.getPosition(timestamp - 1);
-            
+
             if (!GeometryUtil.inside(at.x, at.y, module.position.x, module.position.y, module.width, module.height)) {
               dropletInside = false;
               break;
-            }  
+            }
           }
-          
+
           Move move = getModuleMove(droplet, runningDroplets, module, array);
-          
+
           // @TODO: modules may take control, if they want to.
           if (dropletInside) {
             extra.currentDurationInTimesteps += 1;
-            
+
             if (extra.currentDurationInTimesteps >= module.duration) {
               extra.done = true;
-              
+
               retire(droplet);
-              
+
               Droplet forward = createForwardedDroplet(move, droplet, droplet.area);
               operation.forwarding[0] = forward;
-              
+
               moduleAllocator.free(module);
-              
+
             } else {
               move(droplet, move);
             }
-            
+
           } else {
             // A detour can happen, if the droplet is within another active module.
             if (move == null) continue;
@@ -417,19 +418,19 @@ public class GreedyRouter implements Router {
           }
         }
       }
-       
+
       // select a move to droplets which did not get a move during the operation-phase.
       // This can happen, if a droplet is done with its operation or if a droplet should detour.
       for (Droplet droplet : runningDroplets) {
         Point to = droplet.units.get(0).route.getPosition(timestamp);
         if (to != null) continue;
-        
+
         List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
-        
+
         Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
         if (validMoves.size() > 0) {
           int selectedIndex = indexSelector.selectUniformly(validMoves.size() - 1);
-          
+
           Move move = validMoves.get(selectedIndex);
           to = at.copy().add(move.x, move.y);
           droplet.units.get(0).route.path.add(to);
@@ -440,7 +441,7 @@ public class GreedyRouter implements Router {
           droplet.units.get(0).route.path.add(to);
         }
       }
-      
+
       for (Iterator<Operation> it = runningOperations.iterator(); it.hasNext();) {
         Operation operation = it.next();
         OperationExtra extra = operationIdToExtra.get(operation.id);
@@ -471,17 +472,17 @@ public class GreedyRouter implements Router {
           }
         }
       }
-      
+
       iteration += 1;
       timestamp += 1;
-      
+
       // early terminate.
       if (iteration > maxIterationsPerOperation) {
         earlyTerminated = true;
 
         break;
       }
-      
+
       int activeOperationsCount = runningOperations.size() + readyOperations.size();
       if (activeOperationsCount == 0) break;
     }
@@ -493,7 +494,7 @@ public class GreedyRouter implements Router {
     result.completed = !earlyTerminated;
     result.droplets.addAll(retiredDroplets);
     result.executionTime = timestamp;
-    
+
     List<Module> modulePlacements = moduleAllocator.getModules();
     result.modules.addAll(modulePlacements);
 
@@ -507,62 +508,61 @@ public class GreedyRouter implements Router {
 
     DropletUnit unit0 = droplet0.units.get(0);
     DropletUnit unit1 = droplet1.units.get(0);
-    
+
     Point at = unit0.route.getPosition();
-    
+
     DropletUnit copy = new DropletUnit();
     copy.route.start = timestamp;
     copy.route.path.add(at);
-    
+
     unit0.successor = copy;
     unit1.successor = copy;
-    
+
     droplet.units.add(copy);
-    
+
     runningDroplets.add(droplet);
-    
+
     return droplet;
   }
-
 
   private boolean merged(Droplet droplet0, Droplet droplet1) {
     DropletUnit u0 = droplet0.units.get(0);
     DropletUnit u1 = droplet1.units.get(0);
-    
+
     Point at0 = u0.route.getPosition();
     Point at1 = u1.route.getPosition();
-    
+
     return at0.x == at1.x && at0.y == at1.y;
   }
 
   private void move(Droplet droplet, Move move) {
     DropletUnit unit = droplet.units.get(0);
-    
+
     Point at = unit.route.getPosition(timestamp - 1);
     Point to = at.copy().add(move.x, move.y);
-    
+
     unit.route.path.add(to);
-    
+
   }
 
   private Droplet createForwardedDroplet(Move move, Droplet d, float area) {
     DropletUnit unit = d.units.get(0);
     Point at = unit.route.getPosition();
     Point to = new Point(at).add(move.x, move.y);
-    
+
     DropletUnit copy = new DropletUnit();
     copy.route.start = timestamp;
     copy.route.path.add(to);
-    
+
     Droplet droplet = new Droplet();
     droplet.area = area;
     droplet.units.add(copy);
     droplet.id = dropletIdGenerator.getId();
-    
+
     unit.successor = copy;
-    
+
     runningDroplets.add(droplet);
-    
+
     return droplet;
   }
 
@@ -570,16 +570,16 @@ public class GreedyRouter implements Router {
     runningDroplets.remove(droplet0);
     retiredDroplets.add(droplet0);
   }
-  
+
   private Point getClosestWasteReservoir(Droplet droplet, BioArray array) {
     Assert.that(droplet.units.size() == 1);
-    
+
     DropletUnit unit = droplet.units.get(0);
     Point at = unit.route.getPosition(timestamp - 1);
-    
+
     Point selected = null;
     int minDistance = Integer.MAX_VALUE;
-    
+
     // @cleanup: we do not allocate waste modules, should we do that?
     List<Module> disposers = moduleAllocator.getModulesOfOperationType(OperationType.dispose);
     Assert.that(disposers.size() > 0);
@@ -587,26 +587,26 @@ public class GreedyRouter implements Router {
     for (Module disposer : disposers) {
       Point position = disposer.position;
       int distance = (int) MathUtils.getManhattanDistance(at.x, at.y, position.x, position.y);
-      
+
       if (distance < minDistance) {
         minDistance = distance;
         selected = position;
       }
     }
-    
+
     return selected;
   }
-  
+
   private Move getDisposeMove(Droplet droplet, Point wasteTile, List<Droplet> droplets, BioArray array) {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
-    
+
     Collections.shuffle(validMoves, RandomUtil.get());
     // if we use the manhattan distance, then reverse, turn directions yield the
-                                     // same manhattan distance, meaning all moves are just as good. However, we only
-                                     // select the 3 best moves, so if we don't shuffle, then the last one will
-                                     // always be ignored (due to we always insert the moves in the same order).
-    
+    // same manhattan distance, meaning all moves are just as good. However, we only
+    // select the 3 best moves, so if we don't shuffle, then the last one will
+    // always be ignored (due to we always insert the moves in the same order).
+
     DropletUnit unit = droplet.units.get(0);
     Point at = unit.route.getPosition(timestamp - 1);
 
@@ -633,35 +633,35 @@ public class GreedyRouter implements Router {
     return validMoves.get(bestMoveIndex);
   }
 
-  private Move getDetourMove(Droplet droplet, List<Droplet> droplets, BioArray array) {    
+  private Move getDetourMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
     List<Module> inUseModules = moduleAllocator.getInUseOrAlwaysLockedModules();
     // we could be within multiple modules; a dispenser within a heater or a sensor within a heater.
-    List<Module> inside = new ArrayList<>();  
+    List<Module> inside = new ArrayList<>();
     for (Module other : inUseModules) {
-      
+
       for (DropletUnit unit : droplet.units) {
         Point at = unit.route.getPosition(timestamp - 1);
-      
+
         if (GeometryUtil.inside(at.x, at.y, other.position.x, other.position.y, other.width, other.height)) {
           inside.add(other);
         }
       }
     }
-    
+
     Assert.that(inside.size() > 0);
-    
+
     // @cleanup: a droplet may be within multiple droplets, movefinder does not support selecting multiple modules to ignore. so we just remove the modules the droplet is inside from the modules the movefinder checks against. @TODO: change movefinder so this is not necessary.
     inUseModules.removeAll(inside);
 
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, inUseModules, array);
     Collections.shuffle(validMoves, RandomUtil.get());
-    
+
     Point at = droplet.getCenterPosition();
     Module module = inside.get(0);
-    
+
     float mcx = module.position.x + module.width / 2f;
     float mcy = module.position.y + module.height / 2f;
-    
+
     Point to = new Point();
 
     validMoves.sort((move1, move2) -> {
@@ -682,7 +682,7 @@ public class GreedyRouter implements Router {
     int bestMoveIndex = indexSelector.select(weights);
 
     return validMoves.get(bestMoveIndex);
-    
+
     /*
     Move bestMove = null;
     float maxDistance = -1;
@@ -714,24 +714,24 @@ public class GreedyRouter implements Router {
     DropletUnit unit = new DropletUnit();
     unit.route.start = timestamp;
     unit.route.path.add(position);
-    
+
     Droplet droplet = new Droplet();
     droplet.area = area;
     droplet.units.add(unit);
     droplet.id = dropletIdGenerator.getId();
-    
+
     runningDroplets.add(droplet);
-    
+
     return droplet;
   }
 
   private void dispenseDroplet(Operation operation, Module dispenser) {
     reservoirManager.commit(dispenser);
-    
+
     OperationExtra extra = operationIdToExtra.get(operation.id);
     extra.module = dispenser;
     extra.running = true;
-    
+
     runningOperations.add(operation);
 
     Droplet droplet = createDroplet(dispenser.position, 1f);
@@ -742,7 +742,8 @@ public class GreedyRouter implements Router {
 
   private Move getMixMove(Droplet droplet, MixingPercentages percentages, BioArray array) {
     List<Move> moves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
-    Move prevMove = droplet.units.get(0).route.getMove(timestamp - 2);
+    DropletUnit unit = droplet.units.get(0);
+    Move prevMove = unit.route.getMove(timestamp - 2);
 
     float bestPercentage = Float.NEGATIVE_INFINITY;
     Move bestMove = null;
@@ -769,20 +770,20 @@ public class GreedyRouter implements Router {
     } else {
       throw new IllegalStateException("invalid orientation!");
     }
-    
+
     return false;
   }
 
   private Move getMergeMove(Droplet droplet, Droplet toMerge, List<Droplet> droplets, BioArray array) {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, toMerge, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
-    
+
     Collections.shuffle(validMoves, RandomUtil.get());
     // if we use the manhattan distance, then reverse, turn directions yield the
     // same manhattan distance, meaning all moves are just as good. However, we only
     // select the 3 best moves, so if we don't shuffle, then the last one will
     // always be ignored (due to we always insert the moves in the same order).
-    
+
     Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
 
     Point toMergeAt = toMerge.units.get(0).route.getPosition(timestamp - 1);
@@ -809,14 +810,14 @@ public class GreedyRouter implements Router {
     int bestMoveIndex = indexSelector.select(weights);
 
     return validMoves.get(bestMoveIndex);
-    
+
   }
-  
+
   private Move getModuleMove(Droplet droplet, List<Droplet> droplets, Module module, BioArray array) {
- // move the center of the droplet to the center of the module.
+    // move the center of the droplet to the center of the module.
     List<Move> validMoves = moveFinder.getValidMoves(droplet, module, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
-    
+
     Collections.shuffle(validMoves, RandomUtil.get());
 
     /*
@@ -828,7 +829,7 @@ public class GreedyRouter implements Router {
     
     Move bestMove = null;
     float bestMoveDistance = Float.MAX_VALUE;
-
+    
     for (Move move : validMoves) {
       to.set(at).add(move.x, move.y);
       
@@ -838,37 +839,37 @@ public class GreedyRouter implements Router {
         bestMove = move;
       }
     }
-
+    
     return bestMove;
     */
 
     Point to = new Point();
-    
+
     {
       Point at = droplet.getCenterPosition();
-      
+
       int mcx = module.position.x + module.width / 2;
-      int mcy = module.position.y + module.height/ 2;
-      
+      int mcy = module.position.y + module.height / 2;
+
       validMoves.sort((move1, move2) -> {
         to.set(at).add(move1.x, move1.y);
         int distance1 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
-  
+
         to.set(at).add(move2.x, move2.y);
         int distance2 = (int) MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
-  
+
         return distance1 - distance2;
       });
     }
-    
+
     List<Move> selectedMoves = new ArrayList<>();
     for (Move move : validMoves) {
-      
+
       boolean dropletInside = true;
       for (DropletUnit unit : droplet.units) {
         Point at = unit.route.getPosition(timestamp - 1);
         to.set(at).add(move.x, move.y);
-        
+
         if (!GeometryUtil.inside(to.x, to.y, module.position.x, module.position.y, module.width, module.height)) {
           dropletInside = false;
           break;
@@ -877,11 +878,11 @@ public class GreedyRouter implements Router {
 
       if (dropletInside) selectedMoves.add(move);
     }
-    
+
     if (selectedMoves.size() == 0) {
       selectedMoves.addAll(validMoves);
     }
-    
+
     int candidateSize = (int) MathUtils.clamp(1, 3, selectedMoves.size());
 
     float[] weights = new float[candidateSize];
@@ -891,8 +892,7 @@ public class GreedyRouter implements Router {
 
     return selectedMoves.get(bestMoveIndex);
   }
-  
-  
+
   private Move getSplitMove(Droplet droplet, List<Droplet> droplets, BioArray array) {
     Move bestMove = null;
     int longestDistance = 0;
@@ -927,18 +927,17 @@ public class GreedyRouter implements Router {
     public boolean active;
     public boolean running;
     public boolean done;
-    
+
     public int forwardIndex;
-    
+
     // @TODO
     // public int stepsSinceLastProgress;
     // public float mostProgress;
-    
+
     public float mixingPercentage; // only used for mixing operations.
-//  public float currentTemperature; // only used for heating operations.
-    
+    //  public float currentTemperature; // only used for heating operations.
+
     public int currentDurationInTimesteps;
     public Module module;
   }
 }
-

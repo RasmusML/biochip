@@ -14,27 +14,27 @@ import dmb.helpers.UidGenerator;
 import framework.input.Droplet;
 
 /**
- * An API to connect and create operations for an assay. 
+ * An API to connect and create operations for an assay.
  * 
- * Operations are identified with an unique ID by the API.
- * The IDs are used to connect one operation to another operation.
+ * Operations are identified with an unique ID by the API. The IDs are used to
+ * connect one operation to another operation.
  * 
- * An operation may be connected multiple times if it has multiple predecessor or successor operation, 
- * e.g. split operations and merge operations.
+ * An operation may be connected multiple times if it has multiple predecessor
+ * or successor operation, e.g. split operations and merge operations.
  * 
  * @see BioAssay
  */
 
 public class BioAssayBuilder {
-  
+
   private UidGenerator generator;
   private Map<Integer, Operation> idToOperation;
-  
+
   public BioAssayBuilder() {
     generator = new UidGenerator();
     idToOperation = new HashMap<>();
   }
-  
+
   /**
    * Creates a dispense operation.
    * 
@@ -43,7 +43,7 @@ public class BioAssayBuilder {
    */
   public int createDispenseOperation(String substance) {
     int id = generator.getId();
-    
+
     Operation operation = new Operation();
     operation.id = id;
     operation.name = OperationType.dispense;
@@ -54,12 +54,12 @@ public class BioAssayBuilder {
 
     Map<String, Object> attributes = operation.attributes;
     attributes.put(AttributeTags.substance, substance);
-    
+
     idToOperation.put(id, operation);
-    
+
     return id;
   }
-  
+
   /**
    * Creates a mixing operation.
    * 
@@ -67,7 +67,7 @@ public class BioAssayBuilder {
    */
   public int createMixOperation() {
     int id = generator.getId();
-    
+
     Operation operation = new Operation();
     operation.id = id;
     operation.name = OperationType.mix;
@@ -75,12 +75,12 @@ public class BioAssayBuilder {
     operation.outputs = new Operation[1];
     operation.manipulating = new Droplet[1];
     operation.forwarding = new Droplet[1];
-    
+
     idToOperation.put(id, operation);
-    
+
     return id;
   }
-  
+
   /**
    * Creates a merge operation.
    * 
@@ -88,7 +88,7 @@ public class BioAssayBuilder {
    */
   public int createMergeOperation() {
     int id = generator.getId();
-    
+
     Operation operation = new Operation();
     operation.id = id;
     operation.name = OperationType.merge;
@@ -96,12 +96,12 @@ public class BioAssayBuilder {
     operation.outputs = new Operation[1];
     operation.manipulating = new Droplet[2];
     operation.forwarding = new Droplet[1];
-    
+
     idToOperation.put(id, operation);
-    
+
     return id;
   }
-  
+
   /**
    * Creates a split operation.
    * 
@@ -109,7 +109,7 @@ public class BioAssayBuilder {
    */
   public int createSplitOperation() {
     int id = generator.getId();
-    
+
     Operation operation = new Operation();
     operation.id = id;
     operation.name = OperationType.split;
@@ -117,12 +117,12 @@ public class BioAssayBuilder {
     operation.outputs = new Operation[2];
     operation.manipulating = new Droplet[1];
     operation.forwarding = new Droplet[2];
-    
+
     idToOperation.put(id, operation);
-    
+
     return id;
   }
-  
+
   /**
    * Creates a dispose operation.
    * 
@@ -130,7 +130,7 @@ public class BioAssayBuilder {
    */
   public int createDisposeOperation() {
     int id = generator.getId();
-    
+
     Operation operation = new Operation();
     operation.id = id;
     operation.name = OperationType.dispose;
@@ -138,9 +138,9 @@ public class BioAssayBuilder {
     operation.outputs = new Operation[0];
     operation.manipulating = new Droplet[1];
     operation.forwarding = new Droplet[0];
-    
+
     idToOperation.put(id, operation);
-    
+
     return id;
   }
 
@@ -160,15 +160,15 @@ public class BioAssayBuilder {
     operation.outputs = new Operation[1];
     operation.manipulating = new Droplet[1];
     operation.forwarding = new Droplet[1];
-    
+
     Map<String, Object> attributes = operation.attributes;
     attributes.put(AttributeTags.temperature, temperature);
-    
+
     idToOperation.put(id, operation);
-    
+
     return id;
   }
-  
+
   /**
    * Creates a detection operation.
    * 
@@ -185,33 +185,34 @@ public class BioAssayBuilder {
     operation.outputs = new Operation[1];
     operation.manipulating = new Droplet[1];
     operation.forwarding = new Droplet[1];
-    
+
     Map<String, Object> attributes = operation.attributes;
     attributes.put(AttributeTags.sensor, sensor);
-    
+
     idToOperation.put(id, operation);
-    
+
     return id;
   }
-  
+
   /**
-   * Connects operation with ID <code>fromId</code> to operation with ID <code>toId</code>.
+   * Connects operation with ID <code>fromId</code> to operation with ID
+   * <code>toId</code>.
    * 
    * @param fromId - input operation id
-   * @param toId - output operation id
+   * @param toId   - output operation id
    */
   public void connect(int fromId, int toId) {
     Operation from = idToOperation.get(fromId);
     Operation to = idToOperation.get(toId);
-    
+
     int toInput = ArrayUtils.getFirstEmptySlotIndex(to.inputs);
     int fromOutput = ArrayUtils.getFirstEmptySlotIndex(from.outputs);
-    
+
     if (toInput == -1) {
       String error = String.format("all %d input operations of operation %d (%s) are occupied.", to.inputs.length, to.id, to.name);
       throw new IllegalStateException(error);
     }
-    
+
     if (fromOutput == -1) {
       String error = String.format("all %d output operations of operation %d (%s) are occupied.", from.outputs.length, from.id, from.name);
       throw new IllegalStateException(error);
@@ -220,19 +221,19 @@ public class BioAssayBuilder {
     to.inputs[toInput] = from;
     from.outputs[fromOutput] = to;
   }
-  
+
   public int getOperationCount() {
     return idToOperation.size();
   }
-  
+
   /**
    * @return all leaf operations
    */
   public Operation[] getSink() {
     List<Operation> finalOperations = new ArrayList<>();
-    
+
     for (Operation operation : idToOperation.values()) {
-    
+
       if (operation.outputs.length == 0) {
         finalOperations.add(operation);
       } else {
@@ -244,7 +245,7 @@ public class BioAssayBuilder {
         }
       }
     }
-    
+
     return finalOperations.toArray(new Operation[0]);
   }
 }

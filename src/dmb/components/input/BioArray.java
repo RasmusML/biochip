@@ -12,7 +12,7 @@ import framework.input.Droplet;
 
 public class BioArray {
 
-	public int width, height;
-	
-	public ModuleCatalog catalog;
+  public int width, height;
+
+  public ModuleCatalog catalog;
 }

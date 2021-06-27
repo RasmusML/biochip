@@ -29,5 +29,5 @@ public class WeightedChainPrioritizer extends ChainPrioritizer {
       throw new IllegalStateException("unknown operation type.");
     }
   }
-  
+
 }

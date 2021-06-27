@@ -5,4 +5,3 @@ public enum ModulePolicy {
   lockedOnOperation,
   alwaysLocked;
 }
-

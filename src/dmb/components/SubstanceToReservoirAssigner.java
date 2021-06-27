@@ -15,16 +15,16 @@ import dmb.helpers.Assert;
 import dmb.helpers.RandomUtil;
 
 /**
- *  Selects the fluid substance of an arrays reservoirs based on an assay.
+ * Selects the fluid substance of an arrays reservoirs based on an assay.
  */
 
 public class SubstanceToReservoirAssigner {
-  
+
   public void assign(BioAssay assay, BioArray array, ModuleAllocator moduleAllocator) {
     List<Operation> dispenseOperations = assay.getOperations(OperationType.dispense);
-    
+
     Collections.shuffle(dispenseOperations, RandomUtil.get());
-    
+
     List<Module> dispensers = moduleAllocator.getModulesOfOperationType(OperationType.dispense);
 
     List<String> assigned = new ArrayList<>();
@@ -44,7 +44,7 @@ public class SubstanceToReservoirAssigner {
         pending.add(substance);
       } else {
         Assert.that(reservoirIndex < dispensers.size(), "no reservoirs left to assign substance to! Add more reservoirs in the array");
-        
+
         assigned.add(substance);
 
         Module dispenser = dispensers.get(reservoirIndex);

@@ -8,5 +8,4 @@ public class RandomPrioritizer implements Prioritizer {
   public int prioritize(Operation o1, Operation o2) {
     return 0;
   }
-
 }

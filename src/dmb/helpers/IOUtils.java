@@ -62,27 +62,27 @@ public class IOUtils {
       e.printStackTrace();
     }
   }
-  
+
   public static List<File> getFiles(String folderPath) {
     File folder = new File(folderPath);
-    
+
     List<File> files = new ArrayList<>();
     for (File file : folder.listFiles()) {
       // not sub-folders
       if (file.isFile()) files.add(file);
     }
-    
+
     return files;
   }
-  
+
   public static List<String> getFileNames(String folderPath) {
     List<File> files = getFiles(folderPath);
-    
+
     List<String> filenames = new ArrayList<>();
     for (File file : files) {
       filenames.add(file.getName());
     }
-    
+
     return filenames;
   }
 }

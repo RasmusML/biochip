@@ -3,9 +3,10 @@ package dmb.components.mixingpercentages;
 public class FastMixingPercentages extends MixingPercentages {
 
   /**
-   * Extreme forward mixing percentage to see droplet movement behavior-changes during mixing.
+   * Extreme forward mixing percentage to see droplet movement behavior-changes
+   * during mixing.
    */
-  
+
   public FastMixingPercentages() {
     forwardPercentage = 20.58f;
     reversePercentage = -0.5f;

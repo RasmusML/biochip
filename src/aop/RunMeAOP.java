@@ -4,7 +4,7 @@ import framework.Application;
 import framework.ApplicationConfiguration;
 
 public class RunMeAOP {
-  
+
   public static void main(String[] args) {
     ApplicationConfiguration cfg = new ApplicationConfiguration();
     cfg.width = 640;
@@ -12,7 +12,7 @@ public class RunMeAOP {
     cfg.resizable = true;
     cfg.title = "AOP";
     cfg.fps = 60;
-    
+
     new Application(new AopApp(), cfg);
   }
 

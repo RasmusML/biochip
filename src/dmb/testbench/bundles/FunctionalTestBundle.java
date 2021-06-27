@@ -32,9 +32,9 @@ import dmb.testbench.tests.functionality.Test1BioArray;
 import dmb.testbench.tests.functionality.Test1BioAssay;
 
 public class FunctionalTestBundle implements TestBundle {
-  
+
   private List<Test> tests;
-  
+
   public FunctionalTestBundle() {
     tests = new ArrayList<>();
     registerAllTests();
@@ -44,7 +44,7 @@ public class FunctionalTestBundle implements TestBundle {
   public List<Test> get() {
     return new ArrayList<>(tests);
   }
-  
+
   private void registerAllTests() {
     register(new DetectorAssay1(), new DetectorArray1());
     register(new DispenseAssay1(), new DispenseArray1());
@@ -59,7 +59,7 @@ public class FunctionalTestBundle implements TestBundle {
     register(new Test1BioAssay(), new Test1BioArray());
     register(new PlatformAssay1(), new PlatformArray1());
   }
-  
+
   private void register(BioAssay assay, BioArray array) {
     Test test = new Test();
     test.array = array;

@@ -10,10 +10,10 @@ public class SimpleTimelineLayout implements TimelineLayout {
   @Override
   public List<TimelineUnit> pack(List<Operation> operations) {
     List<TimelineUnit> units = new ArrayList<>();
-    
+
     for (int i = 0; i < operations.size(); i++) {
       Operation operation = operations.get(i);
-      
+
       int start = operation.getStartTime();
       int end = operation.getEndTime();
       int duration = end - start;
@@ -23,10 +23,10 @@ public class SimpleTimelineLayout implements TimelineLayout {
       unit.duration = duration;
       unit.start = start;
       unit.y = i;
-      
+
       units.add(unit);
     }
-    
+
     return units;
   }
 }

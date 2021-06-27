@@ -10,7 +10,7 @@ public class TestResult {
 
   public float compileTime;
   public int executionTime;
- 
+
   public Router router;
   public Test test;
 }

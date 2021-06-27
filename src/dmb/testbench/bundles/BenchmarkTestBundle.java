@@ -40,32 +40,24 @@ import dmb.testbench.tests.Test5BioArray;
 import dmb.testbench.tests.Test5BioAssay;
 import dmb.testbench.tests.Test6BioArray;
 import dmb.testbench.tests.Test6BioAssay;
-import dmb.testbench.tests.functionality.BlockingDispenserTestBioArray;
-import dmb.testbench.tests.functionality.BlockingDispenserTestBioAssay;
-import dmb.testbench.tests.functionality.ModuleBioArray1;
-import dmb.testbench.tests.functionality.ModuleBioAssay1;
-import dmb.testbench.tests.functionality.PlatformArray1;
-import dmb.testbench.tests.functionality.PlatformAssay1;
-import dmb.testbench.tests.functionality.Test1BioArray;
-import dmb.testbench.tests.functionality.Test1BioAssay;
 
 public class BenchmarkTestBundle implements TestBundle {
-  
+
   private List<Test> tests;
-  
+
   public BenchmarkTestBundle() {
     tests = new ArrayList<>();
     registerAllTests();
   }
-  
+
   @Override
   public List<Test> get() {
     return new ArrayList<>(tests);
   }
-  
+
   private void registerAllTests() {
     register(new ColorimetricProteinAssay1(), new ColorimetricProteinArray1());
-    
+
     register(new PCRMixingTreeAssay2(), new PCRMixingTreeArray2());
 
     register(new InVitroAssay1(), new InVitroArray1());
@@ -85,7 +77,7 @@ public class BenchmarkTestBundle implements TestBundle {
     register(new PlatformAssay3(), new PlatformArray3());
     register(new PlatformAssay4(), new PlatformArray4());
   }
-  
+
   private void register(BioAssay assay, BioArray array) {
     Test test = new Test();
     test.array = array;

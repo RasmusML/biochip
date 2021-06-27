@@ -5,8 +5,8 @@ import java.util.Random;
 import dmb.helpers.RandomUtil;
 
 /**
- * A set of functions which return a random index.
- * Each index has a probability to be selected. 
+ * A set of functions which return a random index. Each index has a probability
+ * to be selected.
  */
 
 public class RandomIndexSelector {
@@ -19,8 +19,8 @@ public class RandomIndexSelector {
 
   /**
    * 
-   * Selects an index at random based on the indices weights.
-   * All weights have to >= 0.
+   * Selects an index at random based on the indices weights. All weights have to
+   * >= 0.
    * 
    * The probability of selecting an index is the normalized value of the weights.
    * 
@@ -51,7 +51,7 @@ public class RandomIndexSelector {
    * @param buckets - number of indices
    * @return index - chosen at random
    */
-  
+
   public int selectUniformly(int buckets) {
     return randomInt(0, buckets - 1);
   }

@@ -156,11 +156,11 @@ public class BioAssay {
         String edge = String.format("\t%d -> %d;\n", input.id, operation.id);
         graphBuilder.append(edge);
       }
-      
+
     });
 
     graphBuilder.append("}");
-    
+
     return graphBuilder.toString();
   }
 }

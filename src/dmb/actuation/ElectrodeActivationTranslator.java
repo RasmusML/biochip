@@ -7,28 +7,29 @@ import framework.input.Droplet;
 import framework.input.DropletUnit;
 
 /**
- *  Extracts the electrode actuation of droplets moving.
+ * Extracts the electrode actuation of droplets moving.
  */
 
 public class ElectrodeActivationTranslator {
-  
+
   // droplet units may cause an electrode first to de-actuate (unit move away), then actuate (unit move onto the electrode) during the same timestep. So instead of storing both actuation and de-actuation state (which would be wrong), only store the actuation state.
-  
+
   private int width, height;
-  
+
   private ElectrodeState[][] previousPlatformState;
   private ElectrodeState[][] currentPlatformState;
-  
+
   public ElectrodeActivationTranslator(int width, int height) {
     this.width = width;
     this.height = height;
-    
+
     previousPlatformState = new ElectrodeState[width][height];
     currentPlatformState = new ElectrodeState[width][height];
   }
-  
+
   /**
-   * Assumes electrode activated multiple timesteps have to be re-activated each timestep.
+   * Assumes electrode activated multiple timesteps have to be re-activated each
+   * timestep.
    * 
    * @param droplets
    * @param timesteps - number of timesteps
@@ -36,30 +37,31 @@ public class ElectrodeActivationTranslator {
    */
   public ElectrodeActivations[] translateStateless(List<Droplet> droplets, int timesteps) {
     ElectrodeActivations[] sections = new ElectrodeActivations[timesteps];
-    
+
     clear(currentPlatformState);
-  
+
     for (int time = 0; time < timesteps; time++) {
       for (Droplet droplet : droplets) {
         for (DropletUnit unit : droplet.units) {
           Point tile = unit.route.getPosition(time);
           if (tile == null) continue;
-          
+
           currentPlatformState[tile.x][tile.y] = ElectrodeState.On;
         }
       }
-      
+
       ElectrodeActivations section = buildStatelessSection();
       sections[time] = section;
-      
+
       clear(currentPlatformState);
     }
 
     return sections;
   }
-  
+
   /**
-   * Assumes electrode activated multiple timesteps will only need to activated at the beginning and explicitly de-actuated when no longer actuated.
+   * Assumes electrode activated multiple timesteps will only need to activated at
+   * the beginning and explicitly de-actuated when no longer actuated.
    * 
    * @param droplets
    * @param timesteps - number of timesteps
@@ -67,34 +69,34 @@ public class ElectrodeActivationTranslator {
    */
   public ElectrodeActivations[] translateStateful(List<Droplet> droplets, int timesteps) {
     ElectrodeActivations[] sections = new ElectrodeActivations[timesteps];
-    
+
     clear(previousPlatformState);
     clear(currentPlatformState);
-  
+
     for (int time = 0; time < timesteps; time++) {
       for (Droplet droplet : droplets) {
         for (DropletUnit unit : droplet.units) {
           Point tile = unit.route.getPosition(time);
           if (tile == null) continue;
-          
+
           currentPlatformState[tile.x][tile.y] = ElectrodeState.On;
         }
       }
-      
+
       ElectrodeActivations section = buildStatefulSection();
       sections[time] = section;
-      
+
       transfer(currentPlatformState, previousPlatformState);
       clear(currentPlatformState);
     }
 
     return sections;
   }
-  
+
   private void clear(ElectrodeState[][] platformState) {
     fill(platformState, ElectrodeState.Off);
   }
-  
+
   private void fill(ElectrodeState[][] platformState, ElectrodeState state) {
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
@@ -102,7 +104,7 @@ public class ElectrodeActivationTranslator {
       }
     }
   }
-  
+
   private void transfer(ElectrodeState[][] source, ElectrodeState[][] target) {
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
@@ -110,13 +112,13 @@ public class ElectrodeActivationTranslator {
       }
     }
   }
-  
+
   private ElectrodeActivations buildStatelessSection() {
     ElectrodeActivations section = new ElectrodeActivations();
-    
+
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
-        
+
         if (currentPlatformState[x][y] == ElectrodeState.On) {
           ElectrodeActuation activation = new ElectrodeActuation();
           activation.tile = new Point(x, y);
@@ -125,16 +127,16 @@ public class ElectrodeActivationTranslator {
         }
       }
     }
-    
+
     return section;
   }
-  
+
   private ElectrodeActivations buildStatefulSection() {
     ElectrodeActivations section = new ElectrodeActivations();
-    
+
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
-        
+
         // only store changes.
         if (currentPlatformState[x][y] != previousPlatformState[x][y]) {
           ElectrodeActuation activation = new ElectrodeActuation();
@@ -144,8 +146,7 @@ public class ElectrodeActivationTranslator {
         }
       }
     }
-    
+
     return section;
   }
 }
-

@@ -26,7 +26,7 @@ public class Point {
     y += p.y;
     return this;
   }
-  
+
   public Point add(int dx, int dy) {
     x += dx;
     y += dy;
@@ -38,7 +38,7 @@ public class Point {
     y -= p.y;
     return this;
   }
-  
+
   public Point set(int nx, int ny) {
     x = nx;
     y = ny;
@@ -50,7 +50,7 @@ public class Point {
     y = p.y;
     return this;
   }
-  
+
   @Override
   public String toString() {
     return String.format("(%d,%d)", x, y);

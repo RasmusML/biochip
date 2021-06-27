@@ -13,7 +13,7 @@ public class RunMeDropletReshaper {
     cfg.resizable = true;
     cfg.title = "Reshaper";
     cfg.fps = 60;
-    
+
     new Application(new DropletReshapeApp(), cfg);
   }
 }

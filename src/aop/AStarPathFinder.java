@@ -15,7 +15,7 @@ public class AStarPathFinder {
 
   private BiFunction<Point, Point, Float> stepCostFunction;
   private BiFunction<Point, Point, Float> minimumCostFunction;
-  
+
   public AStarPathFinder() {
     stepCostFunction = (p1, p2) -> p1.x == p2.x && p1.y == p2.y ? 1f : 2f;
     minimumCostFunction = (p1, p2) -> MathUtils.getManhattanDistance(p1.x, p1.y, p2.x, p2.y);
@@ -33,7 +33,8 @@ public class AStarPathFinder {
    * @param timestamp
    * @param maxSteps
    * 
-   * @return the path from {@code from} to {@code to}, if no path exist return an empty list.
+   * @return the path from {@code from} to {@code to}, if no path exist return an
+   *         empty list.
    * 
    */
   public List<Point> search(Point from, Point to, int timestamp, int maxSteps) {
@@ -48,14 +49,14 @@ public class AStarPathFinder {
       float c2 = n2.traveled + n2.minimumCost;
       return (int) (c1 - c2);
     });
-    
+
     PositionInTime source = new PositionInTime(from, timestamp);
 
     Node<PositionInTime> sourceNode = Node.root(minimumCostFunction.apply(source.position, to));
-    
+
     positionInTimeToNode.put(source, sourceNode);
     frontier.add(source);
-    
+
     int arrivalToTarget = -1;
 
     while (frontier.size() > 0) {
@@ -63,28 +64,28 @@ public class AStarPathFinder {
 
       if (current.position.x == to.x && current.position.y == to.y) {
         arrivalToTarget = current.timestep;
-        
+
         System.out.printf("checked %d nodes\n", current.timestep - timestamp);
-        
+
         break;
       }
 
       explored.add(current);
 
       Node<PositionInTime> currentNode = positionInTimeToNode.get(current);
-      
+
       int steps = current.timestep - timestamp;
       if (steps >= maxSteps) break;
-      
+
       List<PositionInTime> children = new ArrayList<>();
-      
+
       List<Point> moves = getMoves(current.position, current.timestep);
       for (Point move : moves) {
         Point position = new Point(current.position).add(move.x, move.y);
         PositionInTime positionInTime = new PositionInTime(position, current.timestep + 1);
         children.add(positionInTime);
       }
-      
+
       for (PositionInTime child : children) {
         if (explored.contains(child)) continue;
 
@@ -129,7 +130,7 @@ public class AStarPathFinder {
     return path;
 
   }
-  
+
   public List<Point> getMoves(Point at, int timestep) {
     throw new IllegalStateException("override me!");
   }
@@ -159,11 +160,11 @@ public class AStarPathFinder {
       return child;
     }
   }
-  
+
   private static class PositionInTime {
     public Point position;
     public int timestep;
-    
+
     public PositionInTime(Point position, int timestep) {
       this.position = position;
       this.timestep = timestep;
