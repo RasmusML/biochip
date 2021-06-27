@@ -193,8 +193,8 @@ public class ReplayScene extends Scene {
 	@Override
 	public void update() {
 	  boardCamera.update();
-	  
-		handleInput();
+
+	  handleInput();
 		
     float tx = (timestamp * timeline.timescale) + timeline.offsetX;
     float ty = viewport.getVirtualHeight() / 2f - 30;

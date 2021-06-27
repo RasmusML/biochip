@@ -10,6 +10,10 @@ import dmb.testbench.tests.BlockingDispenserTestBioArray;
 import dmb.testbench.tests.BlockingDispenserTestBioAssay;
 import dmb.testbench.tests.CrowdedModuleBioArray;
 import dmb.testbench.tests.CrowdedModuleBioAssay;
+import dmb.testbench.tests.InVitroArray1;
+import dmb.testbench.tests.InVitroArray2;
+import dmb.testbench.tests.InVitroAssay1;
+import dmb.testbench.tests.InVitroAssay2;
 import dmb.testbench.tests.ModuleBioArray1;
 import dmb.testbench.tests.ModuleBioArray2;
 import dmb.testbench.tests.ModuleBioArray3;
@@ -19,7 +23,9 @@ import dmb.testbench.tests.ModuleBioAssay2;
 import dmb.testbench.tests.ModuleBioAssay3;
 import dmb.testbench.tests.ModuleBioAssay4;
 import dmb.testbench.tests.PCRMixingTreeArray;
+import dmb.testbench.tests.PCRMixingTreeArray2;
 import dmb.testbench.tests.PCRMixingTreeAssay;
+import dmb.testbench.tests.PCRMixingTreeAssay2;
 import dmb.testbench.tests.PlatformArray1;
 import dmb.testbench.tests.PlatformArray2;
 import dmb.testbench.tests.PlatformArray3;
@@ -56,6 +62,11 @@ public class BenchmarkTestBundle implements TestBundle {
   }
   
   private void registerAllTests() {
+    register(new PCRMixingTreeAssay2(), new PCRMixingTreeArray2());
+
+    register(new InVitroAssay1(), new InVitroArray1());
+    register(new InVitroAssay2(), new InVitroArray2());
+
     register(new Test1BioAssay(), new Test1BioArray());
     register(new Test2BioAssay(), new Test2BioArray());
     register(new Test3BioAssay(), new Test3BioArray());

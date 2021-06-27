@@ -40,6 +40,8 @@ public class SelectionScene extends Scene {
   
   private Color defaultButtonColor;
   
+  private List<Test> tests;
+  
   private final String greedyRouterName = "Greedy Router";
   private final String dropletSizeAwareGreedyRouterName = "Droplet Size-aware Greedy Router";
   
@@ -50,16 +52,17 @@ public class SelectionScene extends Scene {
   @Override
   public void init() {
     TestBundle bundle = new BenchmarkTestBundle();
-    List<Test> tests = bundle.get();
+    tests = bundle.get();
+    
     List<String> bundleNames = extractTestNames(tests);
     
     MixingPercentages percentages = new DefaultMixingPercentages();
     
-    createGUI(tests, bundleNames, percentages);
+    createGUI(bundleNames, percentages);
 
   }
 
-  private void createGUI(List<Test> tests, List<String> bundleNames, MixingPercentages percentages) {
+  private void createGUI(List<String> bundleNames, MixingPercentages percentages) {
     root = new JPanel();
     
     JPanel content = new JPanel();
@@ -215,6 +218,9 @@ public class SelectionScene extends Scene {
   public void enter() {
     app.setRoot(root);
     app.attachInputListenersToComponent(root);
+    
+    TestBundle bundle = new BenchmarkTestBundle();
+    tests = bundle.get();
   }
   
   private List<String> extractTestNames(List<Test> tests) {
