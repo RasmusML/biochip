@@ -4,7 +4,6 @@ import dmb.actuation.ElectrodeActivationTranslator;
 import dmb.actuation.ElectrodeActivations;
 import dmb.actuation.ElectrodeActuation;
 import dmb.actuation.ElectrodeState;
-import dmb.actuation.PlatformInterface;
 import dmb.algorithms.GreedyRouter;
 import dmb.algorithms.Point;
 import dmb.algorithms.Router;
@@ -13,6 +12,7 @@ import dmb.components.input.BioArray;
 import dmb.components.input.BioAssay;
 import dmb.components.mixingpercentages.DefaultMixingPercentages;
 import dmb.components.mixingpercentages.MixingPercentages;
+import dmb.platform.PlatformInterface;
 import dmb.testbench.tests.PCRMixingTreeArray;
 import dmb.testbench.tests.PCRMixingTreeAssay;
 

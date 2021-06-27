@@ -1,4 +1,4 @@
-package dmb.actuation;
+package dmb.platform;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -267,67 +267,3 @@ class ElectrodeMapping {
   public int driverId;
 }
 
-class Platform {
-  public int rows;
-  public int columns;
-  
-  public boolean[][] array;
-
-  public boolean highVoltageOn;
-  
-  public Platform() {
-    rows = 20;
-    columns = 32;
-    array = new boolean[rows][columns];
-    highVoltageOn = false;
-  }
-  
-  public void clearElectrodes() {
-    for (int row = 0; row < rows; row++) {
-      for (int column = 0; column < columns; column++) {
-        array[row][column] = false;
-      }
-    }
-  }
-
-  public boolean isElectrodeOnByXY(int x, int y) {
-    int col = x;
-    int row = rows - 1 - y;
-    
-    return array[row][col];
-  }
-  
-  public void flipElectrodeStateByXY(int x, int y) {
-    int col = x;
-    int row = rows - 1 - y;
-    
-    array[row][col] = !array[row][col];
-  }
-}
-
-class PlatformMessenger {
-  
-  public String turnHighVoltageOnForElectrodesMessage() {
-    return String.format("hvpoe 1 1 \r");
-  }
-
-  public String turnHighVoltageOffForElectrodesMessage() {
-    return String.format("hvpoe 1 0 \r");
-  }
-  
-  public String setHighVoltageValueMessage(int value) {
-    return String.format("shv 1 %d \r");
-  }
-  
-  public String clearAllElectrodesMessage(int driverId) {
-    return String.format("clra %d \r", driverId);
-  }
-  
-  public String setElectrodeMessage(int driverId, int electrodeId) {
-    return String.format("setel %d %d \r", driverId, electrodeId);
-  }
-  
-  public String clearElectrodeMessage(int driverId, int electrodeId) {
-    return String.format("clrel %d %d \r", driverId, electrodeId);
-  }
-}

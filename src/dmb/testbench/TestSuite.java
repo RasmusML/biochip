@@ -20,8 +20,7 @@ import dmb.testbench.bundles.TestBundle;
 
 public class TestSuite {
   
-  private boolean verbose = false;  // verbose or recap mode
-  private boolean writeToFile = false;
+  private boolean writeToFile = true;
 
   private int runs = 100;
   private int recapSeedPrintInterval = runs / 10;
@@ -118,12 +117,8 @@ public class TestSuite {
   }
 
   private void printSeed() {
-    if (verbose) {
+    if (recapSeedPrintInterval > 0 && seed % recapSeedPrintInterval == 0) {
       System.out.printf("seed %d\n", seed);
-    } else {
-      if (recapSeedPrintInterval > 0 && seed % recapSeedPrintInterval == 0) {
-        System.out.printf("seed %d\n", seed);
-      }
     }
   }
 
@@ -145,18 +140,11 @@ public class TestSuite {
       String assayName = assay.getClass().getSimpleName();
       String testName = assayName.replaceAll("(BioAssay)|(Assay)", "");
       
-      if (verbose) System.out.printf("running %s ... ", testName);
-      
       long start = System.currentTimeMillis();
       RoutingResult result = router.compute(assay, array, percentages);
       long msElapsed = System.currentTimeMillis() - start;
       
-      if (verbose) {
-        if (result.completed) System.out.printf("ok\n");
-        else System.out.printf("failed\n");
-      } else {
-        if (!result.completed) System.out.printf("%s using seed %d failed\n", testName, seed);
-      }
+      if (!result.completed) System.out.printf("%s using seed %d failed\n", testName, seed);
 
       TestResult testResult = new TestResult();
       testResult.name = testName;
@@ -169,30 +157,9 @@ public class TestSuite {
       
       routeTestResults.add(testResult);
     }
-    
-    if (verbose) System.out.printf("completed all tests.\n\n");
   }
   
   public void printSummary() {
-    
-    if (verbose) {
-      for (int i = 0; i < routeTestResults.size(); i++) {
-        TestResult result = routeTestResults.get(i);
-       
-        String message;
-        if (result.completed) {
-          message = String.format("%s found a solution with %d steps and took %.3f secs to compute.\n", result.name, result.executionTime, result.runningTime);
-        } else {
-          message = String.format("%s failed.\n", result.name);
-        }
-        
-        System.out.printf(message);
-        
-      }
-      
-      System.out.printf("\n");
-    }
-    
     Statistics cumulated = new Statistics();
     cumulated.name = "cumulated";
 

@@ -9,8 +9,8 @@ import dmb.actuation.ElectrodeActivationTranslator;
 import dmb.actuation.ElectrodeActivations;
 import dmb.actuation.ElectrodeActuation;
 import dmb.actuation.ElectrodeState;
-import dmb.actuation.PlatformInterface;
 import dmb.algorithms.Point;
+import dmb.platform.PlatformInterface;
 import framework.ApplicationAdapter;
 import framework.graphics.Alignment;
 import framework.graphics.Camera;
@@ -194,28 +194,30 @@ public class DropletReshapeApp extends ApplicationAdapter {
     viewport.setCamera(boardCamera);
 
     if (input.isMouseJustPressed(Button.RIGHT)) {
-      int mx = input.getX();
-      int my = input.getY();
-      
-      Vector2 world = viewport.screenToWorld(mx, my);
-      
-      int x = (int) (world.x / tilesize);
-      int y = (int) (world.y / tilesize);
-      
-      Point point = new Point(x, y);
-      
-      if (reshape.contains(point)) {
-        reshape.remove(point);
-      } else {
-        reshape.add(point);
-      }
-      
-      if (reshape.size() == droplet.units.size()) {
-        reshaper.reshape(droplet, reshape);
+      if (droplet.units.size() > 0) {
+        int mx = input.getX();
+        int my = input.getY();
         
-        if (!firstCommandSend) {
-          sendCommandsOfCurrentPositions();
-          firstCommandSend = true;
+        Vector2 world = viewport.screenToWorld(mx, my);
+        
+        int x = (int) (world.x / tilesize);
+        int y = (int) (world.y / tilesize);
+        
+        Point point = new Point(x, y);
+        
+        if (reshape.contains(point)) {
+          reshape.remove(point);
+        } else {
+          reshape.add(point);
+        }
+        
+        if (reshape.size() == droplet.units.size()) {
+          reshaper.reshape(droplet, reshape);
+          
+          if (!firstCommandSend) {
+            sendCommandsOfCurrentPositions();
+            firstCommandSend = true;
+          }
         }
       }
     }
