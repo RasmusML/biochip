@@ -17,7 +17,7 @@ import dmb.components.input.AttributeTags;
 import dmb.components.input.BioArray;
 import dmb.components.input.BioAssay;
 import dmb.components.mixingpercentages.MixingPercentages;
-import dmb.components.module.FirstModuleAllocationStrategy;
+import dmb.components.module.MinModuleAllocationStrategy;
 import dmb.components.module.Module;
 import dmb.components.module.ModuleAllocationStrategy;
 import dmb.components.module.ModuleAllocator;
@@ -35,7 +35,6 @@ import dmb.helpers.GeometryUtil;
 import dmb.helpers.Logger;
 import dmb.helpers.RandomUtil;
 import dmb.helpers.UidGenerator;
-import dmb.helpers.Wrapper;
 import framework.input.Droplet;
 import framework.input.DropletUnit;
 import framework.math.MathUtils;
@@ -95,7 +94,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
     reshaper = new DropletReshaper(moveFinder, array);
     shapeSelector = new DropletShapeSelector();
     
-    ModuleAllocationStrategy strategy = new FirstModuleAllocationStrategy();
+    ModuleAllocationStrategy strategy = new MinModuleAllocationStrategy();
     moduleAllocator = new ModuleAllocator(array.catalog, strategy);
 
     SubstanceToReservoirAssigner s2rAssigner = new SubstanceToReservoirAssigner();
@@ -376,7 +375,8 @@ public class DropletSizeAwareGreedyRouter implements Router {
           Move move = getMixMove(droplet, percentages, array);
           if (move == null) continue;
           
-          Move previousMove = droplet.units.get(0).route.getMove(timestamp - 2);  // @Cleanup
+          DropletUnit unit = droplet.units.get(0);
+          Move previousMove = unit.route.getMove(timestamp - 2);
           float mixing = percentages.getMixingPercentage(move, previousMove);
 
           extra.mixingPercentage += mixing;
@@ -396,7 +396,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
           Droplet droplet = operation.manipulating[0];
           
           // for now, we only dispose droplets with 1 unit size. If the droplet is larger, then split operations should occur in the assay.
-          Assert.that(droplet.units.size() == 1);
+          //Assert.that(droplet.units.size() == 1);
           
           DropletUnit unit = droplet.units.get(0);
           Point at = unit.route.getPosition(timestamp - 1);
@@ -433,7 +433,6 @@ public class DropletSizeAwareGreedyRouter implements Router {
           
           Move move = getModuleMove(droplet, runningDroplets, module, array);
           
-          // @TODO: modules may take control, if they want to.
           if (dropletInside) {
             extra.currentDurationInTimesteps += 1;
             
@@ -526,7 +525,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
                 DropletExtra dropletExtra = getDropletExtra(droplet.id);
                 
                 dropletExtra.reshaping = true;
-                DropletShape shape = shapeSelector.select(droplet, array.width, array.height);
+                DropletShape shape = shapeSelector.select(droplet);
                 reshaper.reshape(droplet, shape);
               }
               
@@ -638,7 +637,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
   }
   
   private Point getClosestWasteReservoir(Droplet droplet, BioArray array) {
-    Assert.that(droplet.units.size() == 1);
+    //Assert.that(droplet.units.size() == 1);
     
     DropletUnit unit = droplet.units.get(0);
     Point at = unit.route.getPosition(timestamp - 1);
@@ -664,8 +663,6 @@ public class DropletSizeAwareGreedyRouter implements Router {
   }
 
   private boolean merged(Droplet droplet0, Droplet droplet1) {
-    // @speed: use a grid instead, fill up the grid with positions, and check if a droplet-units neighbour contains 1 or more of the other droplets unit -> O(n) instead of O(n^2)
-    
     for (DropletUnit unit0 : droplet0.units) {
       Point at0 = unit0.route.getPosition(timestamp);
       
@@ -891,7 +888,9 @@ public class DropletSizeAwareGreedyRouter implements Router {
 
   private Move getMixMove(Droplet droplet, MixingPercentages percentages, BioArray array) {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
-    Move prevMove = droplet.units.get(0).route.getMove(timestamp - 2);
+    
+    DropletUnit unit = droplet.units.get(0);
+    Move prevMove = unit.route.getMove(timestamp - 2);
 
     float bestPercentage = Float.NEGATIVE_INFINITY;
     Move bestMove = null;

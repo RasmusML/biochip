@@ -21,6 +21,8 @@ public class CompactTimelineLayout implements TimelineLayout {
     for (int i = 0; i < operations.size(); i++) {
       Operation operation = operations.get(i);
       
+      if (!completedOperation(operation)) continue;
+      
       int start, end;
       if (operation.name.equals(OperationType.mix)) {
         Droplet droplet = operation.manipulating[0];
@@ -101,5 +103,12 @@ public class CompactTimelineLayout implements TimelineLayout {
     }
     
     return result;
+  }
+  
+  private boolean completedOperation(Operation operation) {
+    for (Droplet droplet : operation.manipulating) {
+      if (droplet == null) return false;
+    }
+    return true;
   }
 }

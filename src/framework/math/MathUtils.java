@@ -41,4 +41,17 @@ public class MathUtils {
   public static float distance(float dx, float dy) {
     return (float) Math.sqrt(dx * dx + dy * dy);
   }
+  
+  /**
+   * @param x - value to take log of
+   * @param b - the log (e.g. b=2, log2)
+   * @return
+   */
+  public static int log(int x, int b) {
+    return (int) (Math.log(x) / Math.log(b));
+  }
+  
+  public static int log2(int x) {
+    return log(x, 2);
+  }
 }

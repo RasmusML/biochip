@@ -18,6 +18,7 @@ import dmb.components.input.BioArray;
 import dmb.components.input.BioAssay;
 import dmb.components.mixingpercentages.MixingPercentages;
 import dmb.components.module.FirstModuleAllocationStrategy;
+import dmb.components.module.MinModuleAllocationStrategy;
 import dmb.components.module.Module;
 import dmb.components.module.ModuleAllocationStrategy;
 import dmb.components.module.ModuleAllocator;
@@ -80,7 +81,7 @@ public class GreedyRouter implements Router {
     indexSelector = new RandomIndexSelector();
     moveFinder = new SingleCellMoveFinder(checker);
 
-    ModuleAllocationStrategy strategy = new FirstModuleAllocationStrategy();
+    ModuleAllocationStrategy strategy = new MinModuleAllocationStrategy();
     moduleAllocator = new ModuleAllocator(array.catalog, strategy);
 
     SubstanceToReservoirAssigner s2rAssigner = new SubstanceToReservoirAssigner();

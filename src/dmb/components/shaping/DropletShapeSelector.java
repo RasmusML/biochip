@@ -12,7 +12,7 @@ import framework.math.MathUtils;
 
 public class DropletShapeSelector {
   
-  public DropletShape select(Droplet droplet, int arrayWidth, int arrayHeight) {
+  public DropletShape select(Droplet droplet) {
     int cellsOccupied = droplet.units.size();
     
     float squareSides = (float) Math.sqrt(cellsOccupied);

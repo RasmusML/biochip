@@ -7,6 +7,7 @@ import java.util.List;
 
 import dmb.actuation.ElectrodeActivationTranslator;
 import dmb.actuation.ElectrodeActivations;
+import dmb.algorithms.DropletSizeAwareGreedyRouter;
 import dmb.algorithms.Operation;
 import dmb.algorithms.OperationType;
 import dmb.algorithms.Point;
@@ -162,11 +163,16 @@ public class ReplayScene extends Scene {
 
     float zoom = Math.min(zoomX, zoomY);
     if (zoom > maxZoom) zoom = maxZoom;
+    
+    float startZoom = 0.8f;
+    zoom *= startZoom; 
+    
     boardCamera.zoomNow(zoom);
     
     timelineLayout = new CompactTimelineLayout();
     //timelineLayout = new SimpleTimelineLayout();
     
+    timeline.height = 0;
     timelineUnits = timelineLayout.pack(assay.getOperations());
     
     for (TimelineUnit unit : timelineUnits) {
@@ -187,26 +193,36 @@ public class ReplayScene extends Scene {
 	
 	@Override
 	public void update() {
-		handleInput();
+	  boardCamera.update();
+	  timelineCamera.update();
+
+	  handleInput();
 		
     float tx = (timestamp * timeline.timescale) + timeline.offsetX;
     float ty = viewport.getVirtualHeight() / 2f - 30;
     
     timelineCamera.lookAtNow(tx, ty);
 
+    /*
     String title = String.format("@%d", app.getFps());
     app.setTitle(title);
+		*/
 		
-		boardCamera.update();
+    updateSelection();
+    updateMovement();
+	}
 
-		if (selected.unit != null) {
+  private void updateSelection() {
+    if (selected.unit != null) {
 		  int end = selected.unit.start + selected.unit.duration;
 		  if (timestamp >= end) {
 		    selected.droplet = null;
 		    selected.unit = null;
 		  }
 		}
-		
+  }
+
+  private void updateMovement() {
     if (timestamp <= result.executionTime - 2) {
       if (running) step = true;
       if (step) {
@@ -229,190 +245,189 @@ public class ReplayScene extends Scene {
     } else {
       moving = false;
     }
-	}
+  }
 
   private void handleInput() {
+		handleTimelineInputs();
+		handleBoardInputs();
+    handleGlobalInputs();
+  }
+
+  private void handleTimelineInputs() {
+    viewport.setCamera(timelineCamera);
+
+    Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
     
-    { // book-keeping
-      viewport.setCamera(timelineCamera);
-      Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
-      
-      float width = timeline.width * timeline.timescale;
-      float height = timeline.height * (timeline.operationHeight + gap) - gap;
-  
-      mouseWithinTimeline = mouse.x >= -timeline.bufferX && mouse.x <= width + timeline.bufferX && mouse.y >= 0 && mouse.y <= height;
+    float width = timeline.width * timeline.timescale;
+    float height = timeline.height * (timeline.operationHeight + gap) - gap;
+
+    mouseWithinTimeline = mouse.x >= -timeline.bufferX && mouse.x <= width + timeline.bufferX && mouse.y >= 0 && mouse.y <= height;
+		viewport.setCamera(timelineCamera);
+		
+		if (mouseWithinTimeline) {
+	    float suggestedTime = MathUtils.clamp(0, result.executionTime - 1, mouse.x / (float) timeline.timescale);
+	    timeline.suggestedTime = Math.round(suggestedTime);
+	    
+	    if (input.isMouseJustReleased(Button.LEFT)) {
+	      timestamp = timeline.suggestedTime;
+	      dt = 0;
+	      moving = false;
+	    }
+		}
+  }
+
+  private void handleBoardInputs() {
+	  if (!mouseWithinTimeline) {
+	    viewport.setCamera(boardCamera);
+	    Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
+	    
+	    // selected droplet
+	    if (input.isMouseJustReleased(Button.LEFT)) {
+	      
+	      List<Droplet> droplets = result.droplets;
+	      outer: for (Droplet droplet : droplets) {
+	        
+	        for (DropletUnit unit : droplet.units) {
+	          Point at = unit.route.getPosition(timestamp);
+	          if (at == null) continue;
+	          
+	          float x = at.x * tilesize;
+	          float y = at.y * tilesize;
+            
+	          float width = tilesize;
+	          float height = tilesize;
+	          
+	          if (mouse.x >= x && mouse.x <= x + width && mouse.y >= y && mouse.y <= y + height) {
+	            if (droplet == selected.droplet) {
+	              // deselect
+	              selected.droplet = null;
+	              selected.unit = null;
+	            } else {
+	              // select
+	              selected.droplet = droplet;
+
+	              if (selected.droplet.operation != null) {
+	                for (TimelineUnit timelineUnit : timelineUnits) {
+	                  if (timelineUnit.operation == selected.droplet.operation) {
+	                    selected.unit = timelineUnit;
+	                  }
+	                }
+	              }
+	            }
+	            
+	            break outer;
+	          }
+	        }
+	      }
+      }
+		}
+  }
+
+  private void handleGlobalInputs() {
+    int stepSize = 10;
+    if (input.isKeyJustPressed(Keys.K)) {
+      timestamp = (int) MathUtils.clamp(0, result.executionTime - 1, timestamp - stepSize);
+    }
+    
+    if (input.isKeyJustPressed(Keys.L)) {
+      timestamp = (int) MathUtils.clamp(0, result.executionTime - 1, timestamp + stepSize);
+    }
+    
+    if (input.isKeyJustPressed(Keys.E)) {
+      timestamp = result.executionTime - 1;
     }
 
-		{ // timeline
-  		viewport.setCamera(timelineCamera);
-  		Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
-  		
-  		if (mouseWithinTimeline) {
-  	    float suggestedTime = MathUtils.clamp(0, result.executionTime - 1, mouse.x / (float) timeline.timescale);
-  	    timeline.suggestedTime = Math.round(suggestedTime);
-  	    
-  	    if (input.isMouseJustReleased(Button.LEFT)) {
-  	      timestamp = timeline.suggestedTime;
-  	      dt = 0;
-  	      moving = false;
-  	    }
-  		}
-		}
-		
-		{ // board
-		  if (!mouseWithinTimeline) {
-		    viewport.setCamera(boardCamera);
-		    Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
-		    
-		    // selected droplet
-		    if (input.isMouseJustReleased(Button.LEFT)) {
-		      
-		      List<Droplet> droplets = result.droplets;
-		      outer: for (Droplet droplet : droplets) {
-		        
-		        for (DropletUnit unit : droplet.units) {
-		          Point at = unit.route.getPosition(timestamp);
-		          if (at == null) continue;
-		          
-		          float x = at.x * tilesize;
-		          float y = at.y * tilesize;
-              
-		          float width = tilesize;
-		          float height = tilesize;
-		          
-		          if (mouse.x >= x && mouse.x <= x + width && mouse.y >= y && mouse.y <= y + height) {
-		            if (droplet == selected.droplet) {
-		              // deselect
-		              selected.droplet = null;
-		              selected.unit = null;
-		            } else {
-		              // select
-		              selected.droplet = droplet;
-
-		              if (selected.droplet.operation != null) {
-		                for (TimelineUnit timelineUnit : timelineUnits) {
-		                  if (timelineUnit.operation == selected.droplet.operation) {
-		                    selected.unit = timelineUnit;
-		                  }
-		                }
-		              }
-		            }
-		            
-		            break outer;
-		          }
-		        }
-		      }
+    if (input.isKeyPressed(Keys.W)) {
+      timeline.timescale *= timeline.stretchScaler;
+    }
+    
+    if (input.isKeyPressed(Keys.Q)) {
+      timeline.timescale /= timeline.stretchScaler;
+    }
+    
+    if (input.isKeyPressed(Keys.X)) {
+      float zoom = boardCamera.targetZoom * zoomScaler;
+      if (zoom > maxZoom) zoom = maxZoom;
+      
+      boardCamera.zoomNow(zoom);
+    }
+    
+    if (input.isKeyPressed(Keys.Z)) {
+      boardCamera.zoomNow(boardCamera.targetZoom / zoomScaler);
+    }
+    
+    if (input.isKeyJustPressed(Keys.SPACE)) {
+      if (running) {
+        if (!moving) {  // if the droplets are not in the moving state, then just stop immediately. Otherwise, let them finish the move. Yielding a smooth animation
+          step = false;
+          dt = 0;
         }
-		  }
-		}
-		
-    { // global
-      
-      int stepSize = 10;
-      if (input.isKeyJustPressed(Keys.K)) {
-        timestamp = (int) MathUtils.clamp(0, result.executionTime - 1, timestamp - stepSize);
+      } else {
+        // start at move-state, so they move instantly.
+        moving = true;
       }
       
-      if (input.isKeyJustPressed(Keys.L)) {
-        timestamp = (int) MathUtils.clamp(0, result.executionTime - 1, timestamp + stepSize);
-      }
+      running = !running;
+    }
+    
+    if (input.isKeyJustPressed(Keys.R)) {
+      running = false;
+      step = false;
+      timestamp = 0;
+      dt = 0;
+    }
+    
+    if (input.isKeyJustPressed(Keys.RIGHT)) {
+      running = false;
+      step = false;
+      timestamp += 1;
       
-      if (input.isKeyJustPressed(Keys.E)) {
+      if (timestamp > result.executionTime - 1) {
         timestamp = result.executionTime - 1;
       }
+      
+      dt = 0;
+    }
+    
+    if (input.isKeyJustPressed(Keys.LEFT)) {
+      running = false;
+      step = false;
+      dt = 0;
 
-      if (input.isKeyPressed(Keys.W)) {
-        timeline.timescale *= timeline.stretchScaler;
-      }
-      
-      if (input.isKeyPressed(Keys.Q)) {
-        timeline.timescale /= timeline.stretchScaler;
-      }
-      
-      if (input.isKeyPressed(Keys.X)) {
-        float zoom = boardCamera.targetZoom * zoomScaler;
-        if (zoom > maxZoom) zoom = maxZoom;
-        
-        boardCamera.zoomNow(zoom);
-      }
-      
-      if (input.isKeyPressed(Keys.Z)) {
-        boardCamera.zoomNow(boardCamera.targetZoom / zoomScaler);
-      }
-      
-      if (input.isKeyJustPressed(Keys.SPACE)) {
-        if (running) {
-          if (!moving) {  // if the droplets are not in the moving state, then just stop immediately. Otherwise, let them finish the move. Yielding a smooth animation
-            step = false;
-            dt = 0;
-          }
-        } else {
-          // start at move-state, so they move instantly.
-          moving = true;
-        }
-        
-        running = !running;
-      }
-      
-      if (input.isKeyJustPressed(Keys.R)) {
-        running = false;
-        step = false;
-        timestamp = 0;
-        dt = 0;
-      }
-      
-      if (input.isKeyJustPressed(Keys.RIGHT)) {
-        running = false;
-        step = false;
-        timestamp += 1;
-        
-        if (timestamp > result.executionTime - 1) {
-          timestamp = result.executionTime - 1;
-        }
-        
-        dt = 0;
-      }
-      
-      if (input.isKeyJustPressed(Keys.LEFT)) {
-        running = false;
-        step = false;
-        dt = 0;
+      timestamp -= 1;
+      if (timestamp < 0) timestamp = 0;
+    }
+    
+    if (input.isKeyJustPressed(Keys.ESCAPE)) {
+      manager.changeScene("selection");
+    }
+    
+    viewport.setCamera(boardCamera);
+    
+    if (input.isMouseJustPressed(Button.RIGHT)) {
+      dragging = true;
 
-        timestamp -= 1;
-        if (timestamp < 0) timestamp = 0;
-      }
-      
-      if (input.isKeyJustPressed(Keys.ESCAPE)) {
-        manager.changeScene("selection");
-      }
-      
-      viewport.setCamera(boardCamera);
-      
-      if (input.isMouseJustPressed(Button.RIGHT)) {
-        dragging = true;
+      Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
+      oldX = mouse.x;
+      oldY = mouse.y;
+    }
 
-        Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
-        oldX = mouse.x;
-        oldY = mouse.y;
-      }
+    if (input.isMouseJustReleased(Button.RIGHT)) {
+      dragging = false;
+    }
+    
+    if (dragging) {
+      Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
+      float mouseX = mouse.x;
+      float mouseY = mouse.y;
 
-      if (input.isMouseJustReleased(Button.RIGHT)) {
-        dragging = false;
-      }
-      
-      if (dragging) {
-        Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
-        float mouseX = mouse.x;
-        float mouseY = mouse.y;
+      float dx = mouseX - oldX;
+      float dy = mouseY - oldY;
 
-        float dx = mouseX - oldX;
-        float dy = mouseY - oldY;
+      float tx = boardCamera.x - dx;
+      float ty = boardCamera.y - dy;
 
-        float tx = boardCamera.x - dx;
-        float ty = boardCamera.y - dy;
-
-        boardCamera.lookAtNow(tx, ty);
-      }
+      boardCamera.lookAtNow(tx, ty);
     }
   }
 
@@ -421,7 +436,7 @@ public class ReplayScene extends Scene {
 		renderer.begin();
 		renderer.clear();
 
-		drawBoard();
+		drawReplay();
 		drawTimeline();
     
 		renderer.end();
@@ -499,9 +514,104 @@ public class ReplayScene extends Scene {
   }
 
 
-  private void drawBoard() {
+  private void drawReplay() {
     viewport.setCamera(boardCamera);
     
+    drawBoard();
+	  drawModules();
+    drawDroplets();
+    drawSelectedDroplets();
+  }
+
+  private void drawSelectedDroplets() {
+    List<Droplet> dropletSelection = new ArrayList<>();
+    if (selected.droplet != null) {
+      if (selected.unit != null && selected.unit.operation.name.equals(OperationType.merge)) {
+        Operation operation = selected.unit.operation;
+        dropletSelection.add(operation.manipulating[0]);
+        dropletSelection.add(operation.manipulating[1]);
+      } else {
+        dropletSelection.add(selected.droplet);
+      }
+    }
+
+    float scalar = 1f;
+    Color color = ColorPalette.seeThroughGray;
+    
+    for (Droplet droplet : dropletSelection) {
+      if (moving) {
+        for (int i = 0; i < droplet.units.size(); i++) {
+          DropletUnit dropletUnit = droplet.units.get(i);
+          Point at = dropletUnit.route.getPosition(timestamp);
+          if (at == null) continue;
+  
+          Point target = dropletUnit.route.getPosition(timestamp + 1);
+          Point move = new Point();
+          
+          if (target == null) {
+            Operation operation = droplet.operation;
+            Assert.that(operation != null);
+            
+            // dispose operations don't have successor droplet units. So skip drawing those droplet units
+            DropletUnit successor = dropletUnit.successor;
+            if (successor == null) continue;
+            Assert.that(!operation.name.equals(OperationType.dispose));
+
+            boolean multiCellDroplet = shared.router instanceof DropletSizeAwareGreedyRouter;
+            if (multiCellDroplet) {
+              target = successor.route.getPosition(timestamp + 1);
+              move.set(target).sub(at);
+
+              drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+            } else {
+              
+              if (droplet.operation.name.equals(OperationType.split)) {
+                Droplet successor1 = operation.forwarding[0];
+                Droplet successor2 = operation.forwarding[1];
+
+                Assert.that(successor1.units.size() == 1);
+                Assert.that(successor2.units.size() == 1);
+                
+                DropletUnit targetUnit1 = successor1.units.get(0);
+                DropletUnit targetUnit2 = successor2.units.get(0);
+                
+                Point target1 = targetUnit1.route.getPosition(timestamp + 1);
+                Point target2 = targetUnit2.route.getPosition(timestamp + 1);
+                
+                move.set(target1).sub(at);
+                drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+
+                move.set(target2).sub(at);
+                drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+                
+              } else {
+                target = successor.route.getPosition(timestamp + 1);
+                move.set(target).sub(at);
+
+                drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+              }
+            }
+            
+          } else {
+            move.set(target).sub(at);
+            
+            drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+          }
+        }
+        
+      } else {
+        for (int i = 0; i < droplet.units.size(); i++) {
+          DropletUnit dropletUnit = droplet.units.get(i);
+          Point at = dropletUnit.route.getPosition(timestamp);
+          if (at == null) continue;
+
+          drawDropletUnit(droplet, at, 0, 0, scalar, color);
+        }
+      }
+    }
+  }
+
+  private void drawBoard() {
     { // frame
 			renderer.setColor(ColorPalette.gray);
 
@@ -526,150 +636,99 @@ public class ReplayScene extends Scene {
 				}
 			}
 		}
-		
-		{ // module
-		  for (Module module : result.modules) {
-		    
-		    Color color = getModuleColor(module);
-		    renderer.setColor(color);
-		    
-        for (int x = 0; x < module.width; x++) {
-          for (int y = 0; y < module.height; y++) {
-            
-            float xx = (module.position.x + x) * tilesize + gap;
-            float yy = (module.position.y + y) * tilesize + gap;
-            float width = tilesize - gap * 2f;
-            float height = tilesize - gap * 2f;
+  }
 
-            renderer.fillRect(xx, yy, width, height);
+  private void drawModules() {
+    for (Module module : result.modules) {
+      
+      Color color = getModuleColor(module);
+      renderer.setColor(color);
+      
+      for (int x = 0; x < module.width; x++) {
+        for (int y = 0; y < module.height; y++) {
+          
+          float xx = (module.position.x + x) * tilesize + gap;
+          float yy = (module.position.y + y) * tilesize + gap;
+          float width = tilesize - gap * 2f;
+          float height = tilesize - gap * 2f;
 
-          }
+          renderer.fillRect(xx, yy, width, height);
+
         }
       }
     }
-		
-    { // droplets
-      
-      List<Droplet> droplets = result.droplets;
-      for (Droplet droplet : droplets) {
-        if (moving) {
-          for (int i = 0; i < droplet.units.size(); i++) {
-            DropletUnit dropletUnit = droplet.units.get(i);
-            Point at = dropletUnit.route.getPosition(timestamp);
-            if (at == null) continue;
-    
-            Point target = dropletUnit.route.getPosition(timestamp + 1);
-            Point move = new Point();
+  }
+
+  private void drawDroplets() {
+    List<Droplet> droplets = result.droplets;
+    for (Droplet droplet : droplets) {
+      if (moving) {
+        for (int i = 0; i < droplet.units.size(); i++) {
+          DropletUnit dropletUnit = droplet.units.get(i);
+          Point at = dropletUnit.route.getPosition(timestamp);
+          if (at == null) continue;
+  
+          Point target = dropletUnit.route.getPosition(timestamp + 1);
+          Point move = new Point();
+          
+          if (target == null) {
+            Operation operation = droplet.operation;
+            Assert.that(operation != null);
             
-            if (target == null) {
-              Operation operation = droplet.operation;
-              Assert.that(operation != null);
-              
-              // dispose operations don't have successor droplet units. So skip drawing those droplet units
-              DropletUnit successor = dropletUnit.successor;
-              if (successor == null) continue;
-              Assert.that(!operation.name.equals(OperationType.dispose));
-              
+            // dispose operations don't have successor droplet units. So skip drawing those droplet units
+            DropletUnit successor = dropletUnit.successor;
+            if (successor == null) continue;
+            Assert.that(!operation.name.equals(OperationType.dispose));
+
+            boolean multiCellDroplet = shared.router instanceof DropletSizeAwareGreedyRouter;
+            if (multiCellDroplet) {
               target = successor.route.getPosition(timestamp + 1);
               move.set(target).sub(at);
 
               drawDropletUnit(droplet, at, move.x, move.y);
-              
             } else {
-              move.set(target).sub(at);
               
-              drawDropletUnit(droplet, at, move.x, move.y);
-            }
-          }
-          
-        } else {
-          for (int i = 0; i < droplet.units.size(); i++) {
-            DropletUnit dropletUnit = droplet.units.get(i);
-            Point at = dropletUnit.route.getPosition(timestamp);
-            if (at == null) continue;
+              if (droplet.operation.name.equals(OperationType.split)) {
+                Droplet successor1 = operation.forwarding[0];
+                Droplet successor2 = operation.forwarding[1];
 
-            drawDropletUnit(droplet, at, 0, 0);
+                Assert.that(successor1.units.size() == 1);
+                Assert.that(successor2.units.size() == 1);
+                
+                DropletUnit targetUnit1 = successor1.units.get(0);
+                DropletUnit targetUnit2 = successor2.units.get(0);
+                
+                Point target1 = targetUnit1.route.getPosition(timestamp + 1);
+                Point target2 = targetUnit2.route.getPosition(timestamp + 1);
+                
+                move.set(target1).sub(at);
+                drawDropletUnit(droplet, at, move.x, move.y);
+
+                move.set(target2).sub(at);
+                drawDropletUnit(droplet, at, move.x, move.y);
+                
+              } else {
+                target = successor.route.getPosition(timestamp + 1);
+                move.set(target).sub(at);
+
+                drawDropletUnit(droplet, at, move.x, move.y);
+              }
+            }
+            
+          } else {
+            move.set(target).sub(at);
+            
+            drawDropletUnit(droplet, at, move.x, move.y);
           }
         }
-      }
-    }
-    
-    { // selected droplets
-      List<Droplet> dropletSelection = new ArrayList<>();
-      if (selected.droplet != null) {
-        if (selected.unit != null && selected.unit.operation.name.equals(OperationType.merge)) {
-          Operation operation = selected.unit.operation;
-          dropletSelection.add(operation.manipulating[0]);
-          dropletSelection.add(operation.manipulating[1]);
-        } else {
-          dropletSelection.add(selected.droplet);
-        }
-      }
-      
-      for (Droplet droplet : dropletSelection) {
-        if (moving) {
-          for (int i = 0; i < droplet.units.size(); i++) {
-            DropletUnit dropletUnit = droplet.units.get(i);
-            Point at = dropletUnit.route.getPosition(timestamp);
-            if (at == null) continue;
-    
-            Point target = dropletUnit.route.getPosition(timestamp + 1);
-            Point move = new Point();
-            
-            if (target == null) {
-              Operation operation = droplet.operation;
-              Assert.that(operation != null);
-              
-              // dispose operations don't have successor droplet units. So skip drawing those droplet units
-              DropletUnit successor = dropletUnit.successor;
-              if (successor == null) continue;
-              Assert.that(!operation.name.equals(OperationType.dispose));
-              
-              target = successor.route.getPosition(timestamp + 1);
-              move.set(target).sub(at);
-              
-              float percentage = dt / (float) movementTime;
-              
-              float x = (at.x + move.x * percentage) * tilesize + gap;
-              float y = (at.y + move.y * percentage) * tilesize + gap;
-              float width = tilesize - gap * 2f;
-              float height = tilesize - gap * 2f;
+        
+      } else {
+        for (int i = 0; i < droplet.units.size(); i++) {
+          DropletUnit dropletUnit = droplet.units.get(i);
+          Point at = dropletUnit.route.getPosition(timestamp);
+          if (at == null) continue;
 
-              renderer.setColor(ColorPalette.seeThroughGray);
-              
-              renderer.fillRect(x, y, width, height);
-              
-            } else {
-              move.set(target).sub(at);
-              
-              float percentage = dt / (float) movementTime;
-              
-              float x = (at.x + move.x * percentage) * tilesize + gap;
-              float y = (at.y + move.y * percentage) * tilesize + gap;
-              float width = tilesize - gap * 2f;
-              float height = tilesize - gap * 2f;
-
-              renderer.setColor(ColorPalette.seeThroughGray);
-              
-              renderer.fillRect(x, y, width, height);
-            }
-          }
-          
-        } else {
-          for (int i = 0; i < droplet.units.size(); i++) {
-            DropletUnit dropletUnit = droplet.units.get(i);
-            Point at = dropletUnit.route.getPosition(timestamp);
-            if (at == null) continue;
-
-            float x = at.x * tilesize + gap;
-            float y = at.y * tilesize + gap;
-            float width = tilesize - gap * 2f;
-            float height = tilesize - gap * 2f;
-
-            renderer.setColor(ColorPalette.seeThroughGray);
-            
-            renderer.fillRect(x, y, width, height);
-          }
+          drawDropletUnit(droplet, at, 0, 0);
         }
       }
     }
@@ -689,7 +748,7 @@ public class ReplayScene extends Scene {
     throw new IllegalStateException("unknown module operation");
   }
 
-  private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy) {
+  private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy, float sizeScaling, Color color) {
     float percentage = dt / (float) movementTime;
     
     float baseRadius = (float) Math.sqrt(1f / Math.PI);
@@ -703,7 +762,7 @@ public class ReplayScene extends Scene {
     
     float diameter = diameterScaler * unscaledDiameter;
     
-    float size = tilesize * diameter;
+    float size = tilesize * diameter * sizeScaling;
     
     float offset = (tilesize - size) / 2f;
     
@@ -713,23 +772,16 @@ public class ReplayScene extends Scene {
     float width = size - gap * 2f;
     float height = size - gap * 2f;
     
-    Color color = getOperationColor(droplet.operation);
     renderer.setColor(color);
-    
     renderer.fillOval(x, y, width, height);    
-    //renderer.fillRect(x, y, width, height);    
-    
-    String id = String.format("%d", droplet.id);
-    
-    float tx = x + width / 2f;
-    float ty = y + height / 2f;
     
     renderer.setColor(ColorPalette.black);
-    //renderer.drawText(id, tx, ty, Alignment.Center);
-    
     renderer.drawOval(x, y, width, height);
-    //renderer.drawRect(x, y, width, height);
-    
+  }
+  
+  private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy) {
+    Color color = getOperationColor(droplet.operation);
+    drawDropletUnit(droplet, at, dx, dy, 1f, color);
   }
 
   private Color getOperationColor(Operation operation) {
