@@ -25,6 +25,7 @@ import dmb.algorithms.Router;
 import dmb.algorithms.RoutingResult;
 import dmb.components.mixingpercentages.DefaultMixingPercentages;
 import dmb.components.mixingpercentages.MixingPercentages;
+import dmb.helpers.RandomUtil;
 import dmb.testbench.Test;
 import dmb.testbench.bundles.BenchmarkTestBundle;
 import dmb.testbench.bundles.TestBundle;
@@ -114,6 +115,7 @@ public class SelectionScene extends Scene {
         int testIndex = testSelector.getSelectedIndex();
         Test test = tests.get(testIndex);
         
+        RandomUtil.init(42);
         RoutingResult result = router.compute(test.assay, test.array, percentages);
 
         shared.router = router;

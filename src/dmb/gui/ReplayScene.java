@@ -194,6 +194,7 @@ public class ReplayScene extends Scene {
 	@Override
 	public void update() {
 	  boardCamera.update();
+	  timelineCamera.update();
 
 	  handleInput();
 		
@@ -202,10 +203,12 @@ public class ReplayScene extends Scene {
     
     timelineCamera.lookAtNow(tx, ty);
 
+    /*
     String title = String.format("@%d", app.getFps());
     app.setTitle(title);
+		*/
 		
-		updateSelection();
+    updateSelection();
     updateMovement();
 	}
 
@@ -531,6 +534,9 @@ public class ReplayScene extends Scene {
         dropletSelection.add(selected.droplet);
       }
     }
+
+    float scalar = 1f;
+    Color color = ColorPalette.seeThroughGray;
     
     for (Droplet droplet : dropletSelection) {
       if (moving) {
@@ -550,34 +556,46 @@ public class ReplayScene extends Scene {
             DropletUnit successor = dropletUnit.successor;
             if (successor == null) continue;
             Assert.that(!operation.name.equals(OperationType.dispose));
-            
-            target = successor.route.getPosition(timestamp + 1);
-            move.set(target).sub(at);
-            
-            float percentage = dt / (float) movementTime;
-            
-            float x = (at.x + move.x * percentage) * tilesize + gap;
-            float y = (at.y + move.y * percentage) * tilesize + gap;
-            float width = tilesize - gap * 2f;
-            float height = tilesize - gap * 2f;
 
-            renderer.setColor(ColorPalette.seeThroughGray);
-            
-            renderer.fillRect(x, y, width, height);
+            boolean multiCellDroplet = shared.router instanceof DropletSizeAwareGreedyRouter;
+            if (multiCellDroplet) {
+              target = successor.route.getPosition(timestamp + 1);
+              move.set(target).sub(at);
+
+              drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+            } else {
+              
+              if (droplet.operation.name.equals(OperationType.split)) {
+                Droplet successor1 = operation.forwarding[0];
+                Droplet successor2 = operation.forwarding[1];
+
+                Assert.that(successor1.units.size() == 1);
+                Assert.that(successor2.units.size() == 1);
+                
+                DropletUnit targetUnit1 = successor1.units.get(0);
+                DropletUnit targetUnit2 = successor2.units.get(0);
+                
+                Point target1 = targetUnit1.route.getPosition(timestamp + 1);
+                Point target2 = targetUnit2.route.getPosition(timestamp + 1);
+                
+                move.set(target1).sub(at);
+                drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+
+                move.set(target2).sub(at);
+                drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+                
+              } else {
+                target = successor.route.getPosition(timestamp + 1);
+                move.set(target).sub(at);
+
+                drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+              }
+            }
             
           } else {
             move.set(target).sub(at);
             
-            float percentage = dt / (float) movementTime;
-            
-            float x = (at.x + move.x * percentage) * tilesize + gap;
-            float y = (at.y + move.y * percentage) * tilesize + gap;
-            float width = tilesize - gap * 2f;
-            float height = tilesize - gap * 2f;
-
-            renderer.setColor(ColorPalette.seeThroughGray);
-            
-            renderer.fillRect(x, y, width, height);
+            drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
           }
         }
         
@@ -587,14 +605,7 @@ public class ReplayScene extends Scene {
           Point at = dropletUnit.route.getPosition(timestamp);
           if (at == null) continue;
 
-          float x = at.x * tilesize + gap;
-          float y = at.y * tilesize + gap;
-          float width = tilesize - gap * 2f;
-          float height = tilesize - gap * 2f;
-
-          renderer.setColor(ColorPalette.seeThroughGray);
-          
-          renderer.fillRect(x, y, width, height);
+          drawDropletUnit(droplet, at, 0, 0, scalar, color);
         }
       }
     }
@@ -737,7 +748,7 @@ public class ReplayScene extends Scene {
     throw new IllegalStateException("unknown module operation");
   }
 
-  private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy) {
+  private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy, float sizeScaling, Color color) {
     float percentage = dt / (float) movementTime;
     
     float baseRadius = (float) Math.sqrt(1f / Math.PI);
@@ -751,7 +762,7 @@ public class ReplayScene extends Scene {
     
     float diameter = diameterScaler * unscaledDiameter;
     
-    float size = tilesize * diameter;
+    float size = tilesize * diameter * sizeScaling;
     
     float offset = (tilesize - size) / 2f;
     
@@ -761,12 +772,16 @@ public class ReplayScene extends Scene {
     float width = size - gap * 2f;
     float height = size - gap * 2f;
     
-    Color color = getOperationColor(droplet.operation);
     renderer.setColor(color);
     renderer.fillOval(x, y, width, height);    
     
     renderer.setColor(ColorPalette.black);
     renderer.drawOval(x, y, width, height);
+  }
+  
+  private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy) {
+    Color color = getOperationColor(droplet.operation);
+    drawDropletUnit(droplet, at, dx, dy, 1f, color);
   }
 
   private Color getOperationColor(Operation operation) {
