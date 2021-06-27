@@ -288,8 +288,8 @@ public class DropletReshaper {
   private void updateOffset() {
     Point bottomLeft = task.droplet.getBottomLeftPosition();
 
-    int offsetX = (int) MathUtils.clamp(0, array.width - 1 - task.dropletShape.width, bottomLeft.x);
-    int offsetY = (int) MathUtils.clamp(0, array.height - 1 - task.dropletShape.height, bottomLeft.y);
+    int offsetX = (int) MathUtils.clamp(0, array.width - task.dropletShape.width, bottomLeft.x);
+    int offsetY = (int) MathUtils.clamp(0, array.height - task.dropletShape.height, bottomLeft.y);
     
     offset.set(offsetX, offsetY);
   }

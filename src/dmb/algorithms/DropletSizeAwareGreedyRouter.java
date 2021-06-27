@@ -375,7 +375,8 @@ public class DropletSizeAwareGreedyRouter implements Router {
           Move move = getMixMove(droplet, percentages, array);
           if (move == null) continue;
           
-          Move previousMove = droplet.units.get(0).route.getMove(timestamp - 2);  // @Cleanup
+          DropletUnit unit = droplet.units.get(0);
+          Move previousMove = unit.route.getMove(timestamp - 2);
           float mixing = percentages.getMixingPercentage(move, previousMove);
 
           extra.mixingPercentage += mixing;
@@ -432,7 +433,6 @@ public class DropletSizeAwareGreedyRouter implements Router {
           
           Move move = getModuleMove(droplet, runningDroplets, module, array);
           
-          // @TODO: modules may take control, if they want to.
           if (dropletInside) {
             extra.currentDurationInTimesteps += 1;
             
@@ -525,7 +525,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
                 DropletExtra dropletExtra = getDropletExtra(droplet.id);
                 
                 dropletExtra.reshaping = true;
-                DropletShape shape = shapeSelector.select(droplet, array.width, array.height);
+                DropletShape shape = shapeSelector.select(droplet);
                 reshaper.reshape(droplet, shape);
               }
               
@@ -888,7 +888,9 @@ public class DropletSizeAwareGreedyRouter implements Router {
 
   private Move getMixMove(Droplet droplet, MixingPercentages percentages, BioArray array) {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
-    Move prevMove = droplet.units.get(0).route.getMove(timestamp - 2);
+    
+    DropletUnit unit = droplet.units.get(0);
+    Move prevMove = unit.route.getMove(timestamp - 2);
 
     float bestPercentage = Float.NEGATIVE_INFINITY;
     Move bestMove = null;
