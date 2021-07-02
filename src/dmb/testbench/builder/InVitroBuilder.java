@@ -18,6 +18,7 @@ public class InVitroBuilder {
     builder = new BioAssayBuilder();
 
     String[] sugars = new String[] { "glucose", "lactate", "pyruvate" };
+    //String[] sugars = new String[] { "glucose", "lactate" };
 
     for (String plasmaSample : plasmaSamples) {
       for (String sugar : sugars) {
@@ -48,8 +49,10 @@ public class InVitroBuilder {
     int detector1 = builder.createDetectionOperation("in-vitro");
     builder.connect(mixer1, detector1);
 
+    /*
     int disposer1 = builder.createDisposeOperation();
     builder.connect(detector1, disposer1);
+    */
   }
 
   private List<String> createGenericSamples(int numSamples) {

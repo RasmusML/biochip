@@ -2,6 +2,7 @@ package dmb.reshaping;
 
 import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import dmb.actuation.ElectrodeActivations;
 import dmb.actuation.ElectrodeActuation;
 import dmb.actuation.ElectrodeState;
 import dmb.algorithms.Point;
+import dmb.components.moves.Move;
 import dmb.platform.PlatformInterface;
 import framework.ApplicationAdapter;
 import framework.graphics.Alignment;
@@ -57,6 +59,8 @@ public class DropletReshapeApp extends ApplicationAdapter {
 
   DropletReshapeSimulator reshaper;
   Droplet droplet;
+  
+  Point hovered;
 
   List<Point> reshape;
 
@@ -75,6 +79,8 @@ public class DropletReshapeApp extends ApplicationAdapter {
 
     canvas.createBufferStrategy(3);
     canvas.setIgnoreRepaint(true);
+    
+    hovered = new Point();
 
     viewport = new FitViewport(640, 480, true);
     boardCamera = new Camera();
@@ -85,7 +91,9 @@ public class DropletReshapeApp extends ApplicationAdapter {
     if (sendCommandsToPlatform) {
       pi = new PlatformInterface();
       pi.connect();
-      //pi.setHighVoltageValue(100);  // ?
+      pi.setHighVoltageValue(299);
+      pi.turnHighVoltageOnForElectrodes();
+      pi.clearAllElectrodes();
     }
 
     float cx = gridWidth * tilesize / 2f;
@@ -135,7 +143,23 @@ public class DropletReshapeApp extends ApplicationAdapter {
     if (input.isKeyPressed(Keys.X)) {
       boardCamera.zoomNow(boardCamera.targetZoom * 1.02f);
     }
+    
+    if (input.isKeyJustPressed(Keys.UP)) {
+      move(Move.Up);
+    }
+    
+    if (input.isKeyJustPressed(Keys.DOWN)) {
+      move(Move.Down);
+    }
+    
+    if (input.isKeyJustPressed(Keys.LEFT)) {
+      move(Move.Left);
+    }
 
+    if (input.isKeyJustPressed(Keys.RIGHT)) {
+      move(Move.Right);
+    }
+    
     if (input.isKeyPressed(Keys.Z)) {
       boardCamera.zoomNow(boardCamera.targetZoom * 0.98f);
     }
@@ -192,15 +216,21 @@ public class DropletReshapeApp extends ApplicationAdapter {
 
     viewport.setCamera(boardCamera);
 
+    int mx = input.getX();
+    int my = input.getY();
+    
+    Vector2 world = viewport.screenToWorld(mx, my);
+    
+    int x = (int) (world.x / tilesize);
+    int y = (int) (world.y / tilesize);
+    
+
+    hovered = new Point();
+    hovered.x = x;
+    hovered.y = y;
+    
     if (input.isMouseJustPressed(Button.RIGHT)) {
       if (droplet.units.size() > 0) {
-        int mx = input.getX();
-        int my = input.getY();
-
-        Vector2 world = viewport.screenToWorld(mx, my);
-
-        int x = (int) (world.x / tilesize);
-        int y = (int) (world.y / tilesize);
 
         Point point = new Point(x, y);
 
@@ -258,6 +288,8 @@ public class DropletReshapeApp extends ApplicationAdapter {
   }
 
   private void sendCommandsOfCurrentPositions() {
+    if (!sendCommandsToPlatform) return;
+    
     List<Droplet> droplets = new ArrayList<>();
     droplets.add(droplet);
 
@@ -270,8 +302,8 @@ public class DropletReshapeApp extends ApplicationAdapter {
     int last = sections.length - 1;
 
     ElectrodeActivations section = sections[last];
+    /*
     for (ElectrodeActuation actuation : section.activations) {
-
       Point tile = actuation.tile;
 
       if (actuation.state == ElectrodeState.On) {
@@ -280,6 +312,24 @@ public class DropletReshapeApp extends ApplicationAdapter {
         pi.clearElectrode(tile.x, tile.y);
       }
     }
+    */
+    
+    for (ElectrodeActuation actuation : section.activations) {
+      Point tile = actuation.tile;
+
+      if (actuation.state == ElectrodeState.On) {
+        pi.setElectrode(tile.x, tile.y);
+      }
+    }
+
+    for (ElectrodeActuation actuation : section.activations) {
+      Point tile = actuation.tile;
+      
+      if (actuation.state == ElectrodeState.Off) {
+        pi.clearElectrode(tile.x, tile.y);
+      }
+    }
+    
   }
 
   @Override
@@ -327,6 +377,22 @@ public class DropletReshapeApp extends ApplicationAdapter {
       drawDroplet(droplet);
       drawReshape();
     }
+    
+    
+    String coords = String.format("(%d,%d)", hovered.x, hovered.y);
+    renderer.setFont("consolas", Font.PLAIN, 22);
+    renderer.setColor(Color.black);
+    renderer.drawText(coords, -20, -20, Alignment.BottomLeft);
+  }
+  
+  private void move(Move move) {
+    for (DropletUnit unit : droplet.units) {
+      Point to = unit.route.getPosition().copy();
+      to.add(move.x, move.y);
+      unit.route.path.add(to);
+    }
+    
+    sendCommandsOfCurrentPositions();
   }
 
   private void drawDroplet(Droplet droplet) {

@@ -11,7 +11,6 @@ public class InVitroArray1 extends BioArray {
     
     catalog = new ModuleCatalog();
     catalog.registerDetector(2, 0, 2, 2, 10, "in-vitro");
-    
     catalog.registerDetector(width / 2, height / 2, 3, 2, 10, "in-vitro");
     
     // sugars

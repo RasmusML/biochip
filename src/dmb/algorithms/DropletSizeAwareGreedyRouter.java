@@ -1057,12 +1057,11 @@ public class DropletSizeAwareGreedyRouter implements Router {
     return bestMove;
   }
 
-  static private class DropletExtra {
+  private class DropletExtra {
     public boolean reshaping;
   }
 
-  // OperationAttachment/State/Temporary
-  static private class OperationExtra {
+  private class OperationExtra {
     public boolean active;
     public boolean running;
 
@@ -1071,12 +1070,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
 
     public int forwardIndex;
 
-    // @TODO
-    // public int stepsSinceLastProgress;
-    // public float mostProgress;
-
     public float mixingPercentage; // only used for mixing operations.
-    //  public float currentTemperature; // only used for heating operations.
 
     public int currentDurationInTimesteps;
     public Module module;

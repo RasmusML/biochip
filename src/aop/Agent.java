@@ -2,7 +2,6 @@ package aop;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -97,15 +96,11 @@ public class Agent {
 
     Assert.that(!myPlan.equals(memory.request));
 
-    if (isResolved()) {
-      //Assert.that(false);
-      return ResolveResult.ok;
-    }
+    if (isResolved()) return ResolveResult.ok;
 
     DependencyLevel myLevel = myPlan.pushDependencyLevel(parentLevel);
 
     if (isCircularDependency(myLevel)) {
-      //Assert.that(false, "@test");
       myPlan.popDependencyLevel(myLevel);
       parentLevel.removeDependency(myLevel);
 
@@ -138,7 +133,7 @@ public class Agent {
   private ResolveResult tryWithPushingParentBack(Plan parentPlan, Phase phase, DependencyLevel myLevel) {
     if (parentPlan.equals(memory.request)) return ResolveResult.failed; // it is not possible to push the requester back.
 
-    if (phase == Phase.pushingParentBack) return ResolveResult.failed; // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
+    //if (phase == Phase.pushingParentBack) return ResolveResult.failed; // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
 
     Plan myPlan = memory.getPlan(this);
 
@@ -501,7 +496,7 @@ public class Agent {
           //requestPlan.agent.printCircularDependency();
 
           requestPlan.addToPlan(path);
-          DependencyLevel requesterLevel = requestPlan.pushRootDependencyLevel(); // requester never check for circular-dependency which is desired. @followup is this desired? 
+          DependencyLevel requesterLevel = requestPlan.pushRootDependencyLevel();
 
           pushableAgents = requestAgent.getPushableAgents();
 
@@ -1095,7 +1090,6 @@ class Plan {
     Plan copy = new Plan();
     copy.agent = agent;
     copy.path.addAll(path);
-    //copy.dependencyLevels.addAll(dependencyLevels); // @todo: deep-copy
     return copy;
   }
 }
@@ -1175,7 +1169,7 @@ class SharedAgentMemory {
   public void addFailedPlan(Plan plan) {
     Assert.that(plan.path.size() > 0);
 
-    failedPlans.add(plan.copy()); // @TODO: deep-copy
+    failedPlans.add(plan.copy());
   }
 
   public Plan getPlan(Agent agent) {

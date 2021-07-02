@@ -68,10 +68,13 @@ public class AopApp extends ApplicationAdapter {
 
     instances = new ArrayList<>();
 
+    pushTest1();
+
+    /*
     openTest1();
     undoTest6();
     undoTest3();
-
+    
     reverseTest2();
     normalTest2();
     okTest();
@@ -87,6 +90,7 @@ public class AopApp extends ApplicationAdapter {
 
     //openTest2();
     normalTest1(); // special: requester re-pathing
+  */
 
     Assert.that(instances.size() > 0);
     currentIndex = 0;
@@ -98,6 +102,53 @@ public class AopApp extends ApplicationAdapter {
     float cy = board.getHeight() * tilesize / 2f;
 
     boardCamera.lookAtNow(cx, cy);
+  }
+
+  private void pushTest1() {
+    String layout = "100\n" +
+        "101\n" +
+        "111\n" +
+        "101\n" +
+        "111";
+
+    Board board = new Board(layout);
+
+    List<Agent> agents = new ArrayList<>();
+    SharedAgentMemory memory = new SharedAgentMemory(board);
+
+    Agent agent0 = new Agent(memory, 0, new Point(0, 4));
+    Agent agent1 = new Agent(memory, 1, new Point(0, 2));
+    Agent agent2 = new Agent(memory, 2, new Point(1, 2));
+
+    agents.add(agent0);
+    agents.add(agent1);
+    agents.add(agent2);
+
+    memory.agents.add(agent0);
+    memory.agents.add(agent1);
+    memory.agents.add(agent2);
+
+    memory.start();
+
+    List<Point> path = new ArrayList<>();
+    path.add(new Point(0, 4));
+    path.add(new Point(0, 3));
+    path.add(new Point(0, 2));
+    path.add(new Point(0, 1));
+    path.add(new Point(0, 0));
+    path.add(new Point(1, 0));
+    path.add(new Point(2, 0));
+    path.add(new Point(2, 1));
+    path.add(new Point(2, 2));
+    path.add(new Point(2, 3));
+
+    Plan plan = memory.getPlan(agent0);
+    plan.addToPlan(path);
+
+    ResolveResult result = agent0.request(plan);
+    Assert.that(result == ResolveResult.ok);
+
+    createAOPInstance(board, agents, path);
   }
 
   private void okTest() {

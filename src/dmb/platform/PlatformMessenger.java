@@ -11,7 +11,7 @@ public class PlatformMessenger {
   }
 
   public String setHighVoltageValueMessage(int value) {
-    return String.format("shv 1 %d \r");
+    return String.format("shv 1 %d \r", value);
   }
 
   public String clearAllElectrodesMessage(int driverId) {

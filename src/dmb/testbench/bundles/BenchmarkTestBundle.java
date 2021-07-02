@@ -76,6 +76,7 @@ public class BenchmarkTestBundle implements TestBundle {
     register(new PlatformAssay2(), new PlatformArray2());
     register(new PlatformAssay3(), new PlatformArray3());
     register(new PlatformAssay4(), new PlatformArray4());
+    
   }
 
   private void register(BioAssay assay, BioArray array) {

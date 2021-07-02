@@ -24,9 +24,7 @@ import dmb.components.module.ModuleAllocator;
 import dmb.components.moves.Move;
 import dmb.components.moves.MoveFinder;
 import dmb.components.moves.SingleCellMoveFinder;
-import dmb.components.prioritizer.CountChainPrioritizer;
 import dmb.components.prioritizer.Prioritizer;
-import dmb.components.prioritizer.RandomPrioritizer;
 import dmb.components.prioritizer.WeightedChainPrioritizer;
 import dmb.helpers.Assert;
 import dmb.helpers.GeometryUtil;
@@ -37,7 +35,7 @@ import framework.input.Droplet;
 import framework.input.DropletUnit;
 import framework.math.MathUtils;
 
-public class GreedyRouter implements Router {
+public class DeadlockRouter implements Router {
 
   private ConstraintsChecker checker;
   private RandomIndexSelector indexSelector;
@@ -64,17 +62,6 @@ public class GreedyRouter implements Router {
   private int timestamp;
 
   private float[] moveWeights;
-
-  /*
-   * The algorithm is based on the following papers:
-   * 
-   * Greedy Randomized Adaptive Search Procedure:
-   * http://www2.compute.dtu.dk/~paupo/publications/Maftei2012aa-Routing-based%20Synthesis%20of%20Dig-Design%20Automation%20for%20Embedded.pdf
-   * 
-   * Performance Improvements and Congestion Reduction for Routing-based Synthesis for Digital Microfluidic Biochips:
-   * http://www2.compute.dtu.dk/~paupo/publications/Windh2016aa-Performance%20Improvements%20and%20C-IEEE%20Transactions%20on%20Computer-.pdf
-   * 
-   */
 
   @Override
   public RoutingResult compute(BioAssay assay, BioArray array, MixingPercentages percentages) {

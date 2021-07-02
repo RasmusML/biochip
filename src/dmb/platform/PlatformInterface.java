@@ -26,7 +26,7 @@ public class PlatformInterface {
   public PlatformInterface() {
     platform = new Platform();
 
-    transmitter = new TerminalTransmitter();
+    transmitter = new SerialTransmitter();
     messenger = new PlatformMessenger();
 
     commandDelay = 50;
@@ -36,7 +36,7 @@ public class PlatformInterface {
   }
 
   public void connect() {
-    String port = null; // @TODO
+    String port = "COM3";
     transmitter.open(port);
   }
 
@@ -233,21 +233,29 @@ class SerialTransmitter implements Transmitter {
 
   @Override
   public void open(String port) {
+    SerialPort[] ports = SerialPort.getCommPorts();
+    
+    for (SerialPort portName : ports) {
+      System.out.println(portName.getPortDescription());
+    }
+    
     serialPort = SerialPort.getCommPort(port);
 
-    serialPort.setBaudRate(115200); // ? 
-    serialPort.setNumDataBits(8); // ? 
-    serialPort.setNumStopBits(SerialPort.ONE_STOP_BIT); // ?
-    serialPort.setParity(SerialPort.NO_PARITY); // ?
-    // serialPort.setFlowControl(SerialPort.FLOW_CONTROL_DISABLED);  // ? 
+    serialPort.setBaudRate(115200); 
+    serialPort.setNumDataBits(8);
+    serialPort.setNumStopBits(SerialPort.ONE_STOP_BIT);
+    serialPort.setParity(SerialPort.NO_PARITY);
 
     serialPort.openPort();
+    
+    System.out.printf("connected to \"%s\"\n", serialPort.getPortDescription());
   }
 
   @Override
   public void send(String message) {
     byte[] buffer = message.getBytes();
     serialPort.writeBytes(buffer, buffer.length);
+    System.out.printf("sending \"%s\"\n", message);
   }
 
   @Override
