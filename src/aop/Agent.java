@@ -96,7 +96,7 @@ public class Agent {
 
     Assert.that(!myPlan.equals(memory.request));
 
-    if (isResolved()) return ResolveResult.ok;
+    if (isResolved(parentPlan)) return ResolveResult.ok;
 
     DependencyLevel myLevel = myPlan.pushDependencyLevel(parentLevel);
 
@@ -109,11 +109,11 @@ public class Agent {
 
     ResolveResult result;
 
-    // try finding a safe cell.
-    result = tryWithResolvingPaths(parentPlan, myLevel);
+    result = tryWithSideStepping(parentPlan, phase, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
 
-    result = tryWithSideStepping(parentPlan, phase, myLevel);
+    // try finding a safe cell.
+    result = tryWithResolvingPaths(parentPlan, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
 
     // try pushing the parent back.
@@ -215,6 +215,43 @@ public class Agent {
     return ResolveResult.failed;
   }
   
+  private int getFirstCollisionTime(Agent other) {
+    Plan myPlan = memory.getPlan(this);
+    Plan otherPlan = memory.getPlan(other);
+    
+    int mySteps = path.size() + myPlan.path.size();
+    int otherSteps = other.path.size() + otherPlan.path.size();
+    
+    int totalTimesteps = Math.max(mySteps, otherSteps);
+    int timestep = 1;
+    while (timestep <= totalTimesteps) {
+      Point at = getPositionSafe(timestep);
+      Point otherAt = other.getPositionSafe(timestep);
+      if (at.x == otherAt.x && at.y == otherAt.y) return timestep;
+      timestep += 1;
+    }
+    
+    return -1;
+  }
+  
+  private Point getPositionSafe(int timestep) {
+    Point at;
+    
+    int index;
+    
+    index = timestep - 1;
+    at = getPosition(index);
+    if (at != null) return at;
+    
+    Plan myPlan = memory.getPlan(this);
+    if (myPlan.path.size() == 0) return getPosition();
+    
+    index = timestep - path.size() - 1;
+    if (index >= myPlan.path.size()) return myPlan.getPosition();
+    
+    return myPlan.path.get(index);
+  }
+
   private ResolveResult tryWithSideStepping(Plan parentPlan, Phase phase, DependencyLevel myLevel) {
     if (parentPlan.equals(memory.request)) return ResolveResult.failed; // it is not possible to push the requester back.
 
@@ -225,19 +262,18 @@ public class Agent {
     Point at = myPlan.getPosition();
     if (at == null) at = myPlan.agent.getPosition();
 
-    Point parentTarget = parentPlan.getPosition();
-    if (!(parentTarget.x == at.x && parentTarget.y == at.y)) return ResolveResult.failed; // a push back move does not make sense, because the parent is just moving through.
-
-    int meTime = path.size() + myPlan.path.size();
-    int mePushedAwayTime = parentPlan.agent.path.size() + parentPlan.path.size();
-    int meJustBeforePushedAwayTime = mePushedAwayTime - 1;
-
     List<Point> stays = new ArrayList<>();
 
-    int stayBy = meJustBeforePushedAwayTime - meTime;
+    int collisionTime = parentPlan.agent.getFirstCollisionTime(this);
+    
+    int meTime = path.size() + myPlan.path.size();
+    int stayBy = collisionTime - meTime - 1;
     for (int i = 0; i < stayBy; i++) {
       stays.add(at.copy());
     }
+
+    
+    int meJustBeforePushedAwayTime = collisionTime - 1;
 
     List<Out> outs = getOuts(at, meJustBeforePushedAwayTime);
 
@@ -310,6 +346,7 @@ public class Agent {
 
       if (!board.isTileOpen(to.x, to.y)) continue;
 
+      if (nextOccupied[to.x][to.y] != -1) continue;
       if (occupied[to.x][to.y] != -1 && occupied[to.x][to.y] == nextOccupied[baseAt.x][baseAt.y]) continue; // the agents would jump through each other. Not possible.
 
       Out out = new Out();
@@ -642,13 +679,10 @@ public class Agent {
 
   }
 
-  private boolean isResolved() {
-    for (Plan plan : memory.plans) {
-      Agent agent = plan.agent;
-      List<Agent> pushableAgents = agent.getPushableAgents();
-      if (pushableAgents.size() > 0) return false;
-    }
-
+  private boolean isResolved(Plan parentPlan) {
+    Agent agent = parentPlan.agent;
+    List<Agent> pushableAgents = agent.getPushableAgents();
+    if (pushableAgents.contains(this)) return false;
     return true;
   }
 

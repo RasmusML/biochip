@@ -68,9 +68,11 @@ public class AopApp extends ApplicationAdapter {
 
     instances = new ArrayList<>();
 
-    undoTest6();
+    undoTest4();
 
     pushTest1();
+
+    undoTest6();
 
     openTest1();
     undoTest3();
@@ -81,7 +83,6 @@ public class AopApp extends ApplicationAdapter {
     reverseTest();
     undoTest2();
     undoTest1();
-    undoTest4();
     undoTest5();
     failingTest1();
     failingTest2();
@@ -131,7 +132,6 @@ public class AopApp extends ApplicationAdapter {
     memory.start();
 
     List<Point> path = new ArrayList<>();
-    path.add(new Point(0, 4));
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
     path.add(new Point(0, 1));
