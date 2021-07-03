@@ -129,8 +129,6 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent1);
     memory.agents.add(agent2);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
@@ -142,7 +140,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(2, 2));
     path.add(new Point(2, 3));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -173,15 +171,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent0);
     memory.agents.add(agent1);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 1));
     path.add(new Point(0, 2));
     path.add(new Point(0, 3));
     path.add(new Point(0, 4));
 
-    Plan plan = memory.getPlan(agent1);
+    Plan plan = agent1.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent1.request(plan);
@@ -225,15 +221,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent1);
     memory.agents.add(agent2);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 1));
     path.add(new Point(0, 2));
     path.add(new Point(0, 3));
     path.add(new Point(0, 4));
 
-    Plan plan = memory.getPlan(agent1);
+    Plan plan = agent1.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent1.request(plan);
@@ -267,15 +261,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent1);
     memory.agents.add(agent2);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
     path.add(new Point(0, 1));
     path.add(new Point(0, 0));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -306,15 +298,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent0);
     memory.agents.add(agent1);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
     path.add(new Point(0, 1));
     path.add(new Point(0, 0));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -348,15 +338,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent1);
     memory.agents.add(agent2);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
     path.add(new Point(0, 1));
     path.add(new Point(0, 0));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -390,15 +378,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent1);
     memory.agents.add(agent2);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(1, 3));
     path.add(new Point(1, 2));
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -431,8 +417,6 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent1);
     memory.agents.add(agent2);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 1));
     path.add(new Point(0, 0));
@@ -442,7 +426,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(2, 2));
     path.add(new Point(2, 3));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     agent0.request(plan);
@@ -475,8 +459,6 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent1);
     memory.agents.add(agent2);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
@@ -488,7 +470,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(2, 2));
     path.add(new Point(2, 3));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -525,15 +507,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent2);
     memory.agents.add(agent3);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(1, 3));
     path.add(new Point(1, 2));
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -570,15 +550,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent2);
     memory.agents.add(agent3);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(1, 3));
     path.add(new Point(1, 2));
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -615,8 +593,6 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent2);
     memory.agents.add(agent3);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
@@ -629,7 +605,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(3, 2));
     path.add(new Point(3, 3));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -663,15 +639,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent1);
     memory.agents.add(agent2);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(1, 3));
     path.add(new Point(1, 2));
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -708,15 +682,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent2);
     memory.agents.add(agent3);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(1, 3));
     path.add(new Point(1, 2));
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -756,15 +728,13 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent3);
     memory.agents.add(agent4);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(1, 3));
     path.add(new Point(1, 2));
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -796,14 +766,12 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent0);
     memory.agents.add(agent1);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(1, 2));
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = memory.getPlan(agent0);
+    Plan plan = agent0.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -834,8 +802,6 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent0);
     memory.agents.add(agent1);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
@@ -843,7 +809,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = memory.getPlan(agent1);
+    Plan plan = agent1.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent1.request(plan);
@@ -875,8 +841,6 @@ public class AopApp extends ApplicationAdapter {
     memory.agents.add(agent0);
     memory.agents.add(agent1);
 
-    memory.start();
-
     List<Point> path = new ArrayList<>();
     path.add(new Point(0, 3));
     path.add(new Point(0, 2));
@@ -884,7 +848,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = memory.getPlan(agent1);
+    Plan plan = agent1.myPlan;
     plan.addToPlan(path);
 
     ResolveResult result = agent1.request(plan);

@@ -12,8 +12,9 @@ import framework.math.MathUtils;
 public class Agent {
 
   private int id;
-
   private SharedAgentMemory memory;
+  
+  public Plan myPlan;
 
   private List<Point> path;
 
@@ -21,6 +22,9 @@ public class Agent {
     this.id = id;
     this.memory = memory;
 
+    myPlan = new Plan();
+    myPlan.agent = this;
+    
     path = new ArrayList<>();
     for (Point point : spawn) {
       path.add(point);
@@ -62,9 +66,9 @@ public class Agent {
     Assert.that(plan.checkpoints.size() == 1);
 
     if (ok) {
-      for (Plan committable : memory.plans) {
-        Agent agent = committable.agent;
-        agent.path.addAll(committable.path);
+      for (Agent agent : memory.agents) {
+        agent.path.addAll(agent.myPlan.path);
+        agent.myPlan.reset();
       }
     }
 
@@ -81,7 +85,6 @@ public class Agent {
 
     memory.request = null;
     memory.failedPlans.clear();
-    memory.plans.clear();
     memory.agents.clear();
 
     return ok ? ResolveResult.ok : ResolveResult.failed;
@@ -92,8 +95,6 @@ public class Agent {
   }
 
   public ResolveResult resolve(Plan parentPlan, Phase phase, DependencyLevel parentLevel) {
-    Plan myPlan = memory.getPlan(this);
-
     Assert.that(!myPlan.equals(memory.request));
 
     if (isResolved(parentPlan)) return ResolveResult.ok;
@@ -137,8 +138,6 @@ public class Agent {
     if (parentPlan.equals(memory.request)) return ResolveResult.failed; // it is not possible to push the requester back.
 
     //if (phase == Phase.pushingParentBack) return ResolveResult.failed; // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
-
-    Plan myPlan = memory.getPlan(this);
 
     Point at = myPlan.getPosition();
     if (at == null) at = myPlan.agent.getPosition();
@@ -216,11 +215,8 @@ public class Agent {
   }
   
   private int getFirstCollisionTime(Agent other) {
-    Plan myPlan = memory.getPlan(this);
-    Plan otherPlan = memory.getPlan(other);
-    
     int mySteps = path.size() + myPlan.path.size();
-    int otherSteps = other.path.size() + otherPlan.path.size();
+    int otherSteps = other.path.size() + other.myPlan.path.size();
     
     int totalTimesteps = Math.max(mySteps, otherSteps);
     int timestep = 1;
@@ -243,7 +239,6 @@ public class Agent {
     at = getPosition(index);
     if (at != null) return at;
     
-    Plan myPlan = memory.getPlan(this);
     if (myPlan.path.size() == 0) return getPosition();
     
     index = timestep - path.size() - 1;
@@ -256,8 +251,6 @@ public class Agent {
     if (parentPlan.equals(memory.request)) return ResolveResult.failed; // it is not possible to push the requester back.
 
     //if (phase == Phase.pushingParentBack) return ResolveResult.failed; // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
-
-    Plan myPlan = memory.getPlan(this);
 
     Point at = myPlan.getPosition();
     if (at == null) at = myPlan.agent.getPosition();
@@ -319,7 +312,6 @@ public class Agent {
   private List<Out> getOuts(Point baseAt, int timestep) {
     Board board = memory.board;
 
-    List<Plan> plans = memory.plans;
     List<Agent> agents = memory.agents;
 
     int width = board.getWidth();
@@ -328,8 +320,8 @@ public class Agent {
     int[][] occupied = new int[width][height]; // free: -1, id: x (>= 0)
     int[][] nextOccupied = new int[width][height]; // free: -1, id: x (>= 0)
 
-    updateOccupiedTiles(occupied, timestep, plans, agents);
-    updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
+    updateOccupiedTiles(occupied, timestep, agents);
+    updateOccupiedTiles(nextOccupied, timestep + 1, agents);
 
     print(occupied);
     print(nextOccupied);
@@ -367,8 +359,8 @@ public class Agent {
 
     //timestep += 1;
 
-    updateOccupiedTiles(occupied, timestep, plans, agents);
-    updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
+    updateOccupiedTiles(occupied, timestep, agents);
+    updateOccupiedTiles(nextOccupied, timestep + 1, agents);
 
     for (int i = 0; i < iterations; i++) {
 
@@ -388,8 +380,8 @@ public class Agent {
 
       timestep += 1;
 
-      updateOccupiedTiles(occupied, timestep, plans, agents);
-      updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
+      updateOccupiedTiles(occupied, timestep, agents);
+      updateOccupiedTiles(nextOccupied, timestep + 1, agents);
     }
 
     return outs;
@@ -403,8 +395,6 @@ public class Agent {
   }
 
   private ResolveResult tryWithResolvingPaths(Plan parentPlan, DependencyLevel myLevel) {
-    Plan myPlan = memory.getPlan(this);
-
     FloodGrid endpointGrid = getDistanceGrid();
 
     System.out.println("distance-grid " + id);
@@ -473,7 +463,6 @@ public class Agent {
   }
 
   private void sortCellsByClosestToAgent(List<Point> endPoints) {
-    Plan myPlan = memory.getPlan(this);
     final Point at = (myPlan.getPosition() == null) ? getPosition() : myPlan.getPosition();
 
     Collections.sort(endPoints, (p1, p2) -> {
@@ -492,8 +481,6 @@ public class Agent {
   }
 
   private int[][] getEndPointHavenGrid(int[][] distanceGrid) {
-    Plan myPlan = memory.getPlan(this);
-
     Board board = memory.board;
 
     int width = board.getWidth();
@@ -502,8 +489,8 @@ public class Agent {
     int[][] havenGrid = new int[width][height]; // ok: 1, wall: 0, agent: -1
     copy(board.grid, havenGrid);
 
-    List<Plan> plans = memory.plans;
-    for (Plan plan : plans) {
+    for (Agent agent :  memory.agents) {
+      Plan plan = agent.myPlan;
       if (plan.equals(myPlan)) continue;
       if (plan.agent.equals(memory.request.agent)) continue;
       if (plan.path.size() == 0) continue;
@@ -546,7 +533,6 @@ public class Agent {
     if (requestPlan.path.size() == 0) return ResolveResult.failed;
 
     Agent requestAgent = memory.request.agent;
-    Plan myPlan = memory.getPlan(this);
 
     List<Point> originalRequestPlanPath = new ArrayList<>();
 
@@ -648,8 +634,6 @@ public class Agent {
   private boolean isCircularDependency(DependencyLevel myLevel) {
     //printCircularDependency();
 
-    Plan myPlan = memory.getPlan(this);
-
     int occurrence = 0;
     int maxOccurences = 1;
 
@@ -664,8 +648,6 @@ public class Agent {
   }
 
   private void printCircularDependency(DependencyLevel myLevel) {
-    Plan myPlan = memory.getPlan(this);
-
     DependencyLevel ancestor = myLevel.parent;
 
     System.out.printf("%d<-", myPlan.agent.id);
@@ -716,13 +698,11 @@ public class Agent {
     int[][] nextOccupied = createGrid(tiles);
     int[][] occupied = createGrid(tiles);
 
-    List<Plan> plans = memory.plans;
-
     AStarPathFinder pathfinder = new AStarPathFinder() {
       @Override
       public List<Point> getMoves(Point at, int timestep) {
-        agent.updateOccupiedTiles(occupied, timestep, plans, memory.agents);
-        agent.updateOccupiedTiles(nextOccupied, timestep + 1, plans, memory.agents);
+        agent.updateOccupiedTiles(occupied, timestep, memory.agents);
+        agent.updateOccupiedTiles(nextOccupied, timestep + 1, memory.agents);
 
         List<Point> validMoves = new ArrayList<>();
         for (Point move : moves) {
@@ -810,8 +790,6 @@ public class Agent {
   public List<Agent> getPushableAgents() {
     List<Agent> pushableAgents = new ArrayList<>();
 
-    Plan myPlan = memory.getPlan(this);
-
     List<Agent> agents = new ArrayList<>();
     agents.addAll(memory.agents);
     agents.remove(memory.request.agent);
@@ -823,7 +801,7 @@ public class Agent {
       for (Iterator<Agent> it = agents.iterator(); it.hasNext();) {
         Agent other = it.next();
 
-        Plan otherPlan = memory.getPlan(other);
+        Plan otherPlan = other.myPlan;
 
         if (otherPlan.path.size() == 0) {
           Point otherLastAt = other.getPosition();
@@ -901,8 +879,6 @@ public class Agent {
   private boolean isFailedPlan(List<Point> path) {
     List<Plan> failedPlans = memory.getFailedPlans(this);
 
-    Plan myPlan = memory.getPlan(this);
-
     List<Point> fullPath = new ArrayList<>();
     fullPath.addAll(myPlan.path);
     fullPath.addAll(path);
@@ -962,7 +938,6 @@ public class Agent {
   private FloodGrid getDistanceGrid() {
     Board board = memory.board;
 
-    List<Plan> plans = memory.plans;
     List<Agent> agents = memory.agents;
 
     int width = board.getWidth();
@@ -983,17 +958,16 @@ public class Agent {
     moves.add(new Point(0, 1));
     moves.add(new Point(0, -1));
 
-    Plan plan = memory.getPlan(this);
-    int timestep = path.size() + plan.path.size();
+    int timestep = path.size() + myPlan.path.size();
 
-    Point at = plan.getPosition();
+    Point at = myPlan.getPosition();
     if (at == null) at = path.get(path.size() - 1);
 
     List<Point> pending = new ArrayList<>();
     pending.add(at);
 
-    updateOccupiedTiles(occupied, timestep, plans, agents);
-    updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
+    updateOccupiedTiles(occupied, timestep, agents);
+    updateOccupiedTiles(nextOccupied, timestep + 1, agents);
 
     //print(occupied);
 
@@ -1048,8 +1022,8 @@ public class Agent {
 
         pendingInLayerCount = pending.size();
 
-        updateOccupiedTiles(occupied, timestep, plans, agents);
-        updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
+        updateOccupiedTiles(occupied, timestep, agents);
+        updateOccupiedTiles(nextOccupied, timestep + 1, agents);
       }
     }
 
@@ -1061,13 +1035,14 @@ public class Agent {
   }
 
   // free: -1, id: x (>= 0)
-  private void updateOccupiedTiles(int[][] occupied, int timestep, List<Plan> plans, List<Agent> agents) {
+  private void updateOccupiedTiles(int[][] occupied, int timestep, List<Agent> agents) {
     fill(occupied, -1);
 
-    for (Plan plan : plans) {
-      Agent agent = plan.agent;
+    for (Agent agent : agents) {
       if (equals(agent)) continue;
 
+      Plan plan = agent.myPlan;
+      
       int stepsCommitted = agent.path.size();
       int stepsPlanned = plan.path.size();
       int steps = stepsCommitted + stepsPlanned;
@@ -1139,6 +1114,12 @@ class Plan {
     path = new ArrayList<>();
     checkpoints = new ArrayList<>();
     dependencyLevels = new ArrayList<>();
+  }
+  
+  public void reset() {
+    path.clear();
+    checkpoints.clear();
+    dependencyLevels.clear();
   }
 
   public void addToPlan(List<Point> addition) {
@@ -1249,7 +1230,6 @@ class SharedAgentMemory {
   public Board board;
 
   public List<Plan> failedPlans;
-  public List<Plan> plans;
 
   public SharedAgentMemory(Board board) {
     this.board = board;
@@ -1260,28 +1240,12 @@ class SharedAgentMemory {
     agents = new ArrayList<>();
 
     failedPlans = new ArrayList<>();
-    plans = new ArrayList<>();
-  }
-
-  public void start() {
-    for (Agent agent : agents) {
-      Plan plan = new Plan();
-      plan.agent = agent;
-      plans.add(plan);
-    }
   }
 
   public void addFailedPlan(Plan plan) {
     Assert.that(plan.path.size() > 0);
 
     failedPlans.add(plan.copy());
-  }
-
-  public Plan getPlan(Agent agent) {
-    for (Plan plan : plans) {
-      if (plan.agent.equals(agent)) return plan;
-    }
-    throw new IllegalStateException("broken!");
   }
 
   public List<Plan> getFailedPlans(Agent agent) {
