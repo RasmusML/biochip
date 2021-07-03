@@ -5,6 +5,11 @@ import java.util.Map;
 
 import framework.input.Droplet;
 
+/**
+ * Microfludic operation.
+ * 
+ */
+
 public class Operation {
 
   public int id;

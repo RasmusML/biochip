@@ -760,34 +760,6 @@ public class DropletSizeAwareGreedyRouter implements Router {
     int bestMoveIndex = indexSelector.select(weights);
 
     return validMoves.get(bestMoveIndex);
-
-    /*
-    Move bestMove = null;
-    float maxDistance = -1;
-    
-    Point to = new Point();
-    
-    float mcx = module.position.x + module.width / 2f;
-    float mcy = module.position.y + module.height / 2f;
-      
-    // @TODO: probabilistic moves, it possible for deadlocks @create test which does deadlock!
-    
-    Point at = droplet.getCenterPosition();
-    Module module = inside.get(0);  // just select 1 of the modules, which droplet is within to remove away from. When the droplet is not within this module, do the same thing for the next module till the droplet is not within any module.
-    
-    List<Move> moves = moveFinder.getValidMoves(droplet, timestamp, droplets, inUseModules, array);
-    for (Move move : moves) {
-      to.set(at).add(move.x, move.y);
-      
-      float distance = MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
-      if (distance > maxDistance) {
-        maxDistance = distance;
-        bestMove = move;
-      }
-    }
-    
-    return bestMove;
-    */
   }
 
   private Droplet createDroplet(Point position, float area) {

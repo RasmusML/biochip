@@ -23,7 +23,7 @@ import dmb.testbench.bundles.TestBundle;
 
 public class TestSuite {
 
-  private boolean writeToFile = true;
+  private boolean writeToFile = false;
 
   private int runs = 1000;
   private int recapSeedPrintInterval = runs / 10;
@@ -63,7 +63,7 @@ public class TestSuite {
     dropletSizeAwareGreedyRouter = new DropletSizeAwareGreedyRouter();
 
     routers.add(greedyRouter);
-    //routers.add(dropletSizeAwareGreedyRouter);
+    routers.add(dropletSizeAwareGreedyRouter);
   }
 
   public void runAllRoutersWithBenchmarkTests() {
