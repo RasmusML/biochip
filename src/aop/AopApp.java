@@ -68,11 +68,11 @@ public class AopApp extends ApplicationAdapter {
 
     instances = new ArrayList<>();
 
+    undoTest6();
+
     pushTest1();
 
-    /*
     openTest1();
-    undoTest6();
     undoTest3();
     
     reverseTest2();
@@ -90,7 +90,6 @@ public class AopApp extends ApplicationAdapter {
 
     //openTest2();
     normalTest1(); // special: requester re-pathing
-  */
 
     Assert.that(instances.size() > 0);
     currentIndex = 0;
@@ -105,7 +104,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void pushTest1() {
-    String layout = "100\n" +
+    String layout = 
+        "100\n" +
         "101\n" +
         "111\n" +
         "101\n" +
@@ -152,7 +152,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void okTest() {
-    String layout = "100\n" +
+    String layout = 
+        "100\n" +
         "111\n" +
         "100\n" +
         "100\n" +
@@ -200,7 +201,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void normalTest2() {
-    String layout = "100\n" +
+    String layout = 
+        "100\n" +
         "111\n" +
         "100\n" +
         "100\n" +
@@ -241,7 +243,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void normalTest3() {
-    String layout = "100\n" +
+    String layout = 
+        "100\n" +
         "111\n" +
         "100\n" +
         "110\n" +
@@ -282,7 +285,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void reverseTest() {
-    String layout = "100\n" +
+    String layout = 
+        "100\n" +
         "111\n" +
         "100\n" +
         "100\n" +
@@ -320,7 +324,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void reverseTest2() {
-    String layout = "100\n" +
+    String layout = 
+        "100\n" +
         "111\n" +
         "100\n" +
         "100\n" +
@@ -361,7 +366,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void undoTest1() {
-    String layout = "0100\n" +
+    String layout = 
+        "0100\n" +
         "0111\n" +
         "0100\n" +
         "1100\n" +
@@ -402,7 +408,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void undoTest2() {
-    String layout = "001\n" +
+    String layout = 
+        "001\n" +
         "111\n" +
         "101\n" +
         "111";
@@ -444,7 +451,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void undoTest3() {
-    String layout = "100\n" +
+    String layout = 
+        "100\n" +
         "101\n" +
         "111\n" +
         "101\n" +
@@ -490,7 +498,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void undoTest4() {
-    String layout = "0100\n" +
+    String layout = 
+        "0100\n" +
         "0111\n" +
         "0100\n" +
         "1100\n" +
@@ -534,7 +543,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void undoTest5() {
-    String layout = "0100\n" +
+    String layout = 
+        "0100\n" +
         "0111\n" +
         "0100\n" +
         "1100\n" +
@@ -578,7 +588,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void undoTest6() {
-    String layout = "1000\n" +
+    String layout = 
+        "1000\n" +
         "1001\n" +
         "1111\n" +
         "1001\n" +
@@ -628,7 +639,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void failingTest1() {
-    String layout = "0100\n" +
+    String layout = 
+        "0100\n" +
         "0110\n" +
         "0100\n" +
         "0100\n" +
@@ -669,7 +681,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void failingTest2() {
-    String layout = "0100\n" +
+    String layout = 
+        "0100\n" +
         "0110\n" +
         "0100\n" +
         "1100\n" +
@@ -713,7 +726,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void failingTest3() {
-    String layout = "0100\n" +
+    String layout = 
+        "0100\n" +
         "0111\n" +
         "0100\n" +
         "1100\n" +
@@ -761,7 +775,8 @@ public class AopApp extends ApplicationAdapter {
 
   // only possible to solve, if requester can use other cells than that of the route to resolve the deadlock
   private void normalTest1() {
-    String layout = "0100\n" +
+    String layout = 
+        "0100\n" +
         "0110\n" +
         "0100\n" +
         "0100\n" +
@@ -798,7 +813,8 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void openTest1() {
-    String layout = "111\n" +
+    String layout = 
+        "111\n" +
         "111\n" +
         "101\n" +
         "111\n" +
@@ -838,7 +854,8 @@ public class AopApp extends ApplicationAdapter {
 
   // figure out what to do here. The problem is the requester has selected a path which goes through another agents committed move. We should probably make it illegal to do so, but not handle it in this algorith. Maybe just detect it?
   private void openTest2() {
-    String layout = "111\n" +
+    String layout = 
+        "111\n" +
         "111\n" +
         "101\n" +
         "111\n" +

@@ -113,6 +113,9 @@ public class Agent {
     result = tryWithResolvingPaths(parentPlan, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
 
+    result = tryWithSideStepping(parentPlan, phase, myLevel);
+    if (result == ResolveResult.ok) return ResolveResult.ok;
+
     // try pushing the parent back.
     result = tryWithPushingParentBack(parentPlan, phase, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
@@ -172,7 +175,7 @@ public class Agent {
       for (int i = 0; i < stayByPushed; i++) {
         path.add(out.at);
       }
-
+      
       path.add(pushBack);
 
       myPlan.addToPlan(path);
@@ -201,6 +204,71 @@ public class Agent {
           myPlan.undo();
         }
 
+      } else {
+        memory.addFailedPlan(myPlan);
+
+        myLevel.undo();
+        myPlan.undo();
+      }
+    }
+
+    return ResolveResult.failed;
+  }
+  
+  private ResolveResult tryWithSideStepping(Plan parentPlan, Phase phase, DependencyLevel myLevel) {
+    if (parentPlan.equals(memory.request)) return ResolveResult.failed; // it is not possible to push the requester back.
+
+    //if (phase == Phase.pushingParentBack) return ResolveResult.failed; // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
+
+    Plan myPlan = memory.getPlan(this);
+
+    Point at = myPlan.getPosition();
+    if (at == null) at = myPlan.agent.getPosition();
+
+    Point parentTarget = parentPlan.getPosition();
+    if (!(parentTarget.x == at.x && parentTarget.y == at.y)) return ResolveResult.failed; // a push back move does not make sense, because the parent is just moving through.
+
+    int meTime = path.size() + myPlan.path.size();
+    int mePushedAwayTime = parentPlan.agent.path.size() + parentPlan.path.size();
+    int meJustBeforePushedAwayTime = mePushedAwayTime - 1;
+
+    List<Point> stays = new ArrayList<>();
+
+    int stayBy = meJustBeforePushedAwayTime - meTime;
+    for (int i = 0; i < stayBy; i++) {
+      stays.add(at.copy());
+    }
+
+    List<Out> outs = getOuts(at, meJustBeforePushedAwayTime);
+
+    while (memory.tryCount < memory.totalTries) {
+      memory.tryCount += 1;
+
+      if (outs.size() == 0) break;
+
+      Out out = outs.remove(0);
+      if (out.collision) continue;
+
+      List<Point> path = new ArrayList<>();
+      path.addAll(stays);
+
+      path.add(out.at);
+      
+      myPlan.addToPlan(path);
+
+      List<Agent> pushableAgents = getPushableAgents();
+
+      boolean ok = true;
+      for (Agent agent : pushableAgents) {
+        ResolveResult result = agent.resolve(myPlan, Phase.resolving, myLevel);
+        if (result == ResolveResult.failed) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (ok) {
+        return ResolveResult.ok;
       } else {
         memory.addFailedPlan(myPlan);
 
@@ -260,7 +328,7 @@ public class Agent {
 
     int iterations = Math.min(iterationsNeeded, maxIterations);
 
-    timestep += 1;
+    //timestep += 1;
 
     updateOccupiedTiles(occupied, timestep, plans, agents);
     updateOccupiedTiles(nextOccupied, timestep + 1, plans, agents);
@@ -273,7 +341,9 @@ public class Agent {
 
         // currently occupied by another agent but not visited
         if (nextOccupied[at.x][at.y] != -1) {
+          out.collision = true;
           it.remove();
+        
         } else {
           out.timestep = timestep + 1;
         }
@@ -292,6 +362,7 @@ public class Agent {
   class Out {
     public Point at;
     public int timestep;
+    public boolean collision;
   }
 
   private ResolveResult tryWithResolvingPaths(Plan parentPlan, DependencyLevel myLevel) {
