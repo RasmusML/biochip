@@ -140,7 +140,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(2, 2));
     path.add(new Point(2, 3));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -177,7 +177,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(0, 3));
     path.add(new Point(0, 4));
 
-    Plan plan = agent1.myPlan;
+    Plan plan = agent1.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent1.request(plan);
@@ -227,7 +227,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(0, 3));
     path.add(new Point(0, 4));
 
-    Plan plan = agent1.myPlan;
+    Plan plan = agent1.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent1.request(plan);
@@ -267,7 +267,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(0, 1));
     path.add(new Point(0, 0));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -304,7 +304,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(0, 1));
     path.add(new Point(0, 0));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -344,7 +344,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(0, 1));
     path.add(new Point(0, 0));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -384,7 +384,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -426,7 +426,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(2, 2));
     path.add(new Point(2, 3));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     agent0.request(plan);
@@ -470,7 +470,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(2, 2));
     path.add(new Point(2, 3));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -513,7 +513,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -556,7 +556,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -605,7 +605,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(3, 2));
     path.add(new Point(3, 3));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -645,7 +645,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -688,7 +688,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -734,7 +734,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -771,7 +771,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = agent0.myPlan;
+    Plan plan = agent0.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent0.request(plan);
@@ -809,7 +809,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = agent1.myPlan;
+    Plan plan = agent1.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent1.request(plan);
@@ -848,7 +848,7 @@ public class AopApp extends ApplicationAdapter {
     path.add(new Point(1, 1));
     path.add(new Point(1, 0));
 
-    Plan plan = agent1.myPlan;
+    Plan plan = agent1.plan;
     plan.addToPlan(path);
 
     ResolveResult result = agent1.request(plan);

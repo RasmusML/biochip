@@ -14,7 +14,7 @@ public class Agent {
   private int id;
   private SharedAgentMemory memory;
   
-  public Plan myPlan;
+  public Plan plan;
 
   private List<Point> path;
 
@@ -22,8 +22,8 @@ public class Agent {
     this.id = id;
     this.memory = memory;
 
-    myPlan = new Plan();
-    myPlan.agent = this;
+    plan = new Plan();
+    plan.agent = this;
     
     path = new ArrayList<>();
     for (Point point : spawn) {
@@ -67,8 +67,8 @@ public class Agent {
 
     if (ok) {
       for (Agent agent : memory.agents) {
-        agent.path.addAll(agent.myPlan.path);
-        agent.myPlan.reset();
+        agent.path.addAll(agent.plan.path);
+        agent.plan.reset();
       }
     }
 
@@ -95,14 +95,14 @@ public class Agent {
   }
 
   public ResolveResult resolve(Plan parentPlan, Phase phase, DependencyLevel parentLevel) {
-    Assert.that(!myPlan.equals(memory.request));
+    Assert.that(!plan.equals(memory.request));
 
     if (isResolved(parentPlan)) return ResolveResult.ok;
 
-    DependencyLevel myLevel = myPlan.pushDependencyLevel(parentLevel);
+    DependencyLevel myLevel = plan.pushDependencyLevel(parentLevel);
 
     if (isCircularDependency(myLevel)) {
-      myPlan.popDependencyLevel(myLevel);
+      plan.popDependencyLevel(myLevel);
       parentLevel.removeDependency(myLevel);
 
       return ResolveResult.failed;
@@ -125,7 +125,7 @@ public class Agent {
     result = tryWithOutposts(parentPlan, phase, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
 
-    myPlan.popDependencyLevel(myLevel);
+    plan.popDependencyLevel(myLevel);
 
     // only undo the child plans which found resolving route.
     // the child plans failing do not have a resolving route to undo below.
@@ -139,15 +139,15 @@ public class Agent {
 
     //if (phase == Phase.pushingParentBack) return ResolveResult.failed; // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
 
-    Point at = myPlan.getPosition();
-    if (at == null) at = myPlan.agent.getPosition();
+    Point at = plan.getPosition();
+    if (at == null) at = plan.agent.getPosition();
 
     Point parentTarget = parentPlan.getPosition();
     if (!(parentTarget.x == at.x && parentTarget.y == at.y)) return ResolveResult.failed; // a push back move does not make sense, because the parent is just moving through.
 
     Point pushBack = at.copy();
 
-    int meTime = path.size() + myPlan.path.size();
+    int meTime = path.size() + plan.path.size();
     int mePushedAwayTime = parentPlan.agent.path.size() + parentPlan.path.size();
     int meJustBeforePushedAwayTime = mePushedAwayTime - 1;
 
@@ -177,7 +177,7 @@ public class Agent {
       
       path.add(pushBack);
 
-      myPlan.addToPlan(path);
+      plan.addToPlan(path);
 
       List<Agent> pushableAgents = getPushableAgents();
       Assert.that(pushableAgents.contains(parentPlan.agent));
@@ -185,7 +185,7 @@ public class Agent {
 
       boolean ok = true;
       for (Agent agent : pushableAgents) {
-        ResolveResult result = agent.resolve(myPlan, Phase.resolving, myLevel);
+        ResolveResult result = agent.resolve(plan, Phase.resolving, myLevel);
         if (result == ResolveResult.failed) {
           ok = false;
           break;
@@ -193,21 +193,21 @@ public class Agent {
       }
 
       if (ok) {
-        ResolveResult result = parentPlan.agent.resolve(myPlan, Phase.resolving, myLevel); // if "pushingParentBack" is used, then we can't do a push with 3 agents: ABC, only with 2 agents: AB
+        ResolveResult result = parentPlan.agent.resolve(plan, Phase.resolving, myLevel); // if "pushingParentBack" is used, then we can't do a push with 3 agents: ABC, only with 2 agents: AB
         if (result == ResolveResult.ok) {
           return ResolveResult.ok;
         } else {
-          memory.addFailedPlan(myPlan);
+          memory.addFailedPlan(plan);
 
           myLevel.undo();
-          myPlan.undo();
+          plan.undo();
         }
 
       } else {
-        memory.addFailedPlan(myPlan);
+        memory.addFailedPlan(plan);
 
         myLevel.undo();
-        myPlan.undo();
+        plan.undo();
       }
     }
 
@@ -215,8 +215,8 @@ public class Agent {
   }
   
   private int getFirstCollisionTime(Agent other) {
-    int mySteps = path.size() + myPlan.path.size();
-    int otherSteps = other.path.size() + other.myPlan.path.size();
+    int mySteps = path.size() + plan.path.size();
+    int otherSteps = other.path.size() + other.plan.path.size();
     
     int totalTimesteps = Math.max(mySteps, otherSteps);
     int timestep = 1;
@@ -239,12 +239,12 @@ public class Agent {
     at = getPosition(index);
     if (at != null) return at;
     
-    if (myPlan.path.size() == 0) return getPosition();
+    if (plan.path.size() == 0) return getPosition();
     
     index = timestep - path.size() - 1;
-    if (index >= myPlan.path.size()) return myPlan.getPosition();
+    if (index >= plan.path.size()) return plan.getPosition();
     
-    return myPlan.path.get(index);
+    return plan.path.get(index);
   }
 
   private ResolveResult tryWithSideStepping(Plan parentPlan, Phase phase, DependencyLevel myLevel) {
@@ -252,14 +252,14 @@ public class Agent {
 
     //if (phase == Phase.pushingParentBack) return ResolveResult.failed; // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
 
-    Point at = myPlan.getPosition();
-    if (at == null) at = myPlan.agent.getPosition();
+    Point at = plan.getPosition();
+    if (at == null) at = plan.agent.getPosition();
 
     List<Point> stays = new ArrayList<>();
 
     int collisionTime = parentPlan.agent.getFirstCollisionTime(this);
     
-    int meTime = path.size() + myPlan.path.size();
+    int meTime = path.size() + plan.path.size();
     int stayBy = collisionTime - meTime - 1;
     for (int i = 0; i < stayBy; i++) {
       stays.add(at.copy());
@@ -283,13 +283,13 @@ public class Agent {
 
       path.add(out.at);
       
-      myPlan.addToPlan(path);
+      plan.addToPlan(path);
 
       List<Agent> pushableAgents = getPushableAgents();
 
       boolean ok = true;
       for (Agent agent : pushableAgents) {
-        ResolveResult result = agent.resolve(myPlan, Phase.resolving, myLevel);
+        ResolveResult result = agent.resolve(plan, Phase.resolving, myLevel);
         if (result == ResolveResult.failed) {
           ok = false;
           break;
@@ -299,10 +299,10 @@ public class Agent {
       if (ok) {
         return ResolveResult.ok;
       } else {
-        memory.addFailedPlan(myPlan);
+        memory.addFailedPlan(plan);
 
         myLevel.undo();
-        myPlan.undo();
+        plan.undo();
       }
     }
 
@@ -410,13 +410,13 @@ public class Agent {
       List<Point> resolvedPath = getDeadlockResolvingPath(endPoints, endpointGrid, havenGrid);
       if (resolvedPath == null) return ResolveResult.failed;
 
-      myPlan.addToPlan(resolvedPath);
+      plan.addToPlan(resolvedPath);
 
       List<Agent> pushableAgents = getPushableAgents();
 
       boolean ok = true;
       for (Agent agent : pushableAgents) {
-        ResolveResult result = agent.resolve(myPlan, Phase.resolving, myLevel);
+        ResolveResult result = agent.resolve(plan, Phase.resolving, myLevel);
         if (result == ResolveResult.failed) {
           ok = false;
           break;
@@ -427,10 +427,10 @@ public class Agent {
         return ResolveResult.ok;
 
       } else { // undo and try another resolving path
-        memory.addFailedPlan(myPlan);
+        memory.addFailedPlan(plan);
 
         myLevel.undo();
-        myPlan.undo();
+        plan.undo();
       }
     }
 
@@ -463,7 +463,7 @@ public class Agent {
   }
 
   private void sortCellsByClosestToAgent(List<Point> endPoints) {
-    final Point at = (myPlan.getPosition() == null) ? getPosition() : myPlan.getPosition();
+    final Point at = (plan.getPosition() == null) ? getPosition() : plan.getPosition();
 
     Collections.sort(endPoints, (p1, p2) -> {
       int d1 = (int) MathUtils.getManhattanDistance(at.x, at.y, p1.x, p1.y);
@@ -490,22 +490,22 @@ public class Agent {
     copy(board.grid, havenGrid);
 
     for (Agent agent :  memory.agents) {
-      Plan plan = agent.myPlan;
-      if (plan.equals(myPlan)) continue;
-      if (plan.agent.equals(memory.request.agent)) continue;
-      if (plan.path.size() == 0) continue;
+      Plan otherPlan = agent.plan;
+      if (otherPlan.equals(plan)) continue;
+      if (otherPlan.agent.equals(memory.request.agent)) continue;
+      if (otherPlan.path.size() == 0) continue;
 
       // the last position is skipped if this agent arrives after the other agent, because the agent can push the other agent.
-      for (int i = 0; i <= plan.path.size() - 2; i++) {
-        Point point = plan.path.get(i);
+      for (int i = 0; i <= otherPlan.path.size() - 2; i++) {
+        Point point = otherPlan.path.get(i);
         havenGrid[point.x][point.y] = -1;
       }
 
-      Point last = plan.path.get(plan.path.size() - 1);
+      Point last = otherPlan.path.get(otherPlan.path.size() - 1);
 
       int steps = distanceGrid[last.x][last.y];
-      int meArrives = path.size() + myPlan.path.size() + steps;
-      int otherArrives = plan.agent.path.size() + plan.path.size();
+      int meArrives = path.size() + plan.path.size() + steps;
+      int otherArrives = otherPlan.agent.path.size() + otherPlan.path.size();
 
       if (meArrives <= otherArrives) havenGrid[last.x][last.y] = -1;
     }
@@ -561,13 +561,13 @@ public class Agent {
 
       if (outpostPath == null) break; // try another outposts (if any left).
 
-      myPlan.addToPlan(outpostPath);
+      plan.addToPlan(outpostPath);
 
       List<Agent> pushableAgents = getPushableAgents();
 
       boolean ok = true;
       for (Agent agent : pushableAgents) {
-        ResolveResult result = agent.resolve(myPlan, Phase.resolving, myLevel);
+        ResolveResult result = agent.resolve(plan, Phase.resolving, myLevel);
         if (result == ResolveResult.failed) {
           ok = false;
           break;
@@ -580,10 +580,10 @@ public class Agent {
         List<Point> path = findPath(requestAgent, requesterTarget, originalRequestPlanPath);
 
         if (path == null) {
-          memory.addFailedPlan(myPlan);
+          memory.addFailedPlan(plan);
 
           myLevel.undo();
-          myPlan.undo();
+          plan.undo();
 
         } else {
           //printCircularDependency();
@@ -614,15 +614,15 @@ public class Agent {
             requestPlan.undo();
 
             myLevel.undo();
-            myPlan.undo();
+            plan.undo();
           }
         }
 
       } else {
-        memory.addFailedPlan(myPlan);
+        memory.addFailedPlan(plan);
 
         myLevel.undo();
-        myPlan.undo();
+        plan.undo();
       }
     }
 
@@ -640,7 +640,7 @@ public class Agent {
     DependencyLevel ancestor = myLevel.parent;
 
     while (ancestor != null) {
-      if (myPlan.equals(ancestor.myPlan)) occurrence += 1;
+      if (plan.equals(ancestor.myPlan)) occurrence += 1;
       ancestor = ancestor.parent;
     }
 
@@ -650,7 +650,7 @@ public class Agent {
   private void printCircularDependency(DependencyLevel myLevel) {
     DependencyLevel ancestor = myLevel.parent;
 
-    System.out.printf("%d<-", myPlan.agent.id);
+    System.out.printf("%d<-", plan.agent.id);
 
     while (ancestor != null) {
       System.out.printf("%d<-", ancestor.myPlan.agent.id);
@@ -795,13 +795,13 @@ public class Agent {
     agents.remove(memory.request.agent);
     agents.remove(this);
 
-    for (int i = 0; i < myPlan.path.size(); i++) {
-      Point at = myPlan.path.get(i);
+    for (int i = 0; i < plan.path.size(); i++) {
+      Point at = plan.path.get(i);
 
       for (Iterator<Agent> it = agents.iterator(); it.hasNext();) {
         Agent other = it.next();
 
-        Plan otherPlan = other.myPlan;
+        Plan otherPlan = other.plan;
 
         if (otherPlan.path.size() == 0) {
           Point otherLastAt = other.getPosition();
@@ -812,7 +812,7 @@ public class Agent {
 
         } else {
           int offsetTimestep = i + 1;
-          int endTime = myPlan.agent.path.size() + offsetTimestep;
+          int endTime = plan.agent.path.size() + offsetTimestep;
 
           int otherEndTime = other.getPath().size() + otherPlan.path.size();
           if (otherEndTime < endTime) {
@@ -880,7 +880,7 @@ public class Agent {
     List<Plan> failedPlans = memory.getFailedPlans(this);
 
     List<Point> fullPath = new ArrayList<>();
-    fullPath.addAll(myPlan.path);
+    fullPath.addAll(plan.path);
     fullPath.addAll(path);
 
     Point end = fullPath.get(fullPath.size() - 1);
@@ -958,9 +958,9 @@ public class Agent {
     moves.add(new Point(0, 1));
     moves.add(new Point(0, -1));
 
-    int timestep = path.size() + myPlan.path.size();
+    int timestep = path.size() + plan.path.size();
 
-    Point at = myPlan.getPosition();
+    Point at = plan.getPosition();
     if (at == null) at = path.get(path.size() - 1);
 
     List<Point> pending = new ArrayList<>();
@@ -1041,7 +1041,7 @@ public class Agent {
     for (Agent agent : agents) {
       if (equals(agent)) continue;
 
-      Plan plan = agent.myPlan;
+      Plan plan = agent.plan;
       
       int stepsCommitted = agent.path.size();
       int stepsPlanned = plan.path.size();
