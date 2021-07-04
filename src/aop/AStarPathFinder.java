@@ -11,6 +11,12 @@ import java.util.function.BiFunction;
 import dmb.algorithms.Point;
 import framework.math.MathUtils;
 
+/**
+ * A* search with the time-dimension implementation.
+ * The algorithm finds the shortest path between to cells.
+ * Cells may become open at different times.
+ */
+
 public class AStarPathFinder {
 
   private BiFunction<Point, Point, Float> stepCostFunction;
@@ -22,11 +28,11 @@ public class AStarPathFinder {
   }
 
   /**
-   * A* search
+   * A* search with the time-dimension.
    * 
    * Finds the path from {@code from} to {@code to}, if it exists. The shortest
    * path is only guaranteed if {@code minimumCostFunction} is admissible and
-   * consistent.
+   * consistent. A cell is defined by a position at the time it was visited.
    * 
    * @param from
    * @param to

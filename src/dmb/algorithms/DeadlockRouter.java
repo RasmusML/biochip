@@ -281,7 +281,7 @@ public class DeadlockRouter implements Router {
             float area2 = droplet.area - area1;
 
             // select the bottom droplet-units to go down
-            Droplet d1 = createForwardedDroplet(Move.Down, droplet, area1); // @TODO: fix droplet successor is overriden, so the visualization is not quit right.
+            Droplet d1 = createForwardedDroplet(Move.Down, droplet, area1);
 
             // select the top droplet-units to go up
             Droplet d2 = createForwardedDroplet(Move.Up, droplet, area2);

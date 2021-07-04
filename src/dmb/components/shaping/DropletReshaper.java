@@ -17,6 +17,11 @@ import framework.input.Droplet;
 import framework.input.DropletUnit;
 import framework.math.MathUtils;
 
+/**
+ * Moves the droplet-units of a droplet such that the shape of the droplet
+ * becomes the desired shape.
+ */
+
 public class DropletReshaper {
 
   private int[][] targetShape;
@@ -55,7 +60,7 @@ public class DropletReshaper {
       Point at1 = p1.route.getPosition();
       Point at2 = p2.route.getPosition();
 
-      // @report if both droplets are within the target shape, select the droplet closest to a droplet outside the target shape, to move.
+      // if both droplets are within the target shape, select the droplet closest to a droplet outside the target shape, to move.
       // This prevents selecting a droplet within the target shape which does not get closer to the final target shape (filling all tiles of the target shape)
       if (targetShape[at1.x][at1.y] == task.id && targetShape[at2.x][at2.y] == task.id) {
         int d1 = pointToMinOutsidePointDistance.get(p1);
@@ -129,7 +134,6 @@ public class DropletReshaper {
     List<DropletUnit> inside = new ArrayList<>();
     List<DropletUnit> outside = new ArrayList<>();
 
-    // @report see dropletResizeIssue for why inside/outside is necessary.
     for (DropletUnit unit : left) {
       Point at = unit.route.getPosition();
 
@@ -222,7 +226,6 @@ public class DropletReshaper {
     clearTaskInTargetShape();
 
     return result;
-
   }
 
   private boolean anyProgess(int timestamp) {

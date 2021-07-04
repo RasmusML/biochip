@@ -10,6 +10,12 @@ import framework.input.Droplet;
 import framework.input.DropletUnit;
 import framework.math.MathUtils;
 
+/**
+ * Computes the new target shape of a droplet. A rectangular shape which a
+ * droplet can reshape into is found. Droplets with already rectangular shape
+ * will select its current shape.
+ */
+
 public class DropletShapeSelector {
 
   public DropletShape select(Droplet droplet) {

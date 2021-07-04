@@ -292,7 +292,7 @@ public class GreedyRouter implements Router {
             float area2 = droplet.area - area1;
 
             // select the bottom droplet-units to go down
-            Droplet d1 = createForwardedDroplet(Move.Down, droplet, area1); // @TODO: fix droplet successor is overriden, so the visualization is not quit right.
+            Droplet d1 = createForwardedDroplet(Move.Down, droplet, area1);
 
             // select the top droplet-units to go up
             Droplet d2 = createForwardedDroplet(Move.Up, droplet, area2);
@@ -391,7 +391,6 @@ public class GreedyRouter implements Router {
 
           Move move = getModuleMove(droplet, runningDroplets, module, array);
 
-          // @TODO: modules may take control, if they want to.
           if (dropletInside) {
             extra.currentDurationInTimesteps += 1;
 

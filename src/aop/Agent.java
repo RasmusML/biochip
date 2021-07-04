@@ -108,7 +108,7 @@ public class Agent {
     result = tryWithSideStepping(parentPlan, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
 
-    // try finding a safe cell.
+    // try finding a haven cell.
     result = tryWithResolvingPaths(parentPlan, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
 
@@ -1196,7 +1196,6 @@ class DependencyLevel {
 
 class SharedAgentMemory {
 
-  public int maxDepth; // @TODO: max planning depth.
   public int numNodesToExploreInSearch;
 
   public int totalTries;

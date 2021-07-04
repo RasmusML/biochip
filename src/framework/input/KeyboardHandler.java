@@ -141,9 +141,9 @@ public class KeyboardHandler {
 		registerKey(KeyEvent.VK_ESCAPE, Keys.ESCAPE);
     
 		/*
-		registerKey(16777414, Keys.ï¿½);
-		registerKey(16777432, Keys.ï¿½);
-		registerKey(16777413, Keys.ï¿½);
+		registerKey(16777414, Keys.Æ);
+		registerKey(16777432, Keys.Ø);
+		registerKey(16777413, Keys.Å);
 		*/
 		registerKey(KeyEvent.VK_SHIFT, Keys.SHIFT);
 		registerKey(KeyEvent.VK_SPACE, Keys.SPACE);
@@ -156,16 +156,5 @@ public class KeyboardHandler {
 	private void registerKey(int swingKeyCode, int keyCode) {
 		swingKeyCodesToKeyCodes.put(swingKeyCode, keyCode);
 	}
-
 }
 
-/*
- * public boolean isAnyPressed() { return isPressed(Button.LEFT) ||
- * isPressed(Button.MIDDLE) || isPressed(Button.RIGHT); }
- * 
- * public boolean isAnyClicked() { return isClicked(Button.LEFT) ||
- * isClicked(Button.MIDDLE) || isClicked(Button.RIGHT); }
- * 
- * public boolean isAnyReleased() { return isReleased(Button.LEFT) ||
- * isReleased(Button.MIDDLE) || isReleased(Button.RIGHT); }
- */

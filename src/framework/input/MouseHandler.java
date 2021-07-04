@@ -128,7 +128,7 @@ public class MouseHandler {
 
 		if (e.getButton() == MouseEvent.BUTTON1) {
 			return Button.LEFT;
-		} else if (e.getButton() == MouseEvent.BUTTON2) { // @test
+		} else if (e.getButton() == MouseEvent.BUTTON2) {
 			return Button.MIDDLE;
 		} else if (e.getButton() == MouseEvent.BUTTON3) {
 			return Button.RIGHT;
