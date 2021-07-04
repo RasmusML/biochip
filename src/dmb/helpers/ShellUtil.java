@@ -4,15 +4,28 @@ import java.io.IOException;
 
 public class ShellUtil {
   
+  /**
+   * Executes a shell command and blocks till the command has been executed
+   * 
+   * @param command - shell command to execute
+   * @return return-value of the shell command
+   */
+  
   public static int execute(String command) {
-    String shell = getShellRunCommand();
-    return execute(shell, command, true);
+    return execute(command, true);
   }
 
-  public static int execute(String shellRunCommand, String command, boolean blocking) {
+  /**
+   * Executes a shell command
+   * 
+   * @param command - shell command to execute
+   * @param blocking - whether the function should stall till the command is done executing.
+   * @return return-value of the shell command
+   */
+  
+  public static int execute(String command, boolean blocking) {
     try {
-      String fullCommand = String.format("%s %s", shellRunCommand, command);
-      Process proc = Runtime.getRuntime().exec(fullCommand);
+      Process proc = Runtime.getRuntime().exec(command);
       if (blocking) return proc.waitFor();
       
     } catch (IOException | InterruptedException e) {
@@ -21,11 +34,5 @@ public class ShellUtil {
     }
     
     return 0;
-  }
-  
-  public static String getShellRunCommand() {
-    String os = System.getProperty("os.name");
-    if (os.startsWith("Windows")) return "cmd /c";
-    throw new IllegalStateException("os unsupported! " + os);
   }
 }

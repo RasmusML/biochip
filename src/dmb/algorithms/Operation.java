@@ -7,7 +7,6 @@ import framework.input.Droplet;
 
 /**
  * Microfludic operation.
- * 
  */
 
 public class Operation {
@@ -55,5 +54,4 @@ public class Operation {
   public int getDuration() {
     return getEndTime() - getStartTime();
   }
-
 }

@@ -5,6 +5,10 @@ import java.util.List;
 
 import dmb.algorithms.Operation;
 
+/**
+ * Creates In-Vitro assay
+ */
+
 public class InVitroBuilder {
 
   private BioAssayBuilder builder;
@@ -14,6 +18,12 @@ public class InVitroBuilder {
     createInVitro(samples);
   }
 
+
+  /**
+   * The plasma samples are mixed with the sugars: "glucose", "lactate" and "pyruvate".
+   * 
+   * @param plasmaSamples - name of the samples
+   */
   public void createInVitro(List<String> plasmaSamples) {
     builder = new BioAssayBuilder();
 
@@ -49,10 +59,8 @@ public class InVitroBuilder {
     int detector1 = builder.createDetectionOperation("in-vitro");
     builder.connect(mixer1, detector1);
 
-    /*
     int disposer1 = builder.createDisposeOperation();
     builder.connect(detector1, disposer1);
-    */
   }
 
   private List<String> createGenericSamples(int numSamples) {

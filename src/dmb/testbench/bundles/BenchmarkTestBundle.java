@@ -41,6 +41,10 @@ import dmb.testbench.tests.Test5BioAssay;
 import dmb.testbench.tests.Test6BioArray;
 import dmb.testbench.tests.Test6BioAssay;
 
+/**
+ * Larger tests used to test the functionality of routing algorithms and to compare routing algorithms.
+ */
+
 public class BenchmarkTestBundle implements TestBundle {
 
   private List<Test> tests;

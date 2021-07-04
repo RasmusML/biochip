@@ -12,6 +12,7 @@ import dmb.actuation.ElectrodeActuation;
 import dmb.actuation.ElectrodeState;
 import dmb.algorithms.Point;
 import dmb.components.moves.Move;
+import dmb.helpers.GeometryUtil;
 import dmb.platform.PlatformInterface;
 import framework.ApplicationAdapter;
 import framework.graphics.Alignment;
@@ -26,18 +27,17 @@ import framework.math.Vector2;
 
 public class DropletReshapeApp extends ApplicationAdapter {
 
-  boolean sendCommandsToPlatform = true;
-  boolean firstCommandSend = false;
+  boolean sendCommandsToPlatform = false;
+  
+  boolean firstCommandSend;
+  
+  boolean reshaping;
 
   // graphics
   Renderer renderer;
   FitViewport viewport;
   Camera boardCamera;
   Canvas canvas;
-
-  // mouse
-  float oldX, oldY;
-  boolean dragging;
 
   // rendering
   float tilesize = 32f;
@@ -71,6 +71,8 @@ public class DropletReshapeApp extends ApplicationAdapter {
     canvas = new Canvas();
     app.setRoot(canvas);
     app.attachInputListenersToComponent(canvas);
+    
+    firstCommandSend = false;
 
     movementTime = 0.12f;
     stopTime = 0.45f;
@@ -79,6 +81,8 @@ public class DropletReshapeApp extends ApplicationAdapter {
 
     canvas.createBufferStrategy(3);
     canvas.setIgnoreRepaint(true);
+    
+    reshaping = false;
     
     hovered = new Point();
 
@@ -99,6 +103,8 @@ public class DropletReshapeApp extends ApplicationAdapter {
     float cx = gridWidth * tilesize / 2f;
     float cy = gridHeight * tilesize / 2f;
     boardCamera.lookAtNow(cx, cy);
+    
+    boardCamera.zoomNow(0.6f);
 
     reshaper = new DropletReshapeSimulator(gridWidth, gridHeight);
 
@@ -137,9 +143,6 @@ public class DropletReshapeApp extends ApplicationAdapter {
       }
     }
 
-    String title = String.format("@%d", app.getFps());
-    app.setTitle(title);
-
     if (input.isKeyPressed(Keys.X)) {
       boardCamera.zoomNow(boardCamera.targetZoom * 1.02f);
     }
@@ -165,51 +168,21 @@ public class DropletReshapeApp extends ApplicationAdapter {
     }
 
     if (input.isKeyJustPressed(Keys.SPACE)) {
-      reshaper.step();
-
-      sendCommandsOfCurrentPositions();
+      if (reshaping) {
+        reshaper.step();
+        sendCommandsOfCurrentPositions();
+      }
     }
 
     if (input.isKeyJustPressed(Keys.R)) {
-      //pi.clearAllElectrodes();
-      //droplet.units.clear();
-
       reshape.clear();
 
+      reshaping = false;
+      
       running = false;
       step = false;
       timestamp = 0;
       dt = 0;
-    }
-
-    if (input.isMouseJustReleased(Button.LEFT)) {
-
-      if (reshape.size() == 0) {
-        int mx = input.getX();
-        int my = input.getY();
-
-        Vector2 world = viewport.screenToWorld(mx, my);
-
-        int x = (int) (world.x / tilesize);
-        int y = (int) (world.y / tilesize);
-
-        boolean match = false;
-        for (DropletUnit unit : droplet.units) {
-          Point at = unit.route.getPosition();
-
-          if (x == at.x && y == at.y) {
-            droplet.units.remove(unit);
-            match = true;
-            break;
-          }
-        }
-
-        if (!match) {
-          DropletUnit unit = new DropletUnit();
-          unit.route.path.add(new Point(x, y));
-          droplet.units.add(unit);
-        }
-      }
     }
 
     viewport.setCamera(boardCamera);
@@ -222,49 +195,58 @@ public class DropletReshapeApp extends ApplicationAdapter {
     int x = (int) (world.x / tilesize);
     int y = (int) (world.y / tilesize);
     
-
     hovered = new Point();
     hovered.x = x;
     hovered.y = y;
     
-    if (input.isMouseJustPressed(Button.RIGHT)) {
-      if (droplet.units.size() > 0) {
+    if (input.isMouseJustReleased(Button.LEFT)) {
+      if (reshape.size() == 0) {
+        if (GeometryUtil.inside(hovered.x, hovered.y, gridWidth, gridHeight)) {
+          boolean match = false;
+          for (DropletUnit unit : droplet.units) {
+            Point at = unit.route.getPosition();
 
-        Point point = new Point(x, y);
+            if (x == at.x && y == at.y) {
+              droplet.units.remove(unit);
+              match = true;
+              break;
+            }
+          }
 
-        if (reshape.contains(point)) {
-          reshape.remove(point);
-        } else {
-          reshape.add(point);
-        }
-
-        if (reshape.size() == droplet.units.size()) {
-          reshaper.reshape(droplet, reshape);
-
-          if (!firstCommandSend) {
-            sendCommandsOfCurrentPositions();
-            firstCommandSend = true;
+          if (!match) {
+            DropletUnit unit = new DropletUnit();
+            unit.route.path.add(new Point(x, y));
+            droplet.units.add(unit);
           }
         }
       }
     }
 
-    if (input.isMouseJustReleased(Button.RIGHT)) {
-      dragging = false;
-    }
+    if (input.isMouseJustPressed(Button.RIGHT)) {
+      
+      if (GeometryUtil.inside(hovered.x, hovered.y, gridWidth, gridHeight)) {
+        Point point = new Point(x, y);
 
-    if (dragging) {
-      Vector2 mouse = viewport.screenToWorld(input.getX(), input.getY());
-      float mouseX = mouse.x;
-      float mouseY = mouse.y;
-
-      float dx = mouseX - oldX;
-      float dy = mouseY - oldY;
-
-      float tx = boardCamera.x - dx;
-      float ty = boardCamera.y - dy;
-
-      boardCamera.lookAtNow(tx, ty);
+        if (reshape.contains(point)) {
+          reshape.remove(point);
+        } else {
+          
+          if (reshape.size() < droplet.units.size()) {
+            reshape.add(point);
+          }
+  
+          if (reshape.size() == droplet.units.size()) {
+            reshaping = true;
+            
+            reshaper.reshape(droplet, reshape);
+  
+            if (!firstCommandSend) {
+              sendCommandsOfCurrentPositions();
+              firstCommandSend = true;
+            }
+          }
+        }
+      }
     }
 
     if (input.isKeyJustPressed(Keys.RIGHT)) {
@@ -300,18 +282,7 @@ public class DropletReshapeApp extends ApplicationAdapter {
     int last = sections.length - 1;
 
     ElectrodeActivations section = sections[last];
-    /*
-    for (ElectrodeActuation actuation : section.activations) {
-      Point tile = actuation.tile;
 
-      if (actuation.state == ElectrodeState.On) {
-        pi.setElectrode(tile.x, tile.y);
-      } else {
-        pi.clearElectrode(tile.x, tile.y);
-      }
-    }
-    */
-    
     for (ElectrodeActuation actuation : section.activations) {
       Point tile = actuation.tile;
 

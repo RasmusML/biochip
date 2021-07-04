@@ -3,6 +3,10 @@ package dmb.components.prioritizer;
 import dmb.algorithms.Operation;
 import dmb.algorithms.OperationType;
 
+/**
+ * Adds an weight to the path length based on the average execution time of an operation.
+ */
+
 public class WeightedChainPrioritizer extends ChainPrioritizer {
 
   @Override

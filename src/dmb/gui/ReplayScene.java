@@ -5,8 +5,6 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-import dmb.actuation.ElectrodeActivationTranslator;
-import dmb.actuation.ElectrodeActivations;
 import dmb.algorithms.DropletSizeAwareGreedyRouter;
 import dmb.algorithms.Operation;
 import dmb.algorithms.OperationType;
@@ -133,24 +131,6 @@ public class ReplayScene extends Scene {
     router = shared.router;
     result = shared.result;
 
-    ElectrodeActivationTranslator translator = new ElectrodeActivationTranslator(array.width, array.height);
-    ElectrodeActivations[] sections = translator.translateStateful(result.droplets, result.executionTime);
-
-    /*
-    
-    for (int i = 0; i < sections.length; i++) {
-      ElectrodeActivationSection section = sections[i];
-      
-      System.out.printf("--- Section %d ---\n", i);
-      
-      for (ElectrodeActivation activation : section.activations) {
-        System.out.printf("%s:%s\n", activation.tile, activation.state);
-      }
-      
-      System.out.printf("\n");
-    }
-    */
-
     float width = array.width * tilesize;
     float height = array.height * tilesize;
 
@@ -202,11 +182,6 @@ public class ReplayScene extends Scene {
     float ty = viewport.getVirtualHeight() / 2f - 30;
 
     timelineCamera.lookAtNow(tx, ty);
-
-    /*
-    String title = String.format("@%d", app.getFps());
-    app.setTitle(title);
-    */
 
     updateSelection();
     updateMovement();
@@ -534,7 +509,6 @@ public class ReplayScene extends Scene {
       }
     }
 
-    float scalar = 1f;
     Color color = ColorPalette.seeThroughGray;
 
     for (Droplet droplet : dropletSelection) {
@@ -561,7 +535,7 @@ public class ReplayScene extends Scene {
               target = successor.route.getPosition(timestamp + 1);
               move.set(target).sub(at);
 
-              drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+              drawDropletUnit(droplet, at, move.x, move.y, color);
             } else {
 
               if (droplet.operation.name.equals(OperationType.split)) {
@@ -578,23 +552,23 @@ public class ReplayScene extends Scene {
                 Point target2 = targetUnit2.route.getPosition(timestamp + 1);
 
                 move.set(target1).sub(at);
-                drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+                drawDropletUnit(droplet, at, move.x, move.y, color);
 
                 move.set(target2).sub(at);
-                drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+                drawDropletUnit(droplet, at, move.x, move.y, color);
 
               } else {
                 target = successor.route.getPosition(timestamp + 1);
                 move.set(target).sub(at);
 
-                drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+                drawDropletUnit(droplet, at, move.x, move.y, color);
               }
             }
 
           } else {
             move.set(target).sub(at);
 
-            drawDropletUnit(droplet, at, move.x, move.y, scalar, color);
+            drawDropletUnit(droplet, at, move.x, move.y, color);
           }
         }
 
@@ -604,7 +578,7 @@ public class ReplayScene extends Scene {
           Point at = dropletUnit.route.getPosition(timestamp);
           if (at == null) continue;
 
-          drawDropletUnit(droplet, at, 0, 0, scalar, color);
+          drawDropletUnit(droplet, at, 0, 0, color);
         }
       }
     }
@@ -747,7 +721,7 @@ public class ReplayScene extends Scene {
     throw new IllegalStateException("unknown module operation");
   }
 
-  private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy, float sizeScaling, Color color) {
+  private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy, Color color) {
     float percentage = dt / (float) movementTime;
 
     float baseRadius = (float) Math.sqrt(1f / Math.PI);
@@ -761,7 +735,7 @@ public class ReplayScene extends Scene {
 
     float diameter = diameterScaler * unscaledDiameter;
 
-    float size = tilesize * diameter * sizeScaling;
+    float size = tilesize * diameter;
 
     float offset = (tilesize - size) / 2f;
 
@@ -780,7 +754,7 @@ public class ReplayScene extends Scene {
 
   private void drawDropletUnit(Droplet droplet, Point at, int dx, int dy) {
     Color color = getOperationColor(droplet.operation);
-    drawDropletUnit(droplet, at, dx, dy, 1f, color);
+    drawDropletUnit(droplet, at, dx, dy, color);
   }
 
   private Color getOperationColor(Operation operation) {

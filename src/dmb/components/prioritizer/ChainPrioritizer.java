@@ -6,6 +6,10 @@ import java.util.List;
 import dmb.algorithms.Operation;
 import dmb.helpers.ArrayUtils;
 
+/**
+ * Computes the path lengths and selects the path with the largest value.
+ */
+
 public abstract class ChainPrioritizer implements Prioritizer {
 
   protected abstract int getOperationCost(Operation operation);

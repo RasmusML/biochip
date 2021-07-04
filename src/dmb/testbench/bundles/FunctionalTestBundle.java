@@ -31,6 +31,10 @@ import dmb.testbench.tests.functionality.PlatformAssay1;
 import dmb.testbench.tests.functionality.Test1BioArray;
 import dmb.testbench.tests.functionality.Test1BioAssay;
 
+/**
+ * A set of small tests focusing on testing a single operation.
+ */
+
 public class FunctionalTestBundle implements TestBundle {
 
   private List<Test> tests;

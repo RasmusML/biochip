@@ -7,6 +7,13 @@ import dmb.algorithms.OperationType;
 import dmb.algorithms.Point;
 import dmb.components.input.AttributeTag;
 import dmb.components.input.AttributeTags;
+import dmb.components.input.BioArray;
+
+/**
+ *  Module-catalog defines the set of available modules placed on an array.
+ *  
+ *  @see BioArray
+ */
 
 public class ModuleCatalog {
 

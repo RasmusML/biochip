@@ -1,5 +1,9 @@
 package dmb.helpers;
 
+/**
+ * A set of functions to inspects arrays.
+ */
+
 public class ArrayUtils {
 
   public static <T> int getFirstEmptySlotIndex(T[] array) {

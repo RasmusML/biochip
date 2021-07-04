@@ -1,5 +1,9 @@
 package dmb.helpers;
 
+/**
+ * Assertion checks.
+ */
+
 public class Assert {
 
   public static void that(boolean is, String message) {

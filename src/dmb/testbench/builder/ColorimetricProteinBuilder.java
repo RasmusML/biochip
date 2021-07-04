@@ -4,10 +4,21 @@ import dmb.algorithms.Operation;
 import dmb.helpers.Assert;
 import framework.math.MathUtils;
 
+/**
+ * Creates colorimetric protein assays.
+ */
+
 public class ColorimetricProteinBuilder {
 
   private BioAssayBuilder builder;
 
+  /**
+   * Creates colorimetric protein assays.
+   * 
+   * @param numSamples -  number of samples
+   * @param dilutionFraction - selects the dilution fraction as 1 / dilutionFraction
+   */
+  
   public void createColorimetricProtein(int numSamples, int dilutionFraction) {
     Assert.that(numSamples % 2 == 0);
 
