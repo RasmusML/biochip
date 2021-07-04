@@ -68,9 +68,9 @@ public class RunMeRealPlatform {
     pi.clearAllElectrodes();
     pi.turnHighVoltageOffForElectrodes();
 
-    System.out.println("done");
-
     pi.disconnect();
+
+    System.out.println("done");
   }
 
   private static void sleep(long ms) {

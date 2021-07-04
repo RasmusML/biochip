@@ -44,8 +44,6 @@ public class ConstraintsChecker {
     return dx >= spacing || dy >= spacing;
   }
 
-  // @TODO: cleanup the functions below are only for single unit droplets. @Refactor
-
   public boolean satisfiesCompanionConstraints(Point to0, Point at1, Point to1) {
     if (satifiesConstraints(to0, at1, to1)) return true;
     if (!satisfiesDynamicCompanionConstraint(to0, at1)) return false;

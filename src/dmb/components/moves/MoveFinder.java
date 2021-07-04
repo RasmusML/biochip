@@ -7,6 +7,10 @@ import dmb.components.module.Module;
 import framework.input.Droplet;
 import framework.input.DropletUnit;
 
+/**
+ * Computes the valid moves for a droplet at a timestep.
+ */
+
 public abstract class MoveFinder {
 
   // a couple of overloads with "default" arguments for convenience.

@@ -34,10 +34,10 @@ public class AopApp extends ApplicationAdapter {
   float tilesize = 32f;
   float gap = 1f;
 
-  List<AOPInstance> instances;
+  List<AOPTestInstance> instances;
 
   int currentIndex;
-  AOPInstance current;
+  AOPTestInstance current;
 
   float dt;
 
@@ -89,8 +89,8 @@ public class AopApp extends ApplicationAdapter {
     normalTest3();
     failingTest3();
 
-    //openTest2();
     normalTest1(); // special: requester re-pathing
+    //openTest2();
 
     Assert.that(instances.size() > 0);
     currentIndex = 0;
@@ -184,16 +184,6 @@ public class AopApp extends ApplicationAdapter {
     Assert.that(result == ResolveResult.ok);
 
     createAOPInstance(board, agents, path);
-  }
-
-  private int getExecutionTime(List<Agent> agents) {
-    int maxExecutionTime = 0;
-    for (Agent agent : agents) {
-      int executionTime = agent.getPath().size();
-      if (executionTime > maxExecutionTime) maxExecutionTime = executionTime;
-    }
-
-    return maxExecutionTime;
   }
 
   private void normalTest2() {
@@ -818,7 +808,8 @@ public class AopApp extends ApplicationAdapter {
     createAOPInstance(board, agents, path);
   }
 
-  // figure out what to do here. The problem is the requester has selected a path which goes through another agents committed move. We should probably make it illegal to do so, but not handle it in this algorith. Maybe just detect it?
+  // the test is actually illegal. The problem is the requester has selected a path which goes through another agents committed path. 
+  // The algorithm assumes that the initial request is valid.
   private void openTest2() {
     String layout = 
         "111\n" +
@@ -858,7 +849,7 @@ public class AopApp extends ApplicationAdapter {
   }
 
   private void createAOPInstance(Board board, List<Agent> agents, List<Point> path) {
-    AOPInstance instance = new AOPInstance();
+    AOPTestInstance instance = new AOPTestInstance();
     instance.timestamp = 0;
     instance.executionTime = getExecutionTime(agents);
     instance.agents = agents;
@@ -871,9 +862,6 @@ public class AopApp extends ApplicationAdapter {
   @Override
   public void update() {
     handleInput();
-
-    String title = String.format("@%d", app.getFps());
-    app.setTitle(title);
 
     if (running) step = true;
 
@@ -1143,9 +1131,19 @@ public class AopApp extends ApplicationAdapter {
   public void resize(int width, int height) {
     viewport.update(canvas.getWidth(), canvas.getHeight());
   }
+  
+  private int getExecutionTime(List<Agent> agents) {
+    int maxExecutionTime = 0;
+    for (Agent agent : agents) {
+      int executionTime = agent.getPath().size();
+      if (executionTime > maxExecutionTime) maxExecutionTime = executionTime;
+    }
+
+    return maxExecutionTime;
+  }
 }
 
-class AOPInstance {
+class AOPTestInstance {
   public int timestamp;
   public int executionTime;
 

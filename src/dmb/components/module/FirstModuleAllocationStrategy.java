@@ -2,6 +2,10 @@ package dmb.components.module;
 
 import java.util.List;
 
+/**
+ * Allocates the first module.
+ */
+
 public class FirstModuleAllocationStrategy implements ModuleAllocationStrategy {
 
   @Override

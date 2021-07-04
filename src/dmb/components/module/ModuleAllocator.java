@@ -29,7 +29,7 @@ public class ModuleAllocator {
 
   public Module allocate(String operation, AttributeTag... tags) {
     List<Module> modules = getModulesOfOperationType(operation, tags);
-    if (modules.size() == 0) return null; // @TODO: throw an exception instead?
+    Assert.that(modules.size() > 0);
 
     Module module = strategy.select(modules, this);
     allocate(module);
@@ -39,7 +39,7 @@ public class ModuleAllocator {
 
   public Module allocate(String operation, int minWidth, int minHeight, AttributeTag... tags) {
     List<Module> modules = getModulesOfOperationType(operation, minWidth, minHeight, tags);
-    if (modules.size() == 0) return null; // @TODO: throw an exception instead?
+    Assert.that(modules.size() > 0);
 
     Module module = strategy.select(modules, this);
     allocate(module);
@@ -121,9 +121,5 @@ public class ModuleAllocator {
 
   public List<Module> getModules() {
     return catalog.modules;
-  }
-
-  class ModuleAllocation {
-    public int count;
   }
 }

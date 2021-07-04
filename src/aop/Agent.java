@@ -11,11 +11,11 @@ import framework.math.MathUtils;
 
 public class Agent {
 
+  public Plan plan;
+
   private int id;
   private SharedAgentMemory memory;
   
-  public Plan plan;
-
   private List<Point> path;
 
   public Agent(SharedAgentMemory memory, int id, Point... spawn) {
@@ -26,6 +26,7 @@ public class Agent {
     plan.agent = this;
     
     path = new ArrayList<>();
+    
     for (Point point : spawn) {
       path.add(point);
     }
@@ -55,7 +56,7 @@ public class Agent {
 
     boolean ok = true;
     for (Agent agent : pushableAgents) {
-      ResolveResult result = agent.resolve(plan, Phase.resolving, rootLevel);
+      ResolveResult result = agent.resolve(plan, rootLevel);
 
       if (result == ResolveResult.failed) {
         ok = false;
@@ -94,23 +95,17 @@ public class Agent {
     return id;
   }
 
-  public ResolveResult resolve(Plan parentPlan, Phase phase, DependencyLevel parentLevel) {
+  public ResolveResult resolve(Plan parentPlan, DependencyLevel parentLevel) {
     Assert.that(!plan.equals(memory.request));
 
     if (isResolved(parentPlan)) return ResolveResult.ok;
 
+    if (isCircularDependency(parentLevel)) return ResolveResult.failed;
+
     DependencyLevel myLevel = plan.pushDependencyLevel(parentLevel);
-
-    if (isCircularDependency(myLevel)) {
-      plan.popDependencyLevel(myLevel);
-      parentLevel.removeDependency(myLevel);
-
-      return ResolveResult.failed;
-    }
-
     ResolveResult result;
 
-    result = tryWithSideStepping(parentPlan, phase, myLevel);
+    result = tryWithSideStepping(parentPlan, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
 
     // try finding a safe cell.
@@ -118,11 +113,11 @@ public class Agent {
     if (result == ResolveResult.ok) return ResolveResult.ok;
 
     // try pushing the parent back.
-    result = tryWithPushingParentBack(parentPlan, phase, myLevel);
+    result = tryWithPushingParentBack(parentPlan, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
 
     // try stalling the requester.
-    result = tryWithOutposts(parentPlan, phase, myLevel);
+    result = tryWithOutposts(parentPlan, myLevel);
     if (result == ResolveResult.ok) return ResolveResult.ok;
 
     plan.popDependencyLevel(myLevel);
@@ -134,10 +129,8 @@ public class Agent {
     return ResolveResult.failed;
   }
 
-  private ResolveResult tryWithPushingParentBack(Plan parentPlan, Phase phase, DependencyLevel myLevel) {
+  private ResolveResult tryWithPushingParentBack(Plan parentPlan, DependencyLevel myLevel) {
     if (parentPlan.equals(memory.request)) return ResolveResult.failed; // it is not possible to push the requester back.
-
-    //if (phase == Phase.pushingParentBack) return ResolveResult.failed; // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
 
     Point at = plan.getPosition();
     if (at == null) at = plan.agent.getPosition();
@@ -185,7 +178,7 @@ public class Agent {
 
       boolean ok = true;
       for (Agent agent : pushableAgents) {
-        ResolveResult result = agent.resolve(plan, Phase.resolving, myLevel);
+        ResolveResult result = agent.resolve(plan, myLevel);
         if (result == ResolveResult.failed) {
           ok = false;
           break;
@@ -193,7 +186,7 @@ public class Agent {
       }
 
       if (ok) {
-        ResolveResult result = parentPlan.agent.resolve(plan, Phase.resolving, myLevel); // if "pushingParentBack" is used, then we can't do a push with 3 agents: ABC, only with 2 agents: AB
+        ResolveResult result = parentPlan.agent.resolve(plan, myLevel); // if "pushingParentBack" is used, then we can't do a push with 3 agents: ABC, only with 2 agents: AB
         if (result == ResolveResult.ok) {
           return ResolveResult.ok;
         } else {
@@ -247,10 +240,8 @@ public class Agent {
     return plan.path.get(index);
   }
 
-  private ResolveResult tryWithSideStepping(Plan parentPlan, Phase phase, DependencyLevel myLevel) {
-    if (parentPlan.equals(memory.request)) return ResolveResult.failed; // it is not possible to push the requester back.
-
-    //if (phase == Phase.pushingParentBack) return ResolveResult.failed; // for now we assume that if A pushes B back, then B can't push A back. To reduce the exploration in states needed to be tested.
+  private ResolveResult tryWithSideStepping(Plan parentPlan, DependencyLevel myLevel) {
+    if (parentPlan.equals(memory.request)) return ResolveResult.failed;
 
     Point at = plan.getPosition();
     if (at == null) at = plan.agent.getPosition();
@@ -264,7 +255,6 @@ public class Agent {
     for (int i = 0; i < stayBy; i++) {
       stays.add(at.copy());
     }
-
     
     int meJustBeforePushedAwayTime = collisionTime - 1;
 
@@ -289,7 +279,7 @@ public class Agent {
 
       boolean ok = true;
       for (Agent agent : pushableAgents) {
-        ResolveResult result = agent.resolve(plan, Phase.resolving, myLevel);
+        ResolveResult result = agent.resolve(plan, myLevel);
         if (result == ResolveResult.failed) {
           ok = false;
           break;
@@ -416,7 +406,7 @@ public class Agent {
 
       boolean ok = true;
       for (Agent agent : pushableAgents) {
-        ResolveResult result = agent.resolve(plan, Phase.resolving, myLevel);
+        ResolveResult result = agent.resolve(plan, myLevel);
         if (result == ResolveResult.failed) {
           ok = false;
           break;
@@ -518,14 +508,7 @@ public class Agent {
     return havenGrid;
   }
 
-  private ResolveResult tryWithOutposts(Plan parentPlan, Phase phase, DependencyLevel myLevel) {
-    if (phase == Phase.pushingParentBack) return ResolveResult.failed;
-
-    // If the parentPlan is the requesters plan, then we can try to resolve the deadlock by stalling the requesters plan.
-    // If the parentPlan is not the requesters plan, then this plan fails, and the parentPlan has to find another way to resolve its deadlock.
-    // an agent can outpost two successive times. If this happens, the first outpost should select another outpost in the next iteration.
-    if (phase == Phase.outposting) return ResolveResult.failed;
-
+  private ResolveResult tryWithOutposts(Plan parentPlan, DependencyLevel myLevel) {
     Plan requestPlan = memory.request;
     // no undoing left to be done. 
     // This can happen, if multiple agents try to do an outpost and the requester does not get to find a new path in between, 
@@ -567,7 +550,7 @@ public class Agent {
 
       boolean ok = true;
       for (Agent agent : pushableAgents) {
-        ResolveResult result = agent.resolve(plan, Phase.resolving, myLevel);
+        ResolveResult result = agent.resolve(plan, myLevel);
         if (result == ResolveResult.failed) {
           ok = false;
           break;
@@ -586,9 +569,6 @@ public class Agent {
           plan.undo();
 
         } else {
-          //printCircularDependency();
-          //requestPlan.agent.printCircularDependency();
-
           requestPlan.addToPlan(path);
           DependencyLevel requesterLevel = requestPlan.pushRootDependencyLevel();
 
@@ -596,8 +576,7 @@ public class Agent {
 
           ok = true;
           for (Agent agent : pushableAgents) {
-            Phase agentPhase = equals(agent) ? Phase.outposting : Phase.resolving;
-            ResolveResult result = agent.resolve(requestPlan, agentPhase, requesterLevel);
+            ResolveResult result = agent.resolve(requestPlan, requesterLevel);
             if (result == ResolveResult.failed) {
               ok = false;
               break;
@@ -631,13 +610,13 @@ public class Agent {
     return ResolveResult.failed;
   }
 
-  private boolean isCircularDependency(DependencyLevel myLevel) {
-    //printCircularDependency();
+  private boolean isCircularDependency(DependencyLevel parentLevel) {
+    if (plan.dependencyLevels.size() == 0) return false;
 
-    int occurrence = 0;
-    int maxOccurences = 1;
-
-    DependencyLevel ancestor = myLevel.parent;
+    int occurrence = 1;
+    int maxOccurences = 2;
+    
+    DependencyLevel ancestor = parentLevel;
 
     while (ancestor != null) {
       if (plan.equals(ancestor.myPlan)) occurrence += 1;
@@ -1262,12 +1241,6 @@ class SharedAgentMemory {
 enum ResolveResult {
   ok,
   failed;
-}
-
-enum Phase {
-  outposting,
-  pushingParentBack, // @remove
-  resolving;
 }
 
 class FloodGrid {

@@ -380,7 +380,6 @@ public class DeadlockRouter implements Router {
 
           Move move = getModuleMove(droplet, runningDroplets, module, array);
 
-          // @TODO: modules may take control, if they want to.
           if (dropletInside) {
             extra.currentDurationInTimesteps += 1;
 
@@ -409,23 +408,24 @@ public class DeadlockRouter implements Router {
       // select a move to droplets which did not get a move during the operation-phase.
       // This can happen, if a droplet is done with its operation or if a droplet should detour.
       for (Droplet droplet : runningDroplets) {
-        Point to = droplet.units.get(0).route.getPosition(timestamp);
+        DropletUnit unit = droplet.units.get(0);
+        Point to = unit.route.getPosition(timestamp);
         if (to != null) continue;
 
         List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, runningDroplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
 
-        Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
+        Point at = unit.route.getPosition(timestamp - 1);
         if (validMoves.size() > 0) {
           int selectedIndex = indexSelector.selectUniformly(validMoves.size() - 1);
 
           Move move = validMoves.get(selectedIndex);
           to = at.copy().add(move.x, move.y);
-          droplet.units.get(0).route.path.add(to);
+          unit.route.path.add(to);
         } else {
           Move move = getDetourMove(droplet, runningDroplets, array);
           to = at.copy().add(move.x, move.y);
 
-          droplet.units.get(0).route.path.add(to);
+          unit.route.path.add(to);
         }
       }
 
@@ -529,7 +529,6 @@ public class DeadlockRouter implements Router {
     Point to = at.copy().add(move.x, move.y);
 
     unit.route.path.add(to);
-
   }
 
   private Droplet createForwardedDroplet(Move move, Droplet d, float area) {
@@ -588,11 +587,11 @@ public class DeadlockRouter implements Router {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
 
-    Collections.shuffle(validMoves, RandomUtil.get());
     // if we use the manhattan distance, then reverse, turn directions yield the
     // same manhattan distance, meaning all moves are just as good. However, we only
     // select the 3 best moves, so if we don't shuffle, then the last one will
     // always be ignored (due to we always insert the moves in the same order).
+    Collections.shuffle(validMoves, RandomUtil.get());
 
     DropletUnit unit = droplet.units.get(0);
     Point at = unit.route.getPosition(timestamp - 1);
@@ -739,11 +738,11 @@ public class DeadlockRouter implements Router {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, toMerge, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
 
-    Collections.shuffle(validMoves, RandomUtil.get());
     // if we use the manhattan distance, then reverse, turn directions yield the
     // same manhattan distance, meaning all moves are just as good. However, we only
     // select the 3 best moves, so if we don't shuffle, then the last one will
     // always be ignored (due to we always insert the moves in the same order).
+    Collections.shuffle(validMoves, RandomUtil.get());
 
     DropletUnit dropletUnit = droplet.units.get(0);
     Point at = dropletUnit.route.getPosition(timestamp - 1);
@@ -819,9 +818,7 @@ public class DeadlockRouter implements Router {
       if (dropletInside) selectedMoves.add(move);
     }
 
-    if (selectedMoves.size() == 0) {
-      selectedMoves.addAll(validMoves);
-    }
+    if (selectedMoves.size() == 0) selectedMoves.addAll(validMoves);
 
     int candidateSize = (int) MathUtils.clamp(1, 3, selectedMoves.size());
 

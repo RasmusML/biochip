@@ -21,6 +21,11 @@ import dmb.testbench.bundles.BenchmarkTestBundle;
 import dmb.testbench.bundles.FunctionalTestBundle;
 import dmb.testbench.bundles.TestBundle;
 
+/**
+ * Runs a bundle of tests for the routing algorithms using N different seeds. 
+ * The results of the tests can optionally be written to text files.
+ */
+
 public class TestSuite {
 
   private boolean writeToFile = false;

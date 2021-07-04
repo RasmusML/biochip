@@ -633,8 +633,6 @@ public class DropletSizeAwareGreedyRouter implements Router {
   }
 
   private Point getClosestWasteReservoir(Droplet droplet, BioArray array) {
-    //Assert.that(droplet.units.size() == 1);
-
     DropletUnit unit = droplet.units.get(0);
     Point at = unit.route.getPosition(timestamp - 1);
 
@@ -932,23 +930,6 @@ public class DropletSizeAwareGreedyRouter implements Router {
     if (validMoves.size() == 0) return null;
 
     Collections.shuffle(validMoves, RandomUtil.get());
-
-    /*
-    Move bestMove = null;
-    float bestMoveDistance = Float.MAX_VALUE;
-    
-    for (Move move : validMoves) {
-      to.set(at).add(move.x, move.y);
-      
-      float distance = MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
-      if (distance < bestMoveDistance) {
-        bestMoveDistance = distance;
-        bestMove = move;
-      }
-    }
-    
-    return bestMove;
-    */
 
     Point to = new Point();
 

@@ -7,6 +7,10 @@ import java.util.List;
 import dmb.algorithms.Router;
 import dmb.helpers.IOUtils;
 
+/**
+ * Writes the result of tests to text-files.
+ */
+
 public class TestResultFileWriter {
 
   public void writeTestResultsFromSingleTestAndRouter(List<TestResult> testSeeds) {
@@ -44,7 +48,7 @@ public class TestResultFileWriter {
 
   }
 
-  public List<TestResult> extract(Router router, String testName, List<TestResult> tests) {
+  private List<TestResult> extract(Router router, String testName, List<TestResult> tests) {
     List<TestResult> extracted = new ArrayList<>(tests);
 
     for (Iterator<TestResult> it = extracted.iterator(); it.hasNext();) {

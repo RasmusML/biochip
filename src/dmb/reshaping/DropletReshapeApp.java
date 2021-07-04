@@ -167,9 +167,7 @@ public class DropletReshapeApp extends ApplicationAdapter {
     if (input.isKeyJustPressed(Keys.SPACE)) {
       reshaper.step();
 
-      if (sendCommandsToPlatform) {
-        sendCommandsOfCurrentPositions();
-      }
+      sendCommandsOfCurrentPositions();
     }
 
     if (input.isKeyJustPressed(Keys.R)) {

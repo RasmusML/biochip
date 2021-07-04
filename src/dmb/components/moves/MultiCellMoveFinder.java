@@ -186,20 +186,3 @@ public class MultiCellMoveFinder extends MoveFinder {
     return true;
   }
 }
-
-/*
-//Don't let the droplet-unit of a droplet overlap. If another unit has already moved, then we check against that position.
-// Otherwise, we check against the current position.
-for (DropletUnit unit : droplet.units) {
-  if (dropletUnit == unit) continue;
-  
-  Point otherAt = unit.route.getPosition(timestamp - 1);
-  Point otherTo = unit.route.getPosition(timestamp);
-  
-  if (otherTo == null) {
-    if (to.x == otherAt.x && to.y == otherAt.y) continue outer;
-  } else {
-    if (to.x == otherTo.x && to.y == otherTo.y) continue outer;
-  }
-}
-*/
