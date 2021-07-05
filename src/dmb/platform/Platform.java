@@ -1,5 +1,9 @@
 package dmb.platform;
 
+/**
+ * Layout of the digital microfludic biochip at the Technical University of Denmark.
+ */
+
 public class Platform {
   public int rows;
   public int columns;

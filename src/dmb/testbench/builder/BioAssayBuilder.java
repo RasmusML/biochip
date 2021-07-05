@@ -7,11 +7,11 @@ import java.util.Map;
 
 import dmb.algorithms.Operation;
 import dmb.algorithms.OperationType;
+import dmb.components.Droplet;
 import dmb.components.input.AttributeTags;
 import dmb.components.input.BioAssay;
 import dmb.helpers.ArrayUtils;
 import dmb.helpers.UidGenerator;
-import framework.input.Droplet;
 
 /**
  * An API to connect and create operations for an assay.

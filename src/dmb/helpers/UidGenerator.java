@@ -1,5 +1,9 @@
 package dmb.helpers;
 
+/**
+ * Creates unique ids.
+ */
+
 public class UidGenerator {
   
   private int nextId;

@@ -7,7 +7,7 @@ public class RunMeTestSuite {
   public static void main(String[] args) {
     TestSuite testSuite = new TestSuite();
 
-    //testSuite.runAllRoutersWithOperationalTests();
+    testSuite.runAllRoutersWithOperationalTests();
     testSuite.runAllRoutersWithBenchmarkTests();
   }
 }

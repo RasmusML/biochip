@@ -2,6 +2,10 @@ package dmb.helpers;
 
 import java.io.File;
 
+/**
+ * Creates a Graphviz graph from the textual description of a Graphviz graph and saves the graph as a PNG.
+ */
+
 public class GraphvizUtil {
 
   public static int createPngFromGvz(String gvzPath, String pngPath, String graphvizPath) {

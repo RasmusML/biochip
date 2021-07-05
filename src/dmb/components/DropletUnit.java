@@ -1,4 +1,4 @@
-package framework.input;
+package dmb.components;
 
 import dmb.algorithms.Route;
 

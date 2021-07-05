@@ -313,8 +313,10 @@ public class Agent {
     updateOccupiedTiles(occupied, timestep, agents);
     updateOccupiedTiles(nextOccupied, timestep + 1, agents);
 
+    /*
     print(occupied);
     print(nextOccupied);
+    */
 
     List<Point> moves = new ArrayList<>();
     moves.add(new Point(-1, 0));
@@ -387,12 +389,14 @@ public class Agent {
   private ResolveResult tryWithResolvingPaths(Plan parentPlan, DependencyLevel myLevel) {
     FloodGrid endpointGrid = getDistanceGrid();
 
+    /*
     System.out.println("distance-grid " + id);
     print(endpointGrid.distances);
+    */
 
     int[][] havenGrid = getEndPointHavenGrid(endpointGrid.distances);
     List<Point> endPoints = getEndpoints(endpointGrid, havenGrid);
-    printEndPoints(endPoints);
+    //printEndPoints(endPoints);
 
     while (memory.tryCount < memory.totalTries) {
       memory.tryCount += 1;
@@ -529,8 +533,10 @@ public class Agent {
     List<Point> oldRequestPlanPath = requestPlan.undo();
     FloodGrid outpostGrid = getOutpostDistanceGrid();
 
+    /*
     System.out.println("outpost-grid " + id);
     print(outpostGrid.distances);
+    */
 
     List<Point> outposts = getOutposts(outpostGrid.distances);
 
@@ -647,7 +653,6 @@ public class Agent {
     return true;
   }
 
-  // @todo: we can do this smarter (use less space).
   private int[][] createGrid(List<Point> possibleTiles) {
     Board board = memory.board;
 

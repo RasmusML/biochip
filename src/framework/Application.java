@@ -5,8 +5,6 @@ import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-import javax.swing.SwingUtilities;
-
 import framework.input.InputHandler;
 import framework.input.KeyboardHandler;
 import framework.input.MouseHandler;
@@ -143,8 +141,8 @@ public class Application {
 		}
 	}
 
-	double accumulatedDelta;
-	long theta = 3;
+	private double accumulatedDelta;
+	private long theta = 3;
 
 	private void sync() {
 		long correctedMsPerFrame = (long) (msPerFrame - accumulatedDelta - theta);

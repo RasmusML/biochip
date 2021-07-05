@@ -5,9 +5,9 @@ import java.util.List;
 
 import dmb.algorithms.Point;
 import dmb.components.BoundingBox;
+import dmb.components.Droplet;
+import dmb.components.DropletUnit;
 import dmb.helpers.Assert;
-import framework.input.Droplet;
-import framework.input.DropletUnit;
 import framework.math.MathUtils;
 
 /**

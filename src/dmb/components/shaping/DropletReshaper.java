@@ -7,14 +7,14 @@ import java.util.List;
 import java.util.Map;
 
 import dmb.algorithms.Point;
+import dmb.components.Droplet;
+import dmb.components.DropletUnit;
 import dmb.components.input.BioArray;
 import dmb.components.module.Module;
 import dmb.components.moves.Move;
 import dmb.components.moves.MoveFinder;
 import dmb.helpers.DisposableUidGenerator;
 import dmb.helpers.GeometryUtil;
-import framework.input.Droplet;
-import framework.input.DropletUnit;
 import framework.math.MathUtils;
 
 /**

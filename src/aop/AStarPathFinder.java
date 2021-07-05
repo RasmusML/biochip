@@ -71,7 +71,7 @@ public class AStarPathFinder {
       if (current.position.x == to.x && current.position.y == to.y) {
         arrivalToTarget = current.timestep;
 
-        System.out.printf("checked %d nodes\n", current.timestep - timestamp);
+        //System.out.printf("checked %d nodes\n", current.timestep - timestamp);
 
         break;
       }

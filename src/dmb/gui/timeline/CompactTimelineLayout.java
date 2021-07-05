@@ -6,6 +6,10 @@ import java.util.List;
 
 import dmb.algorithms.Operation;
 
+/**
+ * A timeline layout which uses a few rows as possible.
+ */
+
 public class CompactTimelineLayout implements TimelineLayout {
 
   // Packing the timeline corresponds to the activity selection problem.

@@ -3,7 +3,7 @@ package dmb.algorithms;
 import java.util.HashMap;
 import java.util.Map;
 
-import framework.input.Droplet;
+import dmb.components.Droplet;
 
 /**
  * Microfludic operation.

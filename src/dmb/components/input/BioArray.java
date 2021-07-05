@@ -1,7 +1,7 @@
 package dmb.components.input;
 
+import dmb.components.Droplet;
 import dmb.components.module.ModuleCatalog;
-import framework.input.Droplet;
 
 /**
  * Represents an array. Droplets are manipulated by the arrays electrodes.

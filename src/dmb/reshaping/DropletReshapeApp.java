@@ -11,6 +11,8 @@ import dmb.actuation.ElectrodeActivations;
 import dmb.actuation.ElectrodeActuation;
 import dmb.actuation.ElectrodeState;
 import dmb.algorithms.Point;
+import dmb.components.Droplet;
+import dmb.components.DropletUnit;
 import dmb.components.moves.Move;
 import dmb.helpers.GeometryUtil;
 import dmb.platform.PlatformInterface;
@@ -20,8 +22,6 @@ import framework.graphics.Camera;
 import framework.graphics.FitViewport;
 import framework.graphics.Renderer;
 import framework.input.Button;
-import framework.input.Droplet;
-import framework.input.DropletUnit;
 import framework.input.Keys;
 import framework.math.Vector2;
 

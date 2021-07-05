@@ -9,6 +9,8 @@ import java.util.Map;
 
 import dmb.components.BoundingBox;
 import dmb.components.ConstraintsChecker;
+import dmb.components.Droplet;
+import dmb.components.DropletUnit;
 import dmb.components.RandomIndexSelector;
 import dmb.components.ReservoirManager;
 import dmb.components.SubstanceToReservoirAssigner;
@@ -35,8 +37,6 @@ import dmb.helpers.GeometryUtil;
 import dmb.helpers.Logger;
 import dmb.helpers.RandomUtil;
 import dmb.helpers.UidGenerator;
-import framework.input.Droplet;
-import framework.input.DropletUnit;
 import framework.math.MathUtils;
 
 public class DropletSizeAwareGreedyRouter implements Router {
@@ -639,7 +639,6 @@ public class DropletSizeAwareGreedyRouter implements Router {
     Point selected = null;
     int minDistance = Integer.MAX_VALUE;
 
-    // @cleanup: we do not allocate waste modules, should we do that?
     List<Module> disposers = moduleAllocator.getModulesOfOperationType(OperationType.dispose);
     Assert.that(disposers.size() > 0);
 
@@ -726,7 +725,7 @@ public class DropletSizeAwareGreedyRouter implements Router {
 
     Assert.that(inside.size() > 0);
 
-    // @cleanup: a droplet may be within multiple droplets, movefinder does not support selecting multiple modules to ignore. so we just remove the modules the droplet is inside from the modules the movefinder checks against. @TODO: change movefinder so this is not necessary.
+    // A droplet may be within multiple allocated modules, so the droplet just move away from one of the modules till the droplet is not within any allocated module.
     inUseModules.removeAll(inside);
 
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, inUseModules, array);

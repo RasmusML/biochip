@@ -15,6 +15,10 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
+/**
+ * File read and write function.
+ */
+
 public class IOUtils {
 
   public static BufferedImage loadImage(String path) {

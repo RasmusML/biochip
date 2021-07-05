@@ -14,7 +14,7 @@ import dmb.algorithms.Point;
 
 public class Module {
   public String operation;
-  public int duration; // in timesteps for now.
+  public int duration; // in timesteps.
 
   public Point position;
   public int width, height;

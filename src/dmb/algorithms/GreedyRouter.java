@@ -9,6 +9,8 @@ import java.util.Map;
 
 import dmb.components.BoundingBox;
 import dmb.components.ConstraintsChecker;
+import dmb.components.Droplet;
+import dmb.components.DropletUnit;
 import dmb.components.RandomIndexSelector;
 import dmb.components.ReservoirManager;
 import dmb.components.SubstanceToReservoirAssigner;
@@ -31,8 +33,6 @@ import dmb.helpers.GeometryUtil;
 import dmb.helpers.Logger;
 import dmb.helpers.RandomUtil;
 import dmb.helpers.UidGenerator;
-import framework.input.Droplet;
-import framework.input.DropletUnit;
 import framework.math.MathUtils;
 
 public class GreedyRouter implements Router {
@@ -577,7 +577,6 @@ public class GreedyRouter implements Router {
     Point selected = null;
     int minDistance = Integer.MAX_VALUE;
 
-    // @cleanup: we do not allocate waste modules, should we do that?
     List<Module> disposers = moduleAllocator.getModulesOfOperationType(OperationType.dispose);
     Assert.that(disposers.size() > 0);
 
@@ -598,11 +597,11 @@ public class GreedyRouter implements Router {
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
     if (validMoves.size() == 0) return null;
 
-    Collections.shuffle(validMoves, RandomUtil.get());
     // if we use the manhattan distance, then reverse, turn directions yield the
     // same manhattan distance, meaning all moves are just as good. However, we only
     // select the 3 best moves, so if we don't shuffle, then the last one will
     // always be ignored (due to we always insert the moves in the same order).
+    Collections.shuffle(validMoves, RandomUtil.get());
 
     DropletUnit unit = droplet.units.get(0);
     Point at = unit.route.getPosition(timestamp - 1);
@@ -647,7 +646,7 @@ public class GreedyRouter implements Router {
 
     Assert.that(inside.size() > 0);
 
-    // @cleanup: a droplet may be within multiple droplets, movefinder does not support selecting multiple modules to ignore. so we just remove the modules the droplet is inside from the modules the movefinder checks against. @TODO: change movefinder so this is not necessary.
+    // A droplet may be within multiple allocated modules, so just move away from one of modules at a time.
     inUseModules.removeAll(inside);
 
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, inUseModules, array);
@@ -679,32 +678,6 @@ public class GreedyRouter implements Router {
     int bestMoveIndex = indexSelector.select(weights);
 
     return validMoves.get(bestMoveIndex);
-
-    /*
-    Move bestMove = null;
-    float maxDistance = -1;
-    
-    Point to = new Point();
-    
-    float mcx = module.position.x + module.width / 2f;
-    float mcy = module.position.y + module.height / 2f;
-      
-    Point at = droplet.getCenterPosition();
-    Module module = inside.get(0);  // just select 1 of the modules, which droplet is within to remove away from. When the droplet is not within this module, do the same thing for the next module till the droplet is not within any module.
-    
-    List<Move> moves = moveFinder.getValidMoves(droplet, timestamp, droplets, inUseModules, array);
-    for (Move move : moves) {
-      to.set(at).add(move.x, move.y);
-      
-      float distance = MathUtils.getManhattanDistance(to.x, to.y, mcx, mcy);
-      if (distance > maxDistance) {
-        maxDistance = distance;
-        bestMove = move;
-      }
-    }
-    
-    return bestMove;
-     */
   }
 
   private Droplet createDroplet(Point position, float area) {
@@ -898,7 +871,8 @@ public class GreedyRouter implements Router {
 
     List<Move> validMoves = moveFinder.getValidMoves(droplet, timestamp, droplets, moduleAllocator.getInUseOrAlwaysLockedModules(), array);
 
-    Point at = droplet.units.get(0).route.getPosition(timestamp - 1);
+    DropletUnit unit = droplet.units.get(0);
+    Point at = unit.route.getPosition(timestamp - 1);
 
     // select move which is furthest away from wall corner.
     Point to = new Point();

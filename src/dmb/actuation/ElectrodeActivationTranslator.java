@@ -3,8 +3,8 @@ package dmb.actuation;
 import java.util.List;
 
 import dmb.algorithms.Point;
-import framework.input.Droplet;
-import framework.input.DropletUnit;
+import dmb.components.Droplet;
+import dmb.components.DropletUnit;
 
 /**
  * Extracts the electrode actuation of droplets moving.

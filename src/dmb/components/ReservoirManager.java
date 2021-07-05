@@ -8,8 +8,6 @@ import dmb.algorithms.Point;
 import dmb.components.input.AttributeTags;
 import dmb.components.module.Module;
 import dmb.components.module.ModuleAllocator;
-import framework.input.Droplet;
-import framework.input.DropletUnit;
 
 /**
  * A wrapper around ModuleAllocator which handles Reservoir allocations for

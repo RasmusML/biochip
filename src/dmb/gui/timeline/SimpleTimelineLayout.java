@@ -5,6 +5,10 @@ import java.util.List;
 
 import dmb.algorithms.Operation;
 
+/**
+ * A timeline layout where each operation is on an different row.
+ */
+
 public class SimpleTimelineLayout implements TimelineLayout {
 
   @Override

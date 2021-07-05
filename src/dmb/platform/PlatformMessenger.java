@@ -1,5 +1,9 @@
 package dmb.platform;
 
+/**
+ * The set of commands the digital microfludic biochip at the Technical University of Denmark understands.
+ */
+
 public class PlatformMessenger {
 
   public String turnHighVoltageOnForElectrodesMessage() {

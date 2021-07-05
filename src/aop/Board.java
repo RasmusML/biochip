@@ -5,6 +5,10 @@ import java.util.List;
 
 import dmb.algorithms.Point;
 
+/**
+ * The board agents move on. The tiles of an board are either a wall or open.
+ */
+
 public class Board {
 
   public int[][] grid;

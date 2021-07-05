@@ -1,11 +1,10 @@
-package framework.input;
+package dmb.components;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import dmb.algorithms.Operation;
 import dmb.algorithms.Point;
-import dmb.components.BoundingBox;
 
 public class Droplet {
   

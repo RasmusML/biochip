@@ -2,6 +2,10 @@ package dmb.helpers;
 
 import java.util.Random;
 
+/**
+ * A random generator with control over the seed.
+ */
+
 public class RandomUtil {
   
   private static Random random;

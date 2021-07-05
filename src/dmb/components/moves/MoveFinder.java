@@ -2,10 +2,10 @@ package dmb.components.moves;
 
 import java.util.List;
 
+import dmb.components.Droplet;
+import dmb.components.DropletUnit;
 import dmb.components.input.BioArray;
 import dmb.components.module.Module;
-import framework.input.Droplet;
-import framework.input.DropletUnit;
 
 /**
  * Computes the valid moves for a droplet at a timestep.

@@ -8,6 +8,12 @@ import java.util.Map;
 import dmb.components.input.AttributeTag;
 import dmb.helpers.Assert;
 
+/**
+ * Allocates and frees modules using a strategy.
+ * 
+ * @see ModuleAllocationStrategy
+ */
+
 public class ModuleAllocator {
 
   private ModuleCatalog catalog;
